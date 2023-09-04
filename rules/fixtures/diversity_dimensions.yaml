@@ -1,0 +1,12 @@
+- model: rules.diversitydimension
+  pk: 1
+  fields:
+    name: abbreviation
+- model: rules.diversitydimension
+  pk: 2
+  fields:
+    name: ability
+- model: rules.diversitydimension
+  pk: 3
+  fields:
+    name: agentic
