@@ -56,7 +56,7 @@ class DiversityDimensionAdmin(ImportExportModelAdmin):
 
 class RuleDiversityDimensionInline(OrderedTabularInline):
     model = RuleDiversityDimension
-    fields = ("diversity_dimension", "move_up_down_links",)
+    fields = ("diversity_dimension", "is_advanced", "move_up_down_links",)
     readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
     extra = 1

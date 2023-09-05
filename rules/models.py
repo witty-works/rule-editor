@@ -165,6 +165,7 @@ class RuleDiversityDimension(OrderedModel, TimestampedModelMixin):
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
     diversity_dimension = models.ForeignKey(DiversityDimension, on_delete=models.CASCADE)
+    is_advanced = models.BooleanField(default=False)
 
 class Alternative(OrderedModel, BaseLemmaModel, SourcedModelMixin):
     class Meta:
