@@ -66,9 +66,13 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     class Meta:
         model = Rule
 
+    def all_diversity_dimensions(self, obj):
+        return ", ".join([d.name for d in obj.diversity_dimensions.all()])
+
     fields = ("language", "lemma", "word_types", "is_context_aware", "is_active", "label", "source_text", "source", "comment", "ownedby")
     search_fields = ("language", "lemma",)
-    list_filter = ("language", "diversity_dimensions")
+    list_filter = ("language", "diversity_dimensions", "is_active")
+    list_display = ("language", "lemma", "is_active", "all_diversity_dimensions")
     save_on_top = True
 
     inlines = [
