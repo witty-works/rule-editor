@@ -1,12 +1,40 @@
+- model: rules.category
+  pk: 1
+  fields:
+    name: cultural-diversity
+- model: rules.category
+  pk: 2
+  fields:
+    name: gender-orientation
+- model: rules.category
+  pk: 3
+  fields:
+    name: ability-physicality
+- model: rules.category
+  pk: 4
+  fields:
+    name: religion
+- model: rules.category
+  pk: 5
+  fields:
+    name: acquired-diversity
+- model: rules.category
+  pk: 5
+  fields:
+    name: social-motive
+
 - model: rules.diversitydimension
   pk: 1
   fields:
     name: abbreviation
+    category: 1
 - model: rules.diversitydimension
   pk: 2
   fields:
     name: ability
+    category: 3
 - model: rules.diversitydimension
   pk: 3
   fields:
     name: agentic
+    category: 5

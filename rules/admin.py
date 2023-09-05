@@ -4,7 +4,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin
 
-from .models import Rule, Alternative, DiversityDimension, RuleDiversityDimension, Source, TrainingSentence
+from .models import Rule, Alternative, Category, DiversityDimension, RuleDiversityDimension, Source, TrainingSentence
 
 class CreatedByAdmin(admin.ModelAdmin):
     base_readonly_fields = ("created_by")
@@ -17,42 +17,59 @@ class AlternativeAdmin(CreatedByAdmin):
     class Meta:
         model = Alternative
 
-    list_display = ('name', 'move_up_down_links')
+    list_display = ("name", "move_up_down_links")
 
 class AlternativeInline(OrderedTabularInline):
     model = Alternative
-    fields = ('lemma', 'word_types', 'is_singular', 'is_inspiration', 'is_active', 'label', 'source_text', 'source', 'comment', 'order', 'move_up_down_links',)
-    readonly_fields = ('order', 'move_up_down_links',)
-    ordering = ('order',)
+    fields = ("lemma", "word_types", "is_singular", "is_inspiration", "is_active", "label", "source_text", "source", "comment", "move_up_down_links",)
+    readonly_fields = ("move_up_down_links",)
+    ordering = ("order",)
     extra = 1
 
 class TrainingSentenceInline(admin.TabularInline):
     model = TrainingSentence
 
+class CategoryResource(resources.ModelResource):
+    class Meta:
+        model = Category
+
+@admin.register(Category)
+class CategoryAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = Category
+
+    resource_class = CategoryResource
+    search_fields = ("name",)
+
 class DiversityDimensionResource(resources.ModelResource):
     class Meta:
         model = DiversityDimension
 
-class RuleDiversityDimensionInline(OrderedTabularInline):
-    model = RuleDiversityDimension
-    fields = ('diversity_dimension', 'order', 'move_up_down_links',)
-    readonly_fields = ('order', 'move_up_down_links',)
-    ordering = ('order',)
-    extra = 1
-
 @admin.register(DiversityDimension)
 class DiversityDimensionAdmin(ImportExportModelAdmin):
-    resource_class = DiversityDimensionResource
-
     class Meta:
         model = DiversityDimension
+
+    resource_class = DiversityDimensionResource
+    search_fields = ("name", )
+    list_filter = ("category", )
+
+class RuleDiversityDimensionInline(OrderedTabularInline):
+    model = RuleDiversityDimension
+    fields = ("diversity_dimension", "move_up_down_links",)
+    readonly_fields = ("move_up_down_links",)
+    ordering = ("order",)
+    extra = 1
 
 @admin.register(Rule)
 class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     class Meta:
         model = Rule
 
-    fields = ('language', 'lemma', 'word_types', 'is_inspiration', 'is_context_aware', 'is_active', 'label', 'source_text', 'source', 'comment', 'ownedby')
+    fields = ("language", "lemma", "word_types", "is_context_aware", "is_active", "label", "source_text", "source", "comment", "ownedby")
+    search_fields = ("language", "lemma",)
+    list_filter = ("language", "diversity_dimensions")
+    save_on_top = True
 
     inlines = [
         RuleDiversityDimensionInline,
@@ -64,3 +81,5 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
 class SourceAdmin(CreatedByAdmin):
     class Meta:
         model = Source
+
+    search_fields = ("name", "url", "reference")
