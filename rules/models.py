@@ -57,7 +57,7 @@ class Source(BaseModel, BaseCreatedByModel):
     reference = models.TextField(null=True, blank=True)
 
     def __str__(self):
-        return str(self.name)
+        return self.name
 
 class BaseSourcedModel(models.Model):
     source_text = models.CharField(max_length=255, null=True, blank=True)
@@ -130,13 +130,13 @@ class Category(BaseModel, CommentedModelMixin):
     class Meta:
         verbose_name_plural = "categories"
     def __str__(self):
-        return str(self.name)
+        return self.name
 
     name = models.CharField(max_length=255, unique=True)
 
 class DiversityDimension(BaseModel, CommentedModelMixin):
     def __str__(self):
-        return str(self.name)
+        return self.name
 
     name = models.CharField(max_length=255, unique=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
@@ -146,7 +146,7 @@ class Rule(BaseLemmaModel, SourcedModelMixin):
         unique_together = (("language", "lemma"),)
 
     def __str__(self):
-        return str(self.lemma[0:50]  + " (" + self.language + ")")
+        return self.lemma[0:50]  + " (" + self.language + ")"
 
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
 
@@ -172,7 +172,7 @@ class Alternative(OrderedModel, BaseLemmaModel, SourcedModelMixin):
         ordering = ("order",)
 
     def __str__(self):
-        return str(self.lemma[0:50])
+        return self.lemma[0:50]
 
     order_with_respect_to = 'rule'
 
@@ -183,7 +183,7 @@ class Alternative(OrderedModel, BaseLemmaModel, SourcedModelMixin):
 
 class TrainingSentence(BaseModel, SourcedModelMixin):
     def __str__(self):
-        return str(self.text)
+        return self.text
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
