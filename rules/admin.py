@@ -3,6 +3,7 @@ from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin
+from rangefilter.filter import DateRangeFilter
 
 from .models import Rule, Alternative, Category, DiversityDimension, RuleDiversityDimension, Source, TrainingSentence
 
@@ -52,7 +53,7 @@ class DiversityDimensionAdmin(ImportExportModelAdmin):
 
     resource_class = DiversityDimensionResource
     search_fields = ("name", )
-    list_filter = ("category", )
+    list_filter = ("category", ('created_at', DateRangeFilter), ('updated_at', DateRangeFilter), )
 
 class RuleDiversityDimensionInline(OrderedTabularInline):
     model = RuleDiversityDimension
@@ -71,7 +72,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
 
     fields = ("language", "lemma", "word_types", "is_context_aware", "is_active", "label", "source_text", "source", "comment", "ownedby")
     search_fields = ("language", "lemma",)
-    list_filter = ("language", "diversity_dimensions", "is_active")
+    list_filter = ("language", "diversity_dimensions", "is_active", ('created_at', DateRangeFilter), ('updated_at', DateRangeFilter), )
     list_display = ("language", "lemma", "is_active", "all_diversity_dimensions")
     save_on_top = True
 
@@ -87,3 +88,4 @@ class SourceAdmin(CreatedByAdmin):
         model = Source
 
     search_fields = ("name", "url", "reference")
+    list_filter = (('created_at', DateRangeFilter), ('updated_at', DateRangeFilter), )

@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "debug_toolbar",
     "import_export",
     "ordered_model",
+    "rangefilter",
     "rules",
 ]
 
