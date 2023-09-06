@@ -20,38 +20,26 @@ class BaseModel(models.Model):
     class Meta:
     	abstract = True
 
-class BaseTimestampedModel(models.Model):
+class BaseTimestampedModel(BaseModel):
     created_at = models.DateField(default=timezone.now, editable=False)
     updated_at = AutoDateTimeField(default=timezone.now, editable=False)
 
     class Meta:
         abstract = True
 
-class TimestampedModelMixin(BaseTimestampedModel):
-    class Meta:
-        abstract = True
-
-class BaseCreatedByModel(models.Model):
+class BaseCreatedByModel(BaseModel):
     createdby = models.ForeignKey(User, null=True, editable=False, on_delete=models.SET_NULL)
 
     class Meta:
         abstract = True
 
-class CreatedbyModelMixin(BaseTimestampedModel, BaseCreatedByModel):
-    class Meta:
-        abstract = True
-
-class BaseCommentableModel(models.Model):
+class BaseCommentableModel(BaseModel):
     comment = models.TextField(null=True, blank=True)
 
     class Meta:
         abstract = True
 
-class CommentedModelMixin(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
-    class Meta:
-        abstract = True
-
-class Source(BaseModel, BaseCreatedByModel):
+class Source(BaseTimestampedModel, BaseCreatedByModel):
     name = models.CharField(max_length=255, unique=True)
     url = models.TextField(null=True, blank=True)
     reference = models.TextField(null=True, blank=True)
@@ -59,14 +47,10 @@ class Source(BaseModel, BaseCreatedByModel):
     def __str__(self):
         return self.name
 
-class BaseSourcedModel(models.Model):
+class BaseSourcedModel(BaseModel):
     source_text = models.CharField(max_length=255, null=True, blank=True)
     source = models.ForeignKey(Source, null=True, blank=True, on_delete=models.SET_NULL)
 
-    class Meta:
-        abstract = True
-
-class SourcedModelMixin(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel):
     class Meta:
         abstract = True
 
@@ -126,7 +110,7 @@ class ProficiencyLevelEnum(models.TextChoices):
     BASIC = "basic"
     ADVANCED = "advanced"
 
-class Category(BaseModel, CommentedModelMixin):
+class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     class Meta:
         verbose_name_plural = "categories"
     def __str__(self):
@@ -134,14 +118,14 @@ class Category(BaseModel, CommentedModelMixin):
 
     name = models.CharField(max_length=255, unique=True)
 
-class DiversityDimension(BaseModel, CommentedModelMixin):
+class DiversityDimension(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.name
 
     name = models.CharField(max_length=255, unique=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
 
-class Rule(BaseLemmaModel, SourcedModelMixin):
+class Rule(BaseLemmaModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel):
     class Meta:
         unique_together = (("language", "lemma"),)
 
@@ -156,7 +140,7 @@ class Rule(BaseLemmaModel, SourcedModelMixin):
 
     ownedby = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='owner')
 
-class RuleDiversityDimension(OrderedModel, TimestampedModelMixin):
+class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
     class Meta:
         unique_together = (("rule", "diversity_dimension"),)
         ordering = ("order",)
@@ -167,7 +151,7 @@ class RuleDiversityDimension(OrderedModel, TimestampedModelMixin):
     diversity_dimension = models.ForeignKey(DiversityDimension, on_delete=models.CASCADE)
     is_advanced = models.BooleanField(default=False)
 
-class Alternative(OrderedModel, BaseLemmaModel, SourcedModelMixin):
+class Alternative(OrderedModel, BaseLemmaModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel):
     class Meta:
         ordering = ("order",)
 
@@ -181,7 +165,7 @@ class Alternative(OrderedModel, BaseLemmaModel, SourcedModelMixin):
     is_singular = models.BooleanField(default=True)
     is_inspiration = models.BooleanField(default=False)
 
-class TrainingSentence(BaseModel, SourcedModelMixin):
+class TrainingSentence(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel):
     def __str__(self):
         return self.text
 
