@@ -48,7 +48,6 @@ class Source(BaseTimestampedModel, BaseCreatedByModel):
         return self.name
 
 class BaseSourcedModel(BaseModel):
-    source_text = models.CharField(max_length=255, null=True, blank=True)
     source = models.ForeignKey(Source, null=True, blank=True, on_delete=models.SET_NULL)
 
     class Meta:
