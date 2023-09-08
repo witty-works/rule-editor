@@ -77,7 +77,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
 
         return ", ".join(all_diversity_dimensions)
 
-    fields = ("language", "lemma", "word_types", "is_context_aware", "is_active", "label", "source_text", "source", "comment", "ownedby")
+    fields = ("language", "lemma", "word_types", "is_context_aware", "is_prefix", "is_active", "label", "source_text", "source", "comment", "ownedby")
     search_fields = ("language", "lemma",)
     list_filter = ("language", "diversity_dimensions", "is_active", ('created_at', DateRangeFilter), ('updated_at', DateRangeFilter), )
     list_display = ("language", "lemma", "is_active", "all_diversity_dimensions")

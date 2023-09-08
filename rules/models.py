@@ -127,7 +127,7 @@ class DiversityDimension(BaseTimestampedModel, BaseCreatedByModel, BaseCommentab
 
 class Rule(BaseLemmaModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel):
     class Meta:
-        unique_together = (("language", "lemma"),)
+        unique_together = (("language", "lemma", "word_types", "lemma"),)
 
     def __str__(self):
         return self.lemma[0:50]  + " (" + self.language + ")"
@@ -135,6 +135,7 @@ class Rule(BaseLemmaModel, BaseTimestampedModel, BaseCreatedByModel, BaseComment
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
 
     is_context_aware = models.BooleanField(default=False)
+    is_prefix = models.BooleanField(default=False)
 
     diversity_dimensions = models.ManyToManyField(DiversityDimension, through='RuleDiversityDimension')
 
