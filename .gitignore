@@ -1,6 +1,6 @@
 .python-version
 .vscode/launch.json
-staticfiles/*
+static/*
 
 # Created by https://www.gitignore.io
 
