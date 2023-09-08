@@ -5,6 +5,11 @@ from django.core.exceptions import ValidationError
 
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
+from hidefield.fields import HideField
+
+
+class HideTextField(HideField, models.TextField):
+    pass
 
 
 class AutoDateTimeField(models.DateTimeField):
@@ -37,7 +42,7 @@ class BaseCreatedByModel(BaseModel):
 
 
 class BaseCommentableModel(BaseModel):
-    comment = models.TextField(null=True, blank=True)
+    comment = HideTextField(null=True, blank=True, hide="no-data")
 
     class Meta:
         abstract = True
@@ -46,7 +51,7 @@ class BaseCommentableModel(BaseModel):
 class Source(BaseTimestampedModel, BaseCreatedByModel):
     name = models.CharField(max_length=255, unique=True)
     url = models.TextField(null=True, blank=True)
-    reference = models.TextField(null=True, blank=True)
+    reference = HideTextField(null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -110,7 +115,7 @@ class BaseLemmaModel(BaseModel):
     word_types = models.CharField(max_length=255)
     word_types_json = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
-    label = models.TextField(null=True, blank=True)
+    label = HideTextField(null=True, blank=True, hide="no-data")
 
 
 class LanguageEnum(models.TextChoices):

@@ -3,7 +3,7 @@ from django.contrib import admin
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from ordered_model.admin import (
-    OrderedTabularInline,
+    OrderedStackedInline,
     OrderedInlineModelAdminMixin,
     OrderedModelAdmin,
 )
@@ -36,7 +36,7 @@ class AlternativeAdmin(CreatedByAdmin):
     list_display = ("name", "move_up_down_links")
 
 
-class AlternativeInline(OrderedTabularInline):
+class AlternativeInline(OrderedStackedInline):
     model = Alternative
     fields = (
         "lemma",
@@ -54,7 +54,7 @@ class AlternativeInline(OrderedTabularInline):
     extra = 1
 
 
-class FalsePositiveInline(admin.TabularInline):
+class FalsePositiveInline(admin.StackedInline):
     model = FalsePositive
     fields = (
         "name",
@@ -62,7 +62,7 @@ class FalsePositiveInline(admin.TabularInline):
     )
 
 
-class TrainingSentenceInline(admin.TabularInline):
+class TrainingSentenceInline(admin.StackedInline):
     model = TrainingSentence
     fields = (
         "text",
@@ -106,7 +106,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin, ImportExportModelAdmin):
     )
 
 
-class RuleDiversityDimensionInline(OrderedTabularInline):
+class RuleDiversityDimensionInline(OrderedStackedInline):
     model = RuleDiversityDimension
     fields = (
         "diversity_dimension",
