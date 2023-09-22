@@ -19,12 +19,12 @@ import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
 sentry_sdk.init(
-    dsn=os.getenv('SENTRY_DSN'),
+    dsn=os.getenv("SENTRY_DSN"),
     release="0.0.0",
     send_default_pii=True,
     integrations=[
         DjangoIntegration(
-            transaction_style='url',
+            transaction_style="url",
             middleware_spans=True,
             signals_spans=False,
             cache_spans=False,

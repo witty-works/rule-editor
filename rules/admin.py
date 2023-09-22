@@ -5,14 +5,24 @@ from import_export.admin import ImportExportModelAdmin
 from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin
 from rangefilter.filter import DateRangeFilter
 
-from .models import Rule, Alternative, Category, DiversityDimension, RuleDiversityDimension, Source, TrainingSentence
+from .models import (
+    Rule,
+    Alternative,
+    Category,
+    DiversityDimension,
+    RuleDiversityDimension,
+    Source,
+    TrainingSentence,
+)
+
 
 class CreatedByAdmin(admin.ModelAdmin):
-    base_readonly_fields = ("created_by")
+    base_readonly_fields = "created_by"
 
-    def save_model(self, request, obj, form, change): 
+    def save_model(self, request, obj, form, change):
         obj.createdby = request.user
         obj.save()
+
 
 class AlternativeAdmin(CreatedByAdmin):
     class Meta:
@@ -20,19 +30,33 @@ class AlternativeAdmin(CreatedByAdmin):
 
     list_display = ("name", "move_up_down_links")
 
+
 class AlternativeInline(OrderedTabularInline):
     model = Alternative
-    fields = ("lemma", "word_types", "is_singular", "is_inspiration", "is_active", "label", "source", "comment", "move_up_down_links",)
+    fields = (
+        "lemma",
+        "word_types",
+        "is_singular",
+        "is_inspiration",
+        "is_active",
+        "label",
+        "source",
+        "comment",
+        "move_up_down_links",
+    )
     readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
     extra = 1
 
+
 class TrainingSentenceInline(admin.TabularInline):
     model = TrainingSentence
+
 
 class CategoryResource(resources.ModelResource):
     class Meta:
         model = Category
+
 
 @admin.register(Category)
 class CategoryAdmin(ImportExportModelAdmin):
@@ -42,9 +66,11 @@ class CategoryAdmin(ImportExportModelAdmin):
     resource_class = CategoryResource
     search_fields = ("name",)
 
+
 class DiversityDimensionResource(resources.ModelResource):
     class Meta:
         model = DiversityDimension
+
 
 @admin.register(DiversityDimension)
 class DiversityDimensionAdmin(ImportExportModelAdmin):
@@ -52,15 +78,25 @@ class DiversityDimensionAdmin(ImportExportModelAdmin):
         model = DiversityDimension
 
     resource_class = DiversityDimensionResource
-    search_fields = ("name", )
-    list_filter = ("category", ('created_at', DateRangeFilter), ('updated_at', DateRangeFilter), )
+    search_fields = ("name",)
+    list_filter = (
+        "category",
+        ("created_at", DateRangeFilter),
+        ("updated_at", DateRangeFilter),
+    )
+
 
 class RuleDiversityDimensionInline(OrderedTabularInline):
     model = RuleDiversityDimension
-    fields = ("diversity_dimension", "is_advanced", "move_up_down_links",)
+    fields = (
+        "diversity_dimension",
+        "is_advanced",
+        "move_up_down_links",
+    )
     readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
     extra = 1
+
 
 @admin.register(Rule)
 class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
@@ -72,14 +108,34 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         for rdd in obj.rulediversitydimension_set.all():
             text = rdd.diversity_dimension.name
             if rdd.is_advanced:
-                text+= " (a)"
+                text += " (a)"
             all_diversity_dimensions.append(text)
 
         return ", ".join(all_diversity_dimensions)
 
-    fields = ("language", "lemma", "word_types", "is_context_aware", "is_prefix", "is_active", "label", "source", "comment", "ownedby")
-    search_fields = ("language", "lemma",)
-    list_filter = ("language", "diversity_dimensions", "is_active", ('created_at', DateRangeFilter), ('updated_at', DateRangeFilter), )
+    fields = (
+        "language",
+        "lemma",
+        "word_types",
+        "is_context_aware",
+        "is_prefix",
+        "is_active",
+        "label",
+        "source",
+        "comment",
+        "ownedby",
+    )
+    search_fields = (
+        "language",
+        "lemma",
+    )
+    list_filter = (
+        "language",
+        "diversity_dimensions",
+        "is_active",
+        ("created_at", DateRangeFilter),
+        ("updated_at", DateRangeFilter),
+    )
     list_display = ("language", "lemma", "is_active", "all_diversity_dimensions")
     save_on_top = True
 
@@ -89,10 +145,14 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         TrainingSentenceInline,
     ]
 
+
 @admin.register(Source)
 class SourceAdmin(CreatedByAdmin):
     class Meta:
         model = Source
 
     search_fields = ("name", "url", "reference")
-    list_filter = (('created_at', DateRangeFilter), ('updated_at', DateRangeFilter), )
+    list_filter = (
+        ("created_at", DateRangeFilter),
+        ("updated_at", DateRangeFilter),
+    )
