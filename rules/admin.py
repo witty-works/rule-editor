@@ -2,7 +2,11 @@ from django.contrib import admin
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, OrderedModelAdmin
+from ordered_model.admin import (
+    OrderedTabularInline,
+    OrderedInlineModelAdminMixin,
+    OrderedModelAdmin,
+)
 from rangefilter.filter import DateRangeFilter
 
 from .models import (
@@ -12,6 +16,7 @@ from .models import (
     DiversityDimension,
     RuleDiversityDimension,
     Source,
+    FalsePositive,
     TrainingSentence,
 )
 
@@ -49,8 +54,22 @@ class AlternativeInline(OrderedTabularInline):
     extra = 1
 
 
+class FalsePositiveInline(admin.TabularInline):
+    model = FalsePositive
+    fields = (
+        "name",
+        "comment",
+    )
+
+
 class TrainingSentenceInline(admin.TabularInline):
     model = TrainingSentence
+    fields = (
+        "text",
+        "is_false_positive",
+        "is_training_data",
+        "comment",
+    )
 
 
 class CategoryResource(resources.ModelResource):
@@ -78,7 +97,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin, ImportExportModelAdmin):
         model = DiversityDimension
 
     resource_class = DiversityDimensionResource
-    list_display = ('name', 'move_up_down_links')
+    list_display = ("name", "move_up_down_links")
     search_fields = ("name",)
     list_filter = (
         "category",
@@ -143,6 +162,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     inlines = [
         RuleDiversityDimensionInline,
         AlternativeInline,
+        FalsePositiveInline,
         TrainingSentenceInline,
     ]
 

@@ -225,3 +225,12 @@ class TrainingSentence(
 
     is_false_positive = models.BooleanField(default=False)
     is_training_data = models.BooleanField(default=False)
+
+
+class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.name
+
+    rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
+
+    name = models.TextField(null=True, blank=True)
