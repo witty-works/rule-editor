@@ -2,7 +2,7 @@ from django.contrib import admin
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin
+from ordered_model.admin import OrderedTabularInline, OrderedInlineModelAdminMixin, OrderedModelAdmin
 from rangefilter.filter import DateRangeFilter
 
 from .models import (
@@ -73,11 +73,12 @@ class DiversityDimensionResource(resources.ModelResource):
 
 
 @admin.register(DiversityDimension)
-class DiversityDimensionAdmin(ImportExportModelAdmin):
+class DiversityDimensionAdmin(OrderedModelAdmin, ImportExportModelAdmin):
     class Meta:
         model = DiversityDimension
 
     resource_class = DiversityDimensionResource
+    list_display = ('name', 'move_up_down_links')
     search_fields = ("name",)
     list_filter = (
         "category",

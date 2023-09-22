@@ -141,7 +141,7 @@ class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
 
 
 class DiversityDimension(
-    BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
+    OrderedModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
 ):
     def __str__(self):
         return self.name
