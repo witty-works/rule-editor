@@ -135,6 +135,12 @@ class ProficiencyLevelEnum(models.TextChoices):
     ADVANCED = "advanced"
 
 
+class AlternativeEnum(models.TextChoices):
+    DEFAULT = "default"
+    PERSON_FIRST = "person_first"
+    IDENTITY_FIRST = "identity_first"
+
+
 class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     class Meta:
         verbose_name_plural = "categories"
@@ -214,6 +220,7 @@ class Alternative(
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
+    type = EnumField(AlternativeEnum, default=AlternativeEnum.DEFAULT)
     is_singular = models.BooleanField(default=True)
     is_inspiration = models.BooleanField(default=False)
 
