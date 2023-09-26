@@ -9,11 +9,12 @@ django-debug-toolbar = "*"
 django-enum = "*"
 django-import-export = "*"
 django-ordered-model = "*"
-sentry-sdk = "*"
 platformshconfig = "*"
 gunicorn = "*"
 django-environ = "*"
 django-admin-rangefilter = "*"
+django-hidefield = "*"
+sentry-sdk = {extras = ["django"], version = "*"}
 
 [dev-packages]
 

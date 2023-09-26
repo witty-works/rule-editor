@@ -18,39 +18,47 @@ from platformshconfig import Config
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
-sentry_sdk.init(
-    dsn=os.getenv('SENTRY_DSN'),
-    release="0.0.0",
-    send_default_pii=True,
-    integrations=[
-        DjangoIntegration(
-            transaction_style='url',
-            middleware_spans=True,
-            signals_spans=False,
-            cache_spans=False,
-        ),
-    ],
-    # Set traces_sample_rate to 1.0 to capture 100%
-    # of transactions for performance monitoring.
-    # We recommend adjusting this value in production,
-    traces_sample_rate=1.0,
-)
 
-env = environ.Env()
-environ.Env.read_env()
+env = environ.Env(
+    DEBUG=(bool, False),
+    SECRET_KEY=(str, ""),
+    SENTRY_DSN=(str, ""),
+)
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Take environment variables from .env file
+environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
+
+if env("SENTRY_DSN"):
+    sentry_sdk.init(
+        dsn=env("SENTRY_DSN"),
+        release="0.1.0",
+        send_default_pii=True,
+        integrations=[
+            DjangoIntegration(
+                transaction_style="url",
+                middleware_spans=True,
+                signals_spans=False,
+                cache_spans=False,
+            ),
+        ],
+        # Set traces_sample_rate to 1.0 to capture 100%
+        # of transactions for performance monitoring.
+        # We recommend adjusting this value in production,
+        traces_sample_rate=1.0,
+    )
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "5^#15wdl(qll2ue&&(-1ixwalo7%td1a(&x7abp(roabe_mk7w"
+SECRET_KEY = env("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = ["*"]
 
@@ -68,6 +76,7 @@ INSTALLED_APPS = [
     "import_export",
     "ordered_model",
     "rangefilter",
+    "hidefield",
     "rules",
 ]
 
@@ -109,7 +118,7 @@ WSGI_APPLICATION = "rule_editor.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "database/db.sqlite3",
+        "NAME": os.path.join(BASE_DIR, "database/db.sqlite3"),
     }
 }
 
@@ -148,6 +157,8 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
+STATICFILES_DIRS = (os.path.join(BASE_DIR, "rule_editor/static"),)
+
 STATIC_URL = "/static/"
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
@@ -161,3 +172,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+# Import some Platform.sh settings from the environment.
+config = Config()
+if config.is_valid_platform():
+    if config.appDir:
+        STATIC_ROOT = os.path.join(config.appDir, "static")
+    if config.projectEntropy:
+        SECRET_KEY = config.projectEntropy

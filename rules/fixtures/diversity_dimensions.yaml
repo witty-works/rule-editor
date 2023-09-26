@@ -28,13 +28,16 @@
   fields:
     name: abbreviation
     category: 1
+    order: 0
 - model: rules.diversitydimension
   pk: 2
   fields:
     name: ability
     category: 3
+    order: 1
 - model: rules.diversitydimension
   pk: 3
   fields:
     name: agentic
     category: 5
+    order: 2
