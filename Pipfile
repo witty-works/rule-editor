@@ -15,6 +15,7 @@ gunicorn = "*"
 django-environ = "*"
 django-admin-rangefilter = "*"
 django-hidefield = "*"
+django-simple-history = "*"
 
 [dev-packages]
 

@@ -6,6 +6,7 @@ from django.core.exceptions import ValidationError
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
 from hidefield.fields import HideField
+from simple_history.models import HistoricalRecords
 
 
 class HideTextField(HideField, models.TextField):
@@ -150,6 +151,8 @@ class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
 
     name = models.CharField(max_length=255, unique=True)
 
+    history = HistoricalRecords()
+
 
 class DiversityDimension(
     OrderedModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
@@ -159,6 +162,8 @@ class DiversityDimension(
 
     name = models.CharField(max_length=255, unique=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
+    history = HistoricalRecords()
 
 
 class Rule(
@@ -186,6 +191,8 @@ class Rule(
     ownedby = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="owner"
     )
+
+    history = HistoricalRecords(m2m_fields=[diversity_dimensions])
 
 
 class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
@@ -224,6 +231,8 @@ class Alternative(
     is_singular = models.BooleanField(default=True)
     is_inspiration = models.BooleanField(default=False)
 
+    history = HistoricalRecords()
+
 
 class TrainingSentence(
     BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel
@@ -238,6 +247,8 @@ class TrainingSentence(
     is_false_positive = models.BooleanField(default=False)
     is_training_data = models.BooleanField(default=False)
 
+    history = HistoricalRecords()
+
 
 class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
@@ -246,3 +257,5 @@ class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
     name = models.TextField(null=True, blank=True)
+
+    history = HistoricalRecords()
