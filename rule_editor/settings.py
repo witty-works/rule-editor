@@ -34,7 +34,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 if env("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
-        release="0.0.0",
+        release="0.1.0",
         send_default_pii=True,
         integrations=[
             DjangoIntegration(
