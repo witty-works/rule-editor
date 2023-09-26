@@ -15,6 +15,7 @@ django-environ = "*"
 django-admin-rangefilter = "*"
 django-hidefield = "*"
 sentry-sdk = {extras = ["django"], version = "*"}
+django-more-admin-filters = "*"
 
 [dev-packages]
 

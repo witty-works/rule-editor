@@ -178,6 +178,7 @@ class Rule(
 
     is_context_aware = models.BooleanField(default=False)
     is_prefix = models.BooleanField(default=False)
+    is_marked_for_review = models.BooleanField(default=False)
 
     diversity_dimensions = models.ManyToManyField(
         DiversityDimension, through="RuleDiversityDimension"
@@ -199,7 +200,6 @@ class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
     diversity_dimension = models.ForeignKey(
         DiversityDimension, on_delete=models.CASCADE
     )
-    is_advanced = models.BooleanField(default=False)
 
 
 class Alternative(
@@ -245,4 +245,4 @@ class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
-    name = models.TextField(null=True, blank=True)
+    name = models.CharField(max_length=255, unique=True)

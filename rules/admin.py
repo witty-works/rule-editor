@@ -8,6 +8,7 @@ from ordered_model.admin import (
     OrderedModelAdmin,
 )
 from rangefilter.filter import DateRangeFilter
+from more_admin_filters import MultiSelectRelatedFilter
 
 from .models import (
     Rule,
@@ -43,6 +44,7 @@ class AlternativeInline(OrderedStackedInline):
         "word_types",
         "is_singular",
         "is_inspiration",
+        "type",
         "is_active",
         "label",
         "source",
@@ -110,7 +112,6 @@ class RuleDiversityDimensionInline(OrderedStackedInline):
     model = RuleDiversityDimension
     fields = (
         "diversity_dimension",
-        "is_advanced",
         "move_up_down_links",
     )
     readonly_fields = ("move_up_down_links",)
@@ -124,19 +125,13 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         model = Rule
 
     def all_diversity_dimensions(self, obj):
-        all_diversity_dimensions = []
-        for rdd in obj.rulediversitydimension_set.all():
-            text = rdd.diversity_dimension.name
-            if rdd.is_advanced:
-                text += " (a)"
-            all_diversity_dimensions.append(text)
-
-        return ", ".join(all_diversity_dimensions)
+        return ", ".join([d.name for d in obj.diversity_dimensions.all()])
 
     fields = (
         "language",
         "lemma",
         "word_types",
+        "is_marked_for_review",
         "is_context_aware",
         "is_prefix",
         "is_active",
@@ -151,7 +146,8 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     )
     list_filter = (
         "language",
-        "diversity_dimensions",
+        ("diversity_dimensions", MultiSelectRelatedFilter),
+        "is_marked_for_review",
         "is_active",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
@@ -162,8 +158,8 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     inlines = [
         RuleDiversityDimensionInline,
         AlternativeInline,
-        FalsePositiveInline,
         TrainingSentenceInline,
+        FalsePositiveInline,
     ]
 
 
