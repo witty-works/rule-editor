@@ -17,6 +17,7 @@ django-hidefield = "*"
 sentry-sdk = {extras = ["django"], version = "*"}
 django-more-admin-filters = "*"
 requests = "*"
+django-ajax-selects = "*"
 
 [dev-packages]
 

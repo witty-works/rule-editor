@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     "rangefilter",
     "hidefield",
     "more_admin_filters",
+    "ajax_select",
     "rules",
 ]
 
