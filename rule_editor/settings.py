@@ -77,6 +77,7 @@ INSTALLED_APPS = [
     "ordered_model",
     "rangefilter",
     "hidefield",
+    "more_admin_filters",
     "rules",
 ]
 

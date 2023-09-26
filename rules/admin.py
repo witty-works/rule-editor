@@ -8,6 +8,7 @@ from ordered_model.admin import (
     OrderedModelAdmin,
 )
 from rangefilter.filter import DateRangeFilter
+from more_admin_filters import MultiSelectRelatedFilter
 
 from .models import (
     Rule,
@@ -145,7 +146,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     )
     list_filter = (
         "language",
-        "diversity_dimensions",
+        ("diversity_dimensions", MultiSelectRelatedFilter),
         "is_marked_for_review",
         "is_active",
         ("created_at", DateRangeFilter),
