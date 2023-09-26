@@ -111,7 +111,6 @@ class RuleDiversityDimensionInline(OrderedStackedInline):
     model = RuleDiversityDimension
     fields = (
         "diversity_dimension",
-        "is_advanced",
         "move_up_down_links",
     )
     readonly_fields = ("move_up_down_links",)
@@ -125,14 +124,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         model = Rule
 
     def all_diversity_dimensions(self, obj):
-        all_diversity_dimensions = []
-        for rdd in obj.rulediversitydimension_set.all():
-            text = rdd.diversity_dimension.name
-            if rdd.is_advanced:
-                text += " (a)"
-            all_diversity_dimensions.append(text)
-
-        return ", ".join(all_diversity_dimensions)
+        return ", ".join([d.name for d in obj.diversity_dimensions.all()])
 
     fields = (
         "language",

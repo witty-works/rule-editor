@@ -41,3 +41,21 @@
     name: agentic
     category: 5
     order: 2
+- model: rules.diversitydimension
+  pk: 4
+  fields:
+    name: advanced_abbreviation
+    category: 1
+    order: 3
+- model: rules.diversitydimension
+  pk: 5
+  fields:
+    name: advanced_ability
+    category: 3
+    order: 4
+- model: rules.diversitydimension
+  pk: 6
+  fields:
+    name: advanced_agentic
+    category: 5
+    order: 5

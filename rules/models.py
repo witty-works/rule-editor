@@ -200,7 +200,6 @@ class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
     diversity_dimension = models.ForeignKey(
         DiversityDimension, on_delete=models.CASCADE
     )
-    is_advanced = models.BooleanField(default=False)
 
 
 class Alternative(
