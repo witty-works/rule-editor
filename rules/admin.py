@@ -163,8 +163,8 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     inlines = [
         RuleDiversityDimensionInline,
         AlternativeInline,
-        FalsePositiveInline,
         TrainingSentenceInline,
+        FalsePositiveInline,
     ]
 
 

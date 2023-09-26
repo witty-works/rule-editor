@@ -245,4 +245,4 @@ class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
-    name = models.TextField(null=True, blank=True)
+    name = models.CharField(max_length=255, unique=True)
