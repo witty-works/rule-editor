@@ -43,6 +43,7 @@ class AlternativeInline(OrderedStackedInline):
         "word_types",
         "is_singular",
         "is_inspiration",
+        "type",
         "is_active",
         "label",
         "source",
