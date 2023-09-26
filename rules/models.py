@@ -178,6 +178,7 @@ class Rule(
 
     is_context_aware = models.BooleanField(default=False)
     is_prefix = models.BooleanField(default=False)
+    is_marked_for_review = models.BooleanField(default=False)
 
     diversity_dimensions = models.ManyToManyField(
         DiversityDimension, through="RuleDiversityDimension"

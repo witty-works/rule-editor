@@ -138,6 +138,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         "language",
         "lemma",
         "word_types",
+        "is_marked_for_review",
         "is_context_aware",
         "is_prefix",
         "is_active",
@@ -153,6 +154,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     list_filter = (
         "language",
         "diversity_dimensions",
+        "is_marked_for_review",
         "is_active",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
