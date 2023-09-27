@@ -9,10 +9,10 @@ python manage.py migrate
 python manage.py createsuperuser
 python manage.py loaddata diversity_dimensions
 
-python manage.py runserver
+python manage.py runserver 8100
 ```
 
-Open http://127.0.0.1:8000/ and login using the credentials used above
+Open http://127.0.0.1:8100/ and login using the credentials used above
 
 ## Development
 

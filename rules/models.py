@@ -2,10 +2,14 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.conf import settings
 
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
 from hidefield.fields import HideField
+
+import requests
+from requests.auth import HTTPBasicAuth
 
 
 class HideTextField(HideField, models.TextField):
@@ -65,47 +69,50 @@ class BaseSourcedModel(BaseModel):
 
 
 class BaseLemmaModel(BaseModel):
-    def lemmatize(self, lemma):
-        # TODO call lemmatize API
-        return lemma.split(" ")
+    @property
+    def language(self):
+        if self.rule:
+            return self.rule.language
+
+        return self.language
+
+    def get_url(self, path):
+        url = settings.NLP_API + path
+
+        auth = (
+            HTTPBasicAuth(settings.NLP_API_USER, settings.NLP_API_PASSWORD)
+            if settings.NLP_API_USER is not None
+            else None
+        )
+
+        r = requests.get(url, auth=auth)
+
+        if r.status_code != 200:
+            body = r.json()
+            error = body["detail"] if "detail" in body else r.text
+            raise ValidationError({"word_types": error})
+
+        return r
+
+    def tokenize(self):
+        path = f"/tokenize?lang={self.language}&text={self.lemma}"
+        r = self.get_url(path)
+
+        return r.json()
+
+    def validate_word_type(self):
+        path = f"/validate-word-type?lang={self.language}&text={self.lemma}&word_types={self.word_types}"
+        self.get_url(path)
 
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
 
     def clean(self):
-        lemma = self.lemmatize(self.lemma)
+        self.validate_word_type()
 
-        # TODO call word_types validate API
-        word_types = self.word_types.split("|")
-
-        if len(lemma) != len(word_types):
-            raise ValidationError(
-                {
-                    "word_types": "word_types needs to have as many '|' as the lemma has tokens"
-                }
-            )
-
-        for word_type in word_types:
-            if word_type[0] in ("=", "~", "-"):
-                word_type = word_type[1:]
-
-            word_type = word_type.split("+")
-            for sub_word_type in word_type:
-                if (
-                    sub_word_type != "s"
-                    and sub_word_type != "a"
-                    and sub_word_type != "adv"
-                    and sub_word_type != "v"
-                    and sub_word_type != "conj"
-                    and sub_word_type != "emoji"
-                ):
-                    raise ValidationError(
-                        {"word_types": f"unrecognized word type '{sub_word_type}'."}
-                    )
-
-        self.lemma_json = lemma
-        self.word_types_json = word_types
+        self.lemma_json = self.tokenize()
+        self.word_types_json = self.word_types.split("|")
 
     class Meta:
         abstract = True
