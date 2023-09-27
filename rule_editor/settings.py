@@ -23,6 +23,9 @@ env = environ.Env(
     DEBUG=(bool, False),
     SECRET_KEY=(str, ""),
     SENTRY_DSN=(str, ""),
+    NLP_API=(str, ""),
+    NLP_API_USER=(str, None),
+    NLP_API_PASSWORD=(str, None),
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -62,6 +65,9 @@ DEBUG = env("DEBUG")
 
 ALLOWED_HOSTS = ["*"]
 
+NLP_API = env("NLP_API")
+NLP_API_USER = env("NLP_API_USER")
+NLP_API_PASSWORD = env("NLP_API_PASSWORD")
 
 # Application definition
 
