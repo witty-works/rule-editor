@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.utils.safestring import mark_safe
+from django.urls import reverse
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -25,6 +27,11 @@ from .models import (
     Noun,
 )
 
+import sys
+
+
+def get_class(class_name):
+    return getattr(sys.modules[__name__], class_name)
 
 
 class CreatedByAdmin(admin.ModelAdmin):
@@ -97,6 +104,55 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
 
     def all_diversity_dimensions(self, obj):
         return ", ".join([d.name for d in obj.diversity_dimensions.all()])
+
+    def generate_help_text(self, class_name, filters, token):
+        cls = get_class(class_name)
+        instances = cls.objects.filter(**filters)
+        if instances:
+            for instance in instances:
+                link = reverse("admin:rules_verb_change", args=[instance.pk])
+                return (
+                    f"{class_name} <a href=\"{link}\">data available</a> for '{token}'"
+                )
+
+        return f"No {class_name} data available for '{token}'"
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        help_text = []
+        tokens = obj.tokenize()
+        word_types = obj.parse_word_type()
+        for i in range(len(word_types)):
+            if word_types[i]["lemmatize"]:
+                filters = {"language": obj.language}
+                if word_types[i]["lower_case"]:
+                    filters["base_form"] = tokens[i]
+                else:
+                    filters["base_form__iexact"] = tokens[i]
+
+                if "v" in word_types[i]["word_types"]:
+                    help_text.append(
+                        self.generate_help_text("Verb", filters, tokens[i])
+                    )
+                if "a" in word_types[i]["word_types"]:
+                    help_text.append(
+                        self.generate_help_text("Adjective", filters, tokens[i])
+                    )
+                if "s" in word_types[i]["word_types"]:
+                    help_text.append(
+                        self.generate_help_text("Noun", filters, tokens[i])
+                    )
+
+                filters = {"lemma": tokens[i], "language": obj.language}
+                help_text.append(
+                    self.generate_help_text("Lemmatization", filters, tokens[i])
+                )
+
+        if len(help_text):
+            form.base_fields["lemma"].help_text = mark_safe("<br>".join(help_text))
+
+        return form
 
     fields = (
         "language",
