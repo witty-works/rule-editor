@@ -305,8 +305,53 @@ class TrainingSentence(
 
 class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
-        return self.name
+        return self.false_positive
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
-    name = models.CharField(max_length=255, unique=True)
+    false_positive = models.CharField(max_length=255, unique=True)
+
+
+class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.text
+
+    class Meta:
+        unique_together = (("language", "text"),)
+
+    text = models.CharField(max_length=255)
+    language = EnumField(LanguageEnum, default=LanguageEnum.EN)
+    lemma = models.CharField(max_length=255)
+
+
+class Verb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    class Meta:
+        unique_together = (("language", "base_form"),)
+
+    base_form = models.CharField(max_length=255, unique=True)
+    language = EnumField(LanguageEnum, default=LanguageEnum.DE)
+
+
+class Adjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    class Meta:
+        unique_together = (("language", "base_form"),)
+
+    base_form = models.CharField(max_length=255, unique=True)
+    language = EnumField(LanguageEnum, default=LanguageEnum.DE)
+
+
+class Noun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    class Meta:
+        unique_together = (("language", "base_form"),)
+
+    base_form = models.CharField(max_length=255, unique=True)
+    language = EnumField(LanguageEnum, default=LanguageEnum.DE)

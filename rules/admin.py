@@ -19,7 +19,12 @@ from .models import (
     Source,
     FalsePositive,
     TrainingSentence,
+    Lemmatization,
+    Verb,
+    Adjective,
+    Noun,
 )
+
 
 
 class CreatedByAdmin(admin.ModelAdmin):
@@ -59,7 +64,7 @@ class AlternativeInline(OrderedStackedInline):
 class FalsePositiveInline(admin.StackedInline):
     model = FalsePositive
     fields = (
-        "name",
+        "false_positive",
         "comment",
     )
 
@@ -176,3 +181,63 @@ class SourceAdmin(CreatedByAdmin):
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )
+
+
+class LemmatizationResource(resources.ModelResource):
+    class Meta:
+        model = Lemmatization
+
+
+@admin.register(Lemmatization)
+class LemmatizationAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = Lemmatization
+
+    resource_class = LemmatizationResource
+    search_fields = ("text", "lemma")
+    list_filter = ("language",)
+
+
+class VerbResource(resources.ModelResource):
+    class Meta:
+        model = Verb
+
+
+@admin.register(Verb)
+class VerbAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = Verb
+
+    resource_class = VerbResource
+    search_fields = ("base_form",)
+    list_filter = ("language",)
+
+
+class AdjectiveResource(resources.ModelResource):
+    class Meta:
+        model = Adjective
+
+
+@admin.register(Adjective)
+class AdjectiveAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = Adjective
+
+    resource_class = AdjectiveResource
+    search_fields = ("base_form",)
+    list_filter = ("language",)
+
+
+class NounResource(resources.ModelResource):
+    class Meta:
+        model = Noun
+
+
+@admin.register(Noun)
+class NounAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = Noun
+
+    resource_class = NounResource
+    search_fields = ("base_form",)
+    list_filter = ("language",)
