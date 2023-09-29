@@ -14,6 +14,29 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
+class LanguageEnum(models.TextChoices):
+    EN = "en", "English"
+    DE = "de", "German"
+
+
+class ContentEnum(models.TextChoices):
+    BASIC = "basic"
+    ADVANCED = "advanced"
+    VIDEO = "video"
+
+
+class ProficiencyLevelEnum(models.TextChoices):
+    HATE = "hate"
+    BASIC = "basic"
+    ADVANCED = "advanced"
+
+
+class AlternativeEnum(models.TextChoices):
+    DEFAULT = "default"
+    PERSON_FIRST = "person_first"
+    IDENTITY_FIRST = "identity_first"
+
+
 class HideTextField(HideField, models.TextField):
     pass
 
@@ -145,29 +168,6 @@ class BaseLemmaModel(BaseModel):
     word_types_json = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
     label = HideTextField(null=True, blank=True, hide="no-data")
-
-
-class LanguageEnum(models.TextChoices):
-    EN = "en", "English"
-    DE = "de", "German"
-
-
-class ContentEnum(models.TextChoices):
-    BASIC = "basic"
-    ADVANCED = "advanced"
-    VIDEO = "video"
-
-
-class ProficiencyLevelEnum(models.TextChoices):
-    HATE = "hate"
-    BASIC = "basic"
-    ADVANCED = "advanced"
-
-
-class AlternativeEnum(models.TextChoices):
-    DEFAULT = "default"
-    PERSON_FIRST = "person_first"
-    IDENTITY_FIRST = "identity_first"
 
 
 class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):

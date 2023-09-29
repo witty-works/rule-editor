@@ -74,40 +74,6 @@ class TrainingSentenceInline(admin.StackedInline):
     )
 
 
-class CategoryResource(resources.ModelResource):
-    class Meta:
-        model = Category
-
-
-@admin.register(Category)
-class CategoryAdmin(ImportExportModelAdmin):
-    class Meta:
-        model = Category
-
-    resource_class = CategoryResource
-    search_fields = ("name",)
-
-
-class DiversityDimensionResource(resources.ModelResource):
-    class Meta:
-        model = DiversityDimension
-
-
-@admin.register(DiversityDimension)
-class DiversityDimensionAdmin(OrderedModelAdmin, ImportExportModelAdmin):
-    class Meta:
-        model = DiversityDimension
-
-    resource_class = DiversityDimensionResource
-    list_display = ("name", "move_up_down_links")
-    search_fields = ("name",)
-    list_filter = (
-        "category",
-        ("created_at", DateRangeFilter),
-        ("updated_at", DateRangeFilter),
-    )
-
-
 class RuleDiversityDimensionInline(OrderedStackedInline):
     model = RuleDiversityDimension
     fields = (
@@ -164,6 +130,40 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         TrainingSentenceInline,
         FalsePositiveInline,
     ]
+
+
+class CategoryResource(resources.ModelResource):
+    class Meta:
+        model = Category
+
+
+@admin.register(Category)
+class CategoryAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = Category
+
+    resource_class = CategoryResource
+    search_fields = ("name",)
+
+
+class DiversityDimensionResource(resources.ModelResource):
+    class Meta:
+        model = DiversityDimension
+
+
+@admin.register(DiversityDimension)
+class DiversityDimensionAdmin(OrderedModelAdmin, ImportExportModelAdmin):
+    class Meta:
+        model = DiversityDimension
+
+    resource_class = DiversityDimensionResource
+    list_display = ("name", "move_up_down_links")
+    search_fields = ("name",)
+    list_filter = (
+        "category",
+        ("created_at", DateRangeFilter),
+        ("updated_at", DateRangeFilter),
+    )
 
 
 @admin.register(Source)
