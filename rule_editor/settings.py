@@ -18,6 +18,8 @@ from platformshconfig import Config
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
+from django.contrib import admin
+
 
 env = environ.Env(
     DEBUG=(bool, False),
@@ -179,6 +181,13 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+def get_app_list(self, request):
+    app_dict = self._build_app_dict(request)
+    for app_name, object_list in app_dict.items():
+        yield app_dict[app_name]
+
+admin.AdminSite.get_app_list = get_app_list
 
 # Import some Platform.sh settings from the environment.
 config = Config()
