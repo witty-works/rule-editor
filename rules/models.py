@@ -121,7 +121,7 @@ class BaseLemmaModel(BaseModel):
 
         return self.language
 
-    def get_url(self, path):
+    def get_json(self, path):
         url = settings.NLP_API + path
 
         auth = (
@@ -135,29 +135,38 @@ class BaseLemmaModel(BaseModel):
         if r.status_code != 200:
             body = r.json()
             error = body["detail"] if "detail" in body else r.text
-            raise ValidationError({"word_types": error})
-
-        return r
-
-    def tokenize(self):
-        path = f"/tokenize?lang={self.language}&text={self.lemma}"
-        r = self.get_url(path)
+            raise ValidationError(error)
 
         return r.json()
 
-    def validate_word_type(self):
-        path = f"/validate-word-type?lang={self.language}&text={self.lemma}&word_types={self.word_types}"
-        self.get_url(path)
+    def tokenize(self):
+        path = f"/tokenize?lang={self.language}&text={self.lemma}"
+        return self.get_json(path)
+
+    def parse_word_type(self):
+        path = f"/parse-word-type?lang={self.language}&text={self.lemma}&word_types={self.word_types}"
+        return self.get_json(path)
 
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
 
     def clean(self):
-        self.validate_word_type()
+        errors = {}
 
-        self.lemma_json = self.tokenize()
-        self.word_types_json = self.word_types.split("|")
+        try:
+            self.lemma_json = self.tokenize()
+        except ValidationError as exception:
+            errors["lemma"] = "Lemma could not be tokenized: " + exception.message
+            self.word_types_json = self.word_types.split("|")
+
+        try:
+            self.parse_word_type()
+        except ValidationError as exception:
+            errors["word_types"] = "Word_types validation failed: " + exception.message
+
+        if len(errors):
+            raise ValidationError(errors)
 
     class Meta:
         abstract = True
