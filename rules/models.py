@@ -1,18 +1,24 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
 from hidefield.fields import HideField
+import emoji
 
 import requests
 from requests.auth import HTTPBasicAuth
 
 
 class HideTextField(HideField, models.TextField):
+    pass
+
+
+class HideCharField(HideField, models.CharField):
     pass
 
 
@@ -53,12 +59,28 @@ class BaseCommentableModel(BaseModel):
 
 
 class Source(BaseTimestampedModel, BaseCreatedByModel):
-    name = models.CharField(max_length=255, unique=True)
-    url = models.TextField(null=True, blank=True)
-    reference = HideTextField(null=True, blank=True)
-
     def __str__(self):
         return self.name
+
+    def clean(self):
+        errors = {}
+
+        self.url = self.url.strip()
+        if self.url:
+            validator = URLValidator()
+            try:
+                validator(self.url)
+            except ValidationError as exception:
+                errors["url"] = (
+                    "URL must either be empty or a valid URL: " + exception.message
+                )
+
+        if len(errors):
+            raise ValidationError(errors)
+
+    name = models.CharField(max_length=255, unique=True)
+    url = models.CharField(max_length=255, null=True, blank=True)
+    reference = HideTextField(null=True, blank=True)
 
 
 class BaseSourcedModel(BaseModel):
@@ -176,7 +198,38 @@ class Rule(
     BaseSourcedModel,
 ):
     class Meta:
-        unique_together = (("language", "lemma", "word_types", "lemma"),)
+        unique_together = (("language", "lemma", "word_types"),)
+
+    def clean(self):
+        errors = {}
+
+        if self.emoji:
+            self.emoji = self.emoji.strip()
+            self.emoji = None if self.emoji == "" else self.emoji
+
+        if self.emoji is not None:
+            self.emoji = self.emoji.strip()
+            if not emoji.is_emoji(self.emoji):
+                errors["emoji"] = (
+                    "Emoji must either be empty or a valid emoji character: " + self.emoji
+                )
+
+        if self.url:
+            self.url = self.url.strip()
+            self.url = None if self.url == "" else self.url
+
+        if self.url is not None:
+
+            validator = URLValidator()
+            try:
+                validator(self.url)
+            except ValidationError as exception:
+                errors["url"] = (
+                    "URL must either be empty or a valid URL: " + exception.message
+                )
+
+        if len(errors):
+            raise ValidationError(errors)
 
     def __str__(self):
         return self.lemma[0:50] + " (" + self.language + ")"
@@ -194,6 +247,10 @@ class Rule(
     ownedby = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="owner"
     )
+
+    explanation = HideCharField(max_length=255, null=True, blank=True, hide="no-data")
+    emoji = HideCharField(max_length=5, null=True, blank=True, hide="no-data")
+    url = HideCharField(max_length=255, null=True, blank=True, hide="no-data")
 
 
 class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
