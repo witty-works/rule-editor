@@ -1,18 +1,47 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.validators import URLValidator
 from django.core.exceptions import ValidationError
 from django.conf import settings
 
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
 from hidefield.fields import HideField
+import emoji
 
 import requests
 from requests.auth import HTTPBasicAuth
 
 
+class LanguageEnum(models.TextChoices):
+    EN = "en", "English"
+    DE = "de", "German"
+
+
+class ContentEnum(models.TextChoices):
+    BASIC = "basic"
+    ADVANCED = "advanced"
+    VIDEO = "video"
+
+
+class ProficiencyLevelEnum(models.TextChoices):
+    HATE = "hate"
+    BASIC = "basic"
+    ADVANCED = "advanced"
+
+
+class AlternativeEnum(models.TextChoices):
+    DEFAULT = "default"
+    PERSON_FIRST = "person_first"
+    IDENTITY_FIRST = "identity_first"
+
+
 class HideTextField(HideField, models.TextField):
+    pass
+
+
+class HideCharField(HideField, models.CharField):
     pass
 
 
@@ -53,12 +82,28 @@ class BaseCommentableModel(BaseModel):
 
 
 class Source(BaseTimestampedModel, BaseCreatedByModel):
-    name = models.CharField(max_length=255, unique=True)
-    url = models.TextField(null=True, blank=True)
-    reference = HideTextField(null=True, blank=True)
-
     def __str__(self):
         return self.name
+
+    def clean(self):
+        errors = {}
+
+        self.url = self.url.strip()
+        if self.url:
+            validator = URLValidator()
+            try:
+                validator(self.url)
+            except ValidationError as exception:
+                errors["url"] = (
+                    "URL must either be empty or a valid URL: " + exception.message
+                )
+
+        if len(errors):
+            raise ValidationError(errors)
+
+    name = models.CharField(max_length=255, unique=True)
+    url = models.CharField(max_length=255, null=True, blank=True)
+    reference = HideTextField(null=True, blank=True)
 
 
 class BaseSourcedModel(BaseModel):
@@ -76,7 +121,7 @@ class BaseLemmaModel(BaseModel):
 
         return self.language
 
-    def get_url(self, path):
+    def get_json(self, path):
         url = settings.NLP_API + path
 
         auth = (
@@ -90,29 +135,38 @@ class BaseLemmaModel(BaseModel):
         if r.status_code != 200:
             body = r.json()
             error = body["detail"] if "detail" in body else r.text
-            raise ValidationError({"word_types": error})
-
-        return r
-
-    def tokenize(self):
-        path = f"/tokenize?lang={self.language}&text={self.lemma}"
-        r = self.get_url(path)
+            raise ValidationError(error)
 
         return r.json()
 
-    def validate_word_type(self):
-        path = f"/validate-word-type?lang={self.language}&text={self.lemma}&word_types={self.word_types}"
-        self.get_url(path)
+    def tokenize(self):
+        path = f"/tokenize?lang={self.language}&text={self.lemma}"
+        return self.get_json(path)
+
+    def parse_word_type(self):
+        path = f"/parse-word-type?lang={self.language}&text={self.lemma}&word_types={self.word_types}"
+        return self.get_json(path)
 
     def save(self, *args, **kwargs):
         self.full_clean()
         return super().save(*args, **kwargs)
 
     def clean(self):
-        self.validate_word_type()
+        errors = {}
 
-        self.lemma_json = self.tokenize()
-        self.word_types_json = self.word_types.split("|")
+        try:
+            self.lemma_json = self.tokenize()
+        except ValidationError as exception:
+            errors["lemma"] = "Lemma could not be tokenized: " + exception.message
+            self.word_types_json = self.word_types.split("|")
+
+        try:
+            self.parse_word_type()
+        except ValidationError as exception:
+            errors["word_types"] = "Word_types validation failed: " + exception.message
+
+        if len(errors):
+            raise ValidationError(errors)
 
     class Meta:
         abstract = True
@@ -123,29 +177,6 @@ class BaseLemmaModel(BaseModel):
     word_types_json = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
     label = HideTextField(null=True, blank=True, hide="no-data")
-
-
-class LanguageEnum(models.TextChoices):
-    EN = "en", "English"
-    DE = "de", "German"
-
-
-class ContentEnum(models.TextChoices):
-    BASIC = "basic"
-    ADVANCED = "advanced"
-    VIDEO = "video"
-
-
-class ProficiencyLevelEnum(models.TextChoices):
-    HATE = "hate"
-    BASIC = "basic"
-    ADVANCED = "advanced"
-
-
-class AlternativeEnum(models.TextChoices):
-    DEFAULT = "default"
-    PERSON_FIRST = "person_first"
-    IDENTITY_FIRST = "identity_first"
 
 
 class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -176,7 +207,38 @@ class Rule(
     BaseSourcedModel,
 ):
     class Meta:
-        unique_together = (("language", "lemma", "word_types", "lemma"),)
+        unique_together = (("language", "lemma", "word_types"),)
+
+    def clean(self):
+        errors = {}
+
+        if self.emoji:
+            self.emoji = self.emoji.strip()
+            self.emoji = None if self.emoji == "" else self.emoji
+
+        if self.emoji is not None:
+            self.emoji = self.emoji.strip()
+            if not emoji.is_emoji(self.emoji):
+                errors["emoji"] = (
+                    "Emoji must either be empty or a valid emoji character: " + self.emoji
+                )
+
+        if self.url:
+            self.url = self.url.strip()
+            self.url = None if self.url == "" else self.url
+
+        if self.url is not None:
+
+            validator = URLValidator()
+            try:
+                validator(self.url)
+            except ValidationError as exception:
+                errors["url"] = (
+                    "URL must either be empty or a valid URL: " + exception.message
+                )
+
+        if len(errors):
+            raise ValidationError(errors)
 
     def __str__(self):
         return self.lemma[0:50] + " (" + self.language + ")"
@@ -194,6 +256,10 @@ class Rule(
     ownedby = models.ForeignKey(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="owner"
     )
+
+    explanation = HideCharField(max_length=255, null=True, blank=True, hide="no-data")
+    emoji = HideCharField(max_length=5, null=True, blank=True, hide="no-data")
+    url = HideCharField(max_length=255, null=True, blank=True, hide="no-data")
 
 
 class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
@@ -248,8 +314,53 @@ class TrainingSentence(
 
 class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
-        return self.name
+        return self.false_positive
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
-    name = models.CharField(max_length=255, unique=True)
+    false_positive = models.CharField(max_length=255, unique=True)
+
+
+class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.text
+
+    class Meta:
+        unique_together = (("language", "text"),)
+
+    text = models.CharField(max_length=255)
+    language = EnumField(LanguageEnum, default=LanguageEnum.EN)
+    lemma = models.CharField(max_length=255)
+
+
+class Verb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    class Meta:
+        unique_together = (("language", "base_form"),)
+
+    base_form = models.CharField(max_length=255, unique=True)
+    language = EnumField(LanguageEnum, default=LanguageEnum.DE)
+
+
+class Adjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    class Meta:
+        unique_together = (("language", "base_form"),)
+
+    base_form = models.CharField(max_length=255, unique=True)
+    language = EnumField(LanguageEnum, default=LanguageEnum.DE)
+
+
+class Noun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    class Meta:
+        unique_together = (("language", "base_form"),)
+
+    base_form = models.CharField(max_length=255, unique=True)
+    language = EnumField(LanguageEnum, default=LanguageEnum.DE)
