@@ -37,6 +37,13 @@ class AlternativeTypeEnum(models.TextChoices):
     IDENTITY_FIRST = "identity_first"
 
 
+class RuleTypeEnum(models.TextChoices):
+    DEFAULT = "default"
+    HR = "hr"
+    MARKETING = "marketing"
+    LEGAL = "legal"
+
+
 class HideTextField(HideField, models.TextField):
     pass
 

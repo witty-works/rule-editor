@@ -164,6 +164,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         "is_marked_for_review",
         "is_context_aware",
         "is_prefix",
+        "type",
         "is_active",
         "label",
         "explanation",
@@ -173,6 +174,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         "comment",
         "ownedby",
     )
+    radio_fields = {"type": admin.HORIZONTAL}
     search_fields = (
         "language",
         "lemma",
