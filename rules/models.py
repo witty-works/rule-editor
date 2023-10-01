@@ -31,10 +31,17 @@ class ProficiencyLevelEnum(models.TextChoices):
     ADVANCED = "advanced"
 
 
-class AlternativeEnum(models.TextChoices):
+class AlternativeTypeEnum(models.TextChoices):
     DEFAULT = "default"
     PERSON_FIRST = "person_first"
     IDENTITY_FIRST = "identity_first"
+
+
+class RuleTypeEnum(models.TextChoices):
+    DEFAULT = "default"
+    HR = "hr"
+    MARKETING = "marketing"
+    LEGAL = "legal"
 
 
 class HideTextField(HideField, models.TextField):
@@ -155,10 +162,9 @@ class BaseLemmaModel(BaseModel):
         errors = {}
 
         try:
-            self.lemma_json = self.tokenize()
+            tokens = self.tokenize()
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
-            self.word_types_json = self.word_types.split("|")
 
         try:
             self.parse_word_type()
@@ -167,6 +173,9 @@ class BaseLemmaModel(BaseModel):
 
         if len(errors):
             raise ValidationError(errors)
+
+        self.lemma_json = tokens
+        self.word_types_json = self.word_types.split("|")
 
     class Meta:
         abstract = True
@@ -196,7 +205,9 @@ class DiversityDimension(
         return self.name
 
     name = models.CharField(max_length=255, unique=True)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    is_advanced = models.BooleanField(default=True)
 
 
 class Rule(
@@ -220,7 +231,8 @@ class Rule(
             self.emoji = self.emoji.strip()
             if not emoji.is_emoji(self.emoji):
                 errors["emoji"] = (
-                    "Emoji must either be empty or a valid emoji character: " + self.emoji
+                    "Emoji must either be empty or a valid emoji character: "
+                    + self.emoji
                 )
 
         if self.url:
@@ -228,7 +240,6 @@ class Rule(
             self.url = None if self.url == "" else self.url
 
         if self.url is not None:
-
             validator = URLValidator()
             try:
                 validator(self.url)
@@ -237,6 +248,15 @@ class Rule(
                     "URL must either be empty or a valid URL: " + exception.message
                 )
 
+        if self.is_prefix:
+            try:
+                tokens = self.tokenize()
+            except ValidationError as exception:
+                errors["lemma"] = "Lemma could not be tokenized: " + exception.message
+
+            if len(tokens) > 1:
+                errors["lemma"] = "Prefix rules can only have one token"
+
         if len(errors):
             raise ValidationError(errors)
 
@@ -244,9 +264,16 @@ class Rule(
         return self.lemma[0:50] + " (" + self.language + ")"
 
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
+    type = EnumField(RuleTypeEnum, default=RuleTypeEnum.DEFAULT)
 
-    is_context_aware = models.BooleanField(default=False)
-    is_prefix = models.BooleanField(default=False)
+    is_context_aware = models.BooleanField(
+        default=False,
+        help_text="Uses custom machine learning model to determine if to highlight in the given context.",
+    )
+    is_prefix = models.BooleanField(
+        default=False,
+        help_text="Rule checks the prefix of the lemma (only one token allowed).",
+    )
     is_marked_for_review = models.BooleanField(default=False)
 
     diversity_dimensions = models.ManyToManyField(
@@ -293,9 +320,10 @@ class Alternative(
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
-    type = EnumField(AlternativeEnum, default=AlternativeEnum.DEFAULT)
+    type = EnumField(AlternativeTypeEnum, default=AlternativeTypeEnum.DEFAULT)
     is_singular = models.BooleanField(default=True)
     is_inspiration = models.BooleanField(default=False)
+    is_advanced = models.BooleanField(default=True)
 
 
 class TrainingSentence(

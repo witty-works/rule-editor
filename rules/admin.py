@@ -56,6 +56,7 @@ class AlternativeInline(OrderedStackedInline):
         "word_types",
         "is_singular",
         "is_inspiration",
+        "is_advanced",
         "type",
         "is_active",
         "label",
@@ -63,6 +64,7 @@ class AlternativeInline(OrderedStackedInline):
         "comment",
         "move_up_down_links",
     )
+    radio_fields = {"type": admin.HORIZONTAL}
     readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
     extra = 1
@@ -121,33 +123,34 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         help_text = []
-        tokens = obj.tokenize()
-        word_types = obj.parse_word_type()
-        for i in range(len(word_types)):
-            if word_types[i]["lemmatize"]:
-                filters = {"language": obj.language}
-                if word_types[i]["lower_case"]:
-                    filters["base_form"] = tokens[i]
-                else:
-                    filters["base_form__iexact"] = tokens[i]
+        if obj:
+            tokens = obj.tokenize()
+            word_types = obj.parse_word_type()
+            for i in range(len(word_types)):
+                if word_types[i]["lemmatize"]:
+                    filters = {"language": obj.language}
+                    if word_types[i]["lower_case"]:
+                        filters["base_form"] = tokens[i]
+                    else:
+                        filters["base_form__iexact"] = tokens[i]
 
-                if "v" in word_types[i]["word_types"]:
-                    help_text.append(
-                        self.generate_help_text("Verb", filters, tokens[i])
-                    )
-                if "a" in word_types[i]["word_types"]:
-                    help_text.append(
-                        self.generate_help_text("Adjective", filters, tokens[i])
-                    )
-                if "s" in word_types[i]["word_types"]:
-                    help_text.append(
-                        self.generate_help_text("Noun", filters, tokens[i])
-                    )
+                    if "v" in word_types[i]["word_types"]:
+                        help_text.append(
+                            self.generate_help_text("Verb", filters, tokens[i])
+                        )
+                    if "a" in word_types[i]["word_types"]:
+                        help_text.append(
+                            self.generate_help_text("Adjective", filters, tokens[i])
+                        )
+                    if "s" in word_types[i]["word_types"]:
+                        help_text.append(
+                            self.generate_help_text("Noun", filters, tokens[i])
+                        )
 
-                filters = {"lemma": tokens[i], "language": obj.language}
-                help_text.append(
-                    self.generate_help_text("Lemmatization", filters, tokens[i])
-                )
+                    filters = {"lemma": tokens[i], "language": obj.language}
+                    help_text.append(
+                        self.generate_help_text("Lemmatization", filters, tokens[i])
+                    )
 
         if len(help_text):
             form.base_fields["lemma"].help_text = mark_safe("<br>".join(help_text))
@@ -161,6 +164,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         "is_marked_for_review",
         "is_context_aware",
         "is_prefix",
+        "type",
         "is_active",
         "label",
         "explanation",
@@ -170,6 +174,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         "comment",
         "ownedby",
     )
+    radio_fields = {"type": admin.HORIZONTAL}
     search_fields = (
         "language",
         "lemma",
@@ -222,6 +227,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin, ImportExportModelAdmin):
     search_fields = ("name",)
     list_filter = (
         "category",
+        "is_advanced",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )
