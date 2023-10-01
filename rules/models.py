@@ -31,7 +31,7 @@ class ProficiencyLevelEnum(models.TextChoices):
     ADVANCED = "advanced"
 
 
-class AlternativeEnum(models.TextChoices):
+class AlternativeTypeEnum(models.TextChoices):
     DEFAULT = "default"
     PERSON_FIRST = "person_first"
     IDENTITY_FIRST = "identity_first"
@@ -196,7 +196,9 @@ class DiversityDimension(
         return self.name
 
     name = models.CharField(max_length=255, unique=True)
+    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
+    is_advanced = models.BooleanField(default=True)
 
 
 class Rule(
@@ -244,6 +246,7 @@ class Rule(
         return self.lemma[0:50] + " (" + self.language + ")"
 
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
+    type = EnumField(RuleTypeEnum, default=RuleTypeEnum.DEFAULT)
 
     is_context_aware = models.BooleanField(default=False)
     is_prefix = models.BooleanField(default=False)
@@ -293,9 +296,10 @@ class Alternative(
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
-    type = EnumField(AlternativeEnum, default=AlternativeEnum.DEFAULT)
+    type = EnumField(AlternativeTypeEnum, default=AlternativeTypeEnum.DEFAULT)
     is_singular = models.BooleanField(default=True)
     is_inspiration = models.BooleanField(default=False)
+    is_advanced = models.BooleanField(default=True)
 
 
 class TrainingSentence(

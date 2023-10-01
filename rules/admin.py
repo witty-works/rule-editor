@@ -56,6 +56,7 @@ class AlternativeInline(OrderedStackedInline):
         "word_types",
         "is_singular",
         "is_inspiration",
+        "is_advanced",
         "type",
         "is_active",
         "label",
@@ -222,6 +223,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin, ImportExportModelAdmin):
     search_fields = ("name",)
     list_filter = (
         "category",
+        "is_advanced",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )

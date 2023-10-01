@@ -27,35 +27,47 @@
   pk: 1
   fields:
     name: abbreviation
+    parent: Null
+    is_advanced: False
     category: 1
     order: 0
 - model: rules.diversitydimension
   pk: 2
   fields:
     name: ability
+    parent: Null
+    is_advanced: False
     category: 3
     order: 1
 - model: rules.diversitydimension
   pk: 3
   fields:
     name: agentic
+    parent: Null
+    is_advanced: False
     category: 5
     order: 2
 - model: rules.diversitydimension
   pk: 4
   fields:
-    name: advanced_abbreviation
+    name: abbreviation_advanced
+    parent: 1
+    is_advanced: True
     category: 1
     order: 3
 - model: rules.diversitydimension
   pk: 5
   fields:
-    name: advanced_ability
+    name: ability_advanced
+    parent: 2
+    is_advanced: True
     category: 3
     order: 4
 - model: rules.diversitydimension
   pk: 6
   fields:
-    name: advanced_agentic
+    name: agentic_advanced
+    parent: 3
+    is_advanced: True
     category: 5
     order: 5
