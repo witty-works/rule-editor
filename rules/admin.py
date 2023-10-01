@@ -64,6 +64,7 @@ class AlternativeInline(OrderedStackedInline):
         "comment",
         "move_up_down_links",
     )
+    radio_fields = {"type": admin.HORIZONTAL}
     readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
     extra = 1
