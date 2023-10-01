@@ -155,10 +155,9 @@ class BaseLemmaModel(BaseModel):
         errors = {}
 
         try:
-            self.lemma_json = self.tokenize()
+            tokens = self.tokenize()
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
-            self.word_types_json = self.word_types.split("|")
 
         try:
             self.parse_word_type()
@@ -167,6 +166,9 @@ class BaseLemmaModel(BaseModel):
 
         if len(errors):
             raise ValidationError(errors)
+
+        self.lemma_json = tokens
+        self.word_types_json = self.word_types.split("|")
 
     class Meta:
         abstract = True
