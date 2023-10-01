@@ -224,7 +224,8 @@ class Rule(
             self.emoji = self.emoji.strip()
             if not emoji.is_emoji(self.emoji):
                 errors["emoji"] = (
-                    "Emoji must either be empty or a valid emoji character: " + self.emoji
+                    "Emoji must either be empty or a valid emoji character: "
+                    + self.emoji
                 )
 
         if self.url:
@@ -232,7 +233,6 @@ class Rule(
             self.url = None if self.url == "" else self.url
 
         if self.url is not None:
-
             validator = URLValidator()
             try:
                 validator(self.url)
@@ -259,8 +259,14 @@ class Rule(
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
     type = EnumField(RuleTypeEnum, default=RuleTypeEnum.DEFAULT)
 
-    is_context_aware = models.BooleanField(default=False)
-    is_prefix = models.BooleanField(default=False)
+    is_context_aware = models.BooleanField(
+        default=False,
+        help_text="Uses custom machine learning model to determine if to highlight in the given context.",
+    )
+    is_prefix = models.BooleanField(
+        default=False,
+        help_text="Rule checks the prefix of the lemma (only one token allowed).",
+    )
     is_marked_for_review = models.BooleanField(default=False)
 
     diversity_dimensions = models.ManyToManyField(
