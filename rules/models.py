@@ -262,14 +262,14 @@ class Rule(
                     "URL must either be empty or a valid URL: " + exception.message
                 )
 
-        if self.is_prefix:
+        if self.type != "default":
             try:
                 tokens = self.tokenize()
             except ValidationError as exception:
                 errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
             if len(tokens) > 1:
-                errors["lemma"] = "Prefix rules can only have one token"
+                errors["type"] = "Rules with a non default type can only have one token"
 
         if len(errors):
             raise ValidationError(errors)
