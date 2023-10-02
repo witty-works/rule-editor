@@ -39,7 +39,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 if env("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
-        release="0.5.0",
+        release="0.6.0",
         send_default_pii=True,
         integrations=[
             DjangoIntegration(
@@ -74,19 +74,22 @@ NLP_API_PASSWORD = env("NLP_API_PASSWORD")
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
+    "rules",
+    "dal",
+    "dal_select2",
     "debug_toolbar",
     "import_export",
     "ordered_model",
     "rangefilter",
     "hidefield",
     "more_admin_filters",
-    "rules",
+    "taggit",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
 ]
 
 MIDDLEWARE = [
@@ -182,10 +185,11 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-def get_app_list(self, request):
-    app_dict = self._build_app_dict(request)
-    for app_name, object_list in app_dict.items():
-        yield app_dict[app_name]
+
+def get_app_list(self, request, app_label=None):
+    app_dict = self._build_app_dict(request, app_label)
+
+    return list(app_dict.values())
 
 admin.AdminSite.get_app_list = get_app_list
 
