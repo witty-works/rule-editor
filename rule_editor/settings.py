@@ -182,10 +182,11 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-def get_app_list(self, request):
-    app_dict = self._build_app_dict(request)
-    for app_name, object_list in app_dict.items():
-        yield app_dict[app_name]
+
+def get_app_list(self, request, app_label=None):
+    app_dict = self._build_app_dict(request, app_label)
+
+    return list(app_dict.values())
 
 admin.AdminSite.get_app_list = get_app_list
 
