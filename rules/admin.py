@@ -183,8 +183,8 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         return ", ".join(o.name for o in obj.tags.all())
 
     fields = (
-        "language",
         "lemma",
+        "language",
         "text_id",
         "word_types",
         "is_marked_for_review",
@@ -312,7 +312,11 @@ class LemmatizationAdmin(ImportExportModelAdmin):
     resource_class = LemmatizationResource
     search_fields = ("text", "lemma")
     list_filter = ("language",)
-
+    list_display = (
+        "text",
+        "lemma",
+        "language",
+    )
 
 class VerbResource(resources.ModelResource):
     class Meta:
