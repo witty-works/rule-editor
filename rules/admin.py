@@ -126,7 +126,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         instances = cls.objects.filter(**filters)
         if instances:
             for instance in instances:
-                link = reverse("admin:rules_verb_change", args=[instance.pk])
+                link = reverse(f"admin:rules_{class_name.lower()}_change", args=[instance.pk])
                 return (
                     f"{class_name} <a href=\"{link}\">data available</a> for '{token}'"
                 )
