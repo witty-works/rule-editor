@@ -18,6 +18,8 @@ sentry-sdk = {extras = ["django"], version = "*"}
 django-more-admin-filters = "*"
 requests = "*"
 emoji = "*"
+django-taggit = "*"
+django-autocomplete-light = "*"
 
 [dev-packages]
 

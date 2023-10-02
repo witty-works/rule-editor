@@ -1,6 +1,9 @@
+import sys
+
 from django.contrib import admin
+from django import forms
 from django.utils.safestring import mark_safe
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -11,6 +14,7 @@ from ordered_model.admin import (
 )
 from rangefilter.filter import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
+from dal import autocomplete
 
 from .models import (
     Rule,
@@ -26,8 +30,6 @@ from .models import (
     Adjective,
     Noun,
 )
-
-import sys
 
 
 def get_class(class_name):
@@ -49,22 +51,34 @@ class AlternativeAdmin(CreatedByAdmin):
     list_display = ("name", "move_up_down_links")
 
 
+class AlternativeForm(forms.ModelForm):
+    class Meta:
+        widgets = {
+            "tags": autocomplete.TaggitSelect2(
+                url="tag-autocomplete",
+                attrs={"class": "form-control", "data-placeholder": "Tag names .."},
+            )
+        }
+
+
 class AlternativeInline(OrderedStackedInline):
     model = Alternative
+    form = AlternativeForm
     fields = (
         "lemma",
         "word_types",
-        "is_singular",
         "is_inspiration",
         "is_advanced",
+        "pluralization",
         "type",
         "is_active",
         "label",
+        "tags",
         "source",
         "comment",
         "move_up_down_links",
     )
-    radio_fields = {"type": admin.HORIZONTAL}
+    radio_fields = {"type": admin.HORIZONTAL, "pluralization": admin.HORIZONTAL}
     readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
     extra = 1
@@ -155,21 +169,33 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         if len(help_text):
             form.base_fields["lemma"].help_text = mark_safe("<br>".join(help_text))
 
+        form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
+            url=reverse_lazy("tag-autocomplete"),
+            attrs={"class": "form-control", "data-placeholder": "Tag names .."},
+        )
+
         return form
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("tags")
+
+    def tag_list(self, obj):
+        return ", ".join(o.name for o in obj.tags.all())
 
     fields = (
         "language",
         "lemma",
+        "text_id",
         "word_types",
         "is_marked_for_review",
         "is_context_aware",
-        "is_prefix",
         "type",
         "is_active",
         "label",
         "explanation",
         "emoji",
         "url",
+        "tags",
         "source",
         "comment",
         "ownedby",
@@ -182,12 +208,19 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     list_filter = (
         "language",
         "is_marked_for_review",
+        "tags",
         "is_active",
         ("diversity_dimensions", MultiSelectRelatedOnlyFilter),
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )
-    list_display = ("language", "lemma", "is_active", "all_diversity_dimensions")
+    list_display = (
+        "lemma",
+        "language",
+        "is_active",
+        "all_diversity_dimensions",
+        "tag_list",
+    )
     save_on_top = True
 
     inlines = [
@@ -238,8 +271,29 @@ class SourceAdmin(CreatedByAdmin):
     class Meta:
         model = Source
 
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
+            url=reverse_lazy("tag-autocomplete"),
+            attrs={"class": "form-control", "data-placeholder": "Tag names .."},
+        )
+
+        return form
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related("tags")
+
+    def tag_list(self, obj):
+        return ", ".join(o.name for o in obj.tags.all())
+
+    list_display = (
+        "name",
+        "tag_list",
+    )
     search_fields = ("name", "url", "reference")
     list_filter = (
+        "tags",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )

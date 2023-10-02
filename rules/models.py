@@ -8,6 +8,8 @@ from django.conf import settings
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
 from hidefield.fields import HideField
+from taggit.managers import TaggableManager
+
 import emoji
 
 import requests
@@ -31,6 +33,12 @@ class ProficiencyLevelEnum(models.TextChoices):
     ADVANCED = "advanced"
 
 
+class AlternativePLuralizationEnum(models.TextChoices):
+    DEFAULT = "default"
+    SINGULAR_ONLY = "singular_only"
+    PLURAL_ONLY = "plural_only"
+
+
 class AlternativeTypeEnum(models.TextChoices):
     DEFAULT = "default"
     PERSON_FIRST = "person_first"
@@ -39,9 +47,9 @@ class AlternativeTypeEnum(models.TextChoices):
 
 class RuleTypeEnum(models.TextChoices):
     DEFAULT = "default"
-    HR = "hr"
-    MARKETING = "marketing"
-    LEGAL = "legal"
+    PREFIX = "prefix"
+    SUFFIX = "suffix"
+    SUBSTRING = "substring"
 
 
 class HideTextField(HideField, models.TextField):
@@ -95,8 +103,11 @@ class Source(BaseTimestampedModel, BaseCreatedByModel):
     def clean(self):
         errors = {}
 
-        self.url = self.url.strip()
         if self.url:
+            self.url = self.url.strip()
+            self.url = None if self.url == "" else self.url
+
+        if self.url is not None:
             validator = URLValidator()
             try:
                 validator(self.url)
@@ -111,6 +122,7 @@ class Source(BaseTimestampedModel, BaseCreatedByModel):
     name = models.CharField(max_length=255, unique=True)
     url = models.CharField(max_length=255, null=True, blank=True)
     reference = HideTextField(null=True, blank=True)
+    tags = TaggableManager(blank=True)
 
 
 class BaseSourcedModel(BaseModel):
@@ -221,6 +233,8 @@ class Rule(
         unique_together = (("language", "lemma", "word_types"),)
 
     def clean(self):
+        super().clean()
+
         errors = {}
 
         if self.emoji:
@@ -264,15 +278,22 @@ class Rule(
         return self.lemma[0:50] + " (" + self.language + ")"
 
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
-    type = EnumField(RuleTypeEnum, default=RuleTypeEnum.DEFAULT)
+    tags = TaggableManager(blank=True)
+
+    text_id = models.CharField(
+        max_length=255,
+        help_text="String used to identify the rule, f.e. in the top words of the analytics",
+    )
+
+    type = EnumField(
+        RuleTypeEnum,
+        default=RuleTypeEnum.DEFAULT,
+        help_text="Should the rule check on part of the lemma (only 'default' allows multiple token lemma).",
+    )
 
     is_context_aware = models.BooleanField(
         default=False,
         help_text="Uses custom machine learning model to determine if to highlight in the given context.",
-    )
-    is_prefix = models.BooleanField(
-        default=False,
-        help_text="Rule checks the prefix of the lemma (only one token allowed).",
     )
     is_marked_for_review = models.BooleanField(default=False)
 
@@ -321,9 +342,13 @@ class Alternative(
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
     type = EnumField(AlternativeTypeEnum, default=AlternativeTypeEnum.DEFAULT)
-    is_singular = models.BooleanField(default=True)
+    pluralization = EnumField(
+        AlternativePLuralizationEnum, default=AlternativePLuralizationEnum.DEFAULT
+    )
     is_inspiration = models.BooleanField(default=False)
     is_advanced = models.BooleanField(default=True)
+
+    tags = TaggableManager(blank=True)
 
 
 class TrainingSentence(
@@ -338,6 +363,8 @@ class TrainingSentence(
 
     is_false_positive = models.BooleanField(default=False)
     is_training_data = models.BooleanField(default=False)
+
+    tags = TaggableManager(blank=True)
 
 
 class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):

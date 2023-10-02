@@ -74,19 +74,22 @@ NLP_API_PASSWORD = env("NLP_API_PASSWORD")
 # Application definition
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
+    "rules",
+    "dal",
+    "dal_select2",
     "debug_toolbar",
     "import_export",
     "ordered_model",
     "rangefilter",
     "hidefield",
     "more_admin_filters",
-    "rules",
+    "taggit",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
 ]
 
 MIDDLEWARE = [
