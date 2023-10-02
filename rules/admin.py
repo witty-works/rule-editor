@@ -126,7 +126,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         instances = cls.objects.filter(**filters)
         if instances:
             for instance in instances:
-                link = reverse("admin:rules_verb_change", args=[instance.pk])
+                link = reverse(f"admin:rules_{class_name.lower()}_change", args=[instance.pk])
                 return (
                     f"{class_name} <a href=\"{link}\">data available</a> for '{token}'"
                 )
@@ -183,8 +183,8 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         return ", ".join(o.name for o in obj.tags.all())
 
     fields = (
-        "language",
         "lemma",
+        "language",
         "text_id",
         "word_types",
         "is_marked_for_review",
@@ -312,7 +312,11 @@ class LemmatizationAdmin(ImportExportModelAdmin):
     resource_class = LemmatizationResource
     search_fields = ("text", "lemma")
     list_filter = ("language",)
-
+    list_display = (
+        "text",
+        "lemma",
+        "language",
+    )
 
 class VerbResource(resources.ModelResource):
     class Meta:
