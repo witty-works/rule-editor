@@ -126,7 +126,9 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         instances = cls.objects.filter(**filters)
         if instances:
             for instance in instances:
-                link = reverse(f"admin:rules_{class_name.lower()}_change", args=[instance.pk])
+                link = reverse(
+                    f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
+                )
                 return (
                     f"{class_name} <a href=\"{link}\">data available</a> for '{token}'"
                 )
@@ -182,25 +184,50 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
 
-    fields = (
-        "lemma",
-        "language",
-        "text_id",
-        "word_types",
-        "is_marked_for_review",
-        "is_context_aware",
-        "type",
-        "is_active",
-        "label",
-        "explanation",
-        "emoji",
-        "url",
-        "tags",
-        "source",
-        "comment",
-        "ownedby",
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "lemma",
+                    "language",
+                    "text_id",
+                    "word_types",
+                    "is_marked_for_review",
+                    "is_context_aware",
+                    "type",
+                    "is_active",
+                    "tags",
+                ),
+            },
+        ),
+        (
+            "Custom Label",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": (
+                    "label_type",
+                    "label",
+                    "explanation",
+                    "emoji",
+                    "url",
+                ),
+            },
+        ),
+        (
+            "Optional Fields",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": (
+                    "source",
+                    "comment",
+                    "ownedby",
+                ),
+            },
+        ),
     )
-    radio_fields = {"type": admin.HORIZONTAL}
+
+    radio_fields = {"type": admin.HORIZONTAL, "label_type": admin.HORIZONTAL}
     search_fields = (
         "language",
         "lemma",
@@ -221,7 +248,6 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         "all_diversity_dimensions",
         "tag_list",
     )
-    save_on_top = True
 
     inlines = [
         RuleDiversityDimensionInline,
@@ -287,6 +313,26 @@ class SourceAdmin(CreatedByAdmin):
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
 
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "name",
+                    "url",
+                    "tags",
+                ),
+            },
+        ),
+        (
+            "Reference",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": ("reference",),
+            },
+        ),
+    )
+
     list_display = (
         "name",
         "tag_list",
@@ -317,6 +363,7 @@ class LemmatizationAdmin(ImportExportModelAdmin):
         "lemma",
         "language",
     )
+
 
 class VerbResource(resources.ModelResource):
     class Meta:

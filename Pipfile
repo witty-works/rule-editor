@@ -13,13 +13,13 @@ platformshconfig = "*"
 gunicorn = "*"
 django-environ = "*"
 django-admin-rangefilter = "*"
-django-hidefield = "*"
 sentry-sdk = {extras = ["django"], version = "*"}
 django-more-admin-filters = "*"
 requests = "*"
 emoji = "*"
 django-taggit = "*"
 django-autocomplete-light = "*"
+django-grappelli = "*"
 
 [dev-packages]
 

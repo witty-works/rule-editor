@@ -13,17 +13,17 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="rule",
             name="emoji",
-            field=rules.models.HideCharField(blank=True, max_length=5, null=True),
+            field=models.CharField(blank=True, max_length=5, null=True),
         ),
         migrations.AddField(
             model_name="rule",
             name="explanation",
-            field=rules.models.HideCharField(blank=True, max_length=255, null=True),
+            field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AddField(
             model_name="rule",
             name="url",
-            field=rules.models.HideCharField(blank=True, max_length=255, null=True),
+            field=models.CharField(blank=True, max_length=255, null=True),
         ),
         migrations.AlterField(
             model_name="source",

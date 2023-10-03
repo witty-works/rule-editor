@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
                         default=django.utils.timezone.now, editable=False
                     ),
                 ),
-                ("comment", rules.models.HideTextField(blank=True, null=True)),
+                ("comment", models.TextField(blank=True, null=True)),
                 ("base_form", models.CharField(max_length=255, unique=True)),
                 (
                     "language",
@@ -104,7 +104,7 @@ class Migration(migrations.Migration):
                         default=django.utils.timezone.now, editable=False
                     ),
                 ),
-                ("comment", rules.models.HideTextField(blank=True, null=True)),
+                ("comment", models.TextField(blank=True, null=True)),
                 ("base_form", models.CharField(max_length=255, unique=True)),
                 (
                     "language",
@@ -147,7 +147,7 @@ class Migration(migrations.Migration):
                         default=django.utils.timezone.now, editable=False
                     ),
                 ),
-                ("comment", rules.models.HideTextField(blank=True, null=True)),
+                ("comment", models.TextField(blank=True, null=True)),
                 ("base_form", models.CharField(max_length=255, unique=True)),
                 (
                     "language",

@@ -7,7 +7,6 @@ from django.conf import settings
 
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
-from hidefield.fields import HideField
 from taggit.managers import TaggableManager
 
 import emoji
@@ -52,12 +51,13 @@ class RuleTypeEnum(models.TextChoices):
     SUBSTRING = "substring"
 
 
-class HideTextField(HideField, models.TextField):
-    pass
-
-
-class HideCharField(HideField, models.CharField):
-    pass
+class RuleLabelEnum(models.TextChoices):
+    DEFAULT = "default"
+    NOT_FOR_PEOPLE = "not_for_people"
+    BE_SPECIFIC = "be_specific"
+    NAME_DISABILITY = "name_disability"
+    ONLY_IF_GENDER_IDENTITY_RELEVANT = "only_if_gender_identity_relevant"
+    NOT_FOR_NON_COMBAT = "not_for_non_combat"
 
 
 class AutoDateTimeField(models.DateTimeField):
@@ -90,7 +90,7 @@ class BaseCreatedByModel(BaseModel):
 
 
 class BaseCommentableModel(BaseModel):
-    comment = HideTextField(null=True, blank=True, hide="no-data")
+    comment = models.TextField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -121,7 +121,7 @@ class Source(BaseTimestampedModel, BaseCreatedByModel):
 
     name = models.CharField(max_length=255, unique=True)
     url = models.CharField(max_length=255, null=True, blank=True)
-    reference = HideTextField(null=True, blank=True)
+    reference = models.TextField(null=True, blank=True)
     tags = TaggableManager(blank=True)
 
 
@@ -197,7 +197,7 @@ class BaseLemmaModel(BaseModel):
     word_types = models.CharField(max_length=255)
     word_types_json = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
-    label = HideTextField(null=True, blank=True, hide="no-data")
+    label = models.TextField(null=True, blank=True)
 
 
 class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -271,6 +271,11 @@ class Rule(
             if len(tokens) > 1:
                 errors["type"] = "Rules with a non default type can only have one token"
 
+        if self.label_type != "default" and self.label != "":
+            errors["label_type"] = errors[
+                "label"
+            ] = "Change label type to 'default' or change label to an empty string"
+
         if len(errors):
             raise ValidationError(errors)
 
@@ -291,6 +296,12 @@ class Rule(
         help_text="Should the rule check on part of the lemma (only 'default' allows multiple token lemma).",
     )
 
+    label_type = EnumField(
+        RuleLabelEnum,
+        default=RuleLabelEnum.DEFAULT,
+        help_text="Quick selections for custom labels (only change from 'default' if label is empty).",
+    )
+
     is_context_aware = models.BooleanField(
         default=False,
         help_text="Uses custom machine learning model to determine if to highlight in the given context.",
@@ -305,15 +316,18 @@ class Rule(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="owner"
     )
 
-    explanation = HideCharField(max_length=255, null=True, blank=True, hide="no-data")
-    emoji = HideCharField(max_length=5, null=True, blank=True, hide="no-data")
-    url = HideCharField(max_length=255, null=True, blank=True, hide="no-data")
+    explanation = models.CharField(max_length=255, null=True, blank=True)
+    emoji = models.CharField(max_length=5, null=True, blank=True)
+    url = models.CharField(max_length=255, null=True, blank=True)
 
 
 class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
     class Meta:
         unique_together = (("rule", "diversity_dimension"),)
         ordering = ("order",)
+
+    def __str__(self):
+        return str(self.diversity_dimension)
 
     order_with_respect_to = "rule"
 

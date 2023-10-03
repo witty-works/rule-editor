@@ -39,7 +39,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 if env("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
-        release="0.6.2",
+        release="0.7.0",
         send_default_pii=True,
         integrations=[
             DjangoIntegration(
@@ -77,11 +77,11 @@ INSTALLED_APPS = [
     "rules",
     "dal",
     "dal_select2",
+    "grappelli",
     "debug_toolbar",
     "import_export",
     "ordered_model",
     "rangefilter",
-    "hidefield",
     "more_admin_filters",
     "taggit",
     "django.contrib.admin",
@@ -112,6 +112,7 @@ TEMPLATES = [
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
+                "django.template.context_processors.request",
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
@@ -169,7 +170,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATICFILES_DIRS = (os.path.join(BASE_DIR, "rule_editor/static"),)
+STATICFILES_DIRS = ()
 
 STATIC_URL = "/static/"
 
@@ -191,6 +192,7 @@ def get_app_list(self, request, app_label=None):
 
     return list(app_dict.values())
 
+
 admin.AdminSite.get_app_list = get_app_list
 
 # Import some Platform.sh settings from the environment.
@@ -200,3 +202,6 @@ if config.is_valid_platform():
         STATIC_ROOT = os.path.join(config.appDir, "static")
     if config.projectEntropy:
         SECRET_KEY = config.projectEntropy
+
+GRAPPELLI_AUTOCOMPLETE_LIMIT = 10
+GRAPPELLI_SWITCH_USER = False
