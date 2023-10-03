@@ -102,8 +102,31 @@ class TrainingSentenceInline(admin.StackedInline):
     )
 
 
+class RuleDiversityDimensionForm(forms.ModelForm):
+    class Meta:
+        widgets = {
+            "diversity_dimension": autocomplete.ModelSelect2(
+                url="diversity_dimension-autocomplete",
+                attrs={
+                    "class": "form-control",
+                    "data-placeholder": "Diversity dimensions ..",
+                },
+            )
+        }
+
+
 class RuleDiversityDimensionInline(OrderedStackedInline):
+    def get_formset(self, request, obj=None, **kwargs):
+        res = super().get_formset(request, obj=None, **kwargs)
+        for formfield in res.form.base_fields.values():
+            if hasattr(formfield, "widget"):
+                formfield.widget.can_add_related = False
+                formfield.widget.can_delete_related = False
+                formfield.widget.can_change_related = False
+        return res
+
     model = RuleDiversityDimension
+    form = RuleDiversityDimensionForm
     fields = (
         "diversity_dimension",
         "move_up_down_links",
