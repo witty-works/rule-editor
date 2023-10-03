@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     "rangefilter",
     "more_admin_filters",
     "taggit",
+    "computedfields",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

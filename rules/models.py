@@ -8,6 +8,7 @@ from django.conf import settings
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
 from taggit.managers import TaggableManager
+from computedfields.models import ComputedFieldsModel, computed
 
 import emoji
 
@@ -132,7 +133,7 @@ class BaseSourcedModel(BaseModel):
         abstract = True
 
 
-class BaseLemmaModel(BaseModel):
+class BaseLemmaModel(ComputedFieldsModel, BaseModel):
     @property
     def language(self):
         if self.rule:
@@ -174,7 +175,7 @@ class BaseLemmaModel(BaseModel):
         errors = {}
 
         try:
-            tokens = self.tokenize()
+            self.tokenized = self.tokenize()
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
@@ -186,16 +187,23 @@ class BaseLemmaModel(BaseModel):
         if len(errors):
             raise ValidationError(errors)
 
-        self.lemma_json = tokens
-        self.word_types_json = self.word_types.split("|")
-
     class Meta:
         abstract = True
 
+    tokenized = None
+
     lemma = models.CharField(max_length=255)
-    lemma_json = models.JSONField(default=dict)
+
+    @computed(models.JSONField(default=dict))
+    def lemma_json(self):
+        return self.tokenized
+
     word_types = models.CharField(max_length=255)
-    word_types_json = models.JSONField(default=dict)
+
+    @computed(models.JSONField(default=dict))
+    def word_types_json(self):
+        return self.word_types.split("|")
+
     is_active = models.BooleanField(default=True)
     label = models.TextField(null=True, blank=True)
 
@@ -263,12 +271,7 @@ class Rule(
                 )
 
         if self.type != "default":
-            try:
-                tokens = self.tokenize()
-            except ValidationError as exception:
-                errors["lemma"] = "Lemma could not be tokenized: " + exception.message
-
-            if len(tokens) > 1:
+            if self.tokenized is not None and len(self.tokenized) > 1:
                 errors["type"] = "Rules with a non default type can only have one token"
 
         if self.label_type != "default" and self.label != "":
