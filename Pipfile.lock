@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "716f990637cb9076d137c139a61c8552a9787374c599f4778ec7983af726c20c"
+            "sha256": "1817c1aa30589e3bb37e9ae072506545a0091b51951532861929b9854e3ebf04"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -177,11 +177,11 @@
         },
         "django-enum": {
             "hashes": [
-                "sha256:50325a1736081228d936ca7ec2affb44e043762cf922b78f991c47a11f6d5f5f",
-                "sha256:eb9a0faa4f3ecc046c988896c157d935f6c3d3ed59e50fcca3f073e41ce99c69"
+                "sha256:076a440dd073cc7b20987b2b933c8fd9dc386ef93b9689b0b7ddb4ac4bcb5798",
+                "sha256:5d7f29ed326a0d4d8be48198c29985e226ae2befbbb96fd8a6e5ad738de48b1b"
             ],
             "index": "pypi",
-            "version": "==1.2.1"
+            "version": "==1.2.2"
         },
         "django-environ": {
             "hashes": [
@@ -191,12 +191,13 @@
             "index": "pypi",
             "version": "==0.11.2"
         },
-        "django-hidefield": {
+        "django-grappelli": {
             "hashes": [
-                "sha256:7ed7e67e0d023b765fefcc1c7b88007d67b18ccc3142837a5f701563cb62c3e7"
+                "sha256:0c24a0128a8e94b0f251a99d71b96738e4cf546d20fd993d03b26c05c8642fdd",
+                "sha256:4664f14cd8f296e01130d167cb869a106644818bf84953dfeabff498be937319"
             ],
             "index": "pypi",
-            "version": "==0.1.2"
+            "version": "==3.0.8"
         },
         "django-import-export": {
             "hashes": [
@@ -405,11 +406,11 @@
         },
         "urllib3": {
             "hashes": [
-                "sha256:13abf37382ea2ce6fb744d4dad67838eec857c9f4f57009891805e0b5e123594",
-                "sha256:ef16afa8ba34a1f989db38e1dbbe0c302e4289a47856990d0682e374563ce35e"
+                "sha256:7a7c7003b000adf9e7ca2a377c9688bbc54ed41b985789ed576570342a375cd2",
+                "sha256:b19e1a85d206b56d7df1d5e683df4a7725252a964e3993648dd0fb5a1c157564"
             ],
             "markers": "python_version >= '3.7'",
-            "version": "==2.0.5"
+            "version": "==2.0.6"
         },
         "xlrd": {
             "hashes": [
