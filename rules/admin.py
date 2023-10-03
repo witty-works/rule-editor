@@ -247,7 +247,6 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         "all_diversity_dimensions",
         "tag_list",
     )
-    save_on_top = True
 
     inlines = [
         RuleDiversityDimensionInline,
