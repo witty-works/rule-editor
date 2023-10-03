@@ -39,7 +39,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 if env("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
-        release="0.7.0",
+        release="0.8.0",
         send_default_pii=True,
         integrations=[
             DjangoIntegration(
@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     "rangefilter",
     "more_admin_filters",
     "taggit",
+    "computedfields",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",

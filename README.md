@@ -7,8 +7,7 @@ cp .env.example .env
 python manage.py collectstatic
 python manage.py migrate
 python manage.py createsuperuser
-python manage.py loaddata diversity_dimensions
-
+python manage.py import_diversity_dimensions --file [diversity_dimension_drivers.json]
 python manage.py runserver 8100
 ```
 

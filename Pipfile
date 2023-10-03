@@ -20,6 +20,7 @@ emoji = "*"
 django-taggit = "*"
 django-autocomplete-light = "*"
 django-grappelli = "*"
+django-computedfields = "*"
 
 [dev-packages]
 
