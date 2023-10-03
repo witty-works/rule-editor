@@ -26,6 +26,7 @@ admin.site.index_title = "Welcome to Witty Works Rule Editor"
 
 urlpatterns = [
     path("", RedirectView.as_view(url=reverse_lazy("admin:index"))),
+    path("grappelli/", include("grappelli.urls")),  # grappelli URLS
     path("admin/", admin.site.urls),
     re_path(
         r"^tag-autocomplete/$",

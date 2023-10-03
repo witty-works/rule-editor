@@ -184,24 +184,48 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
 
-    fields = (
-        "lemma",
-        "language",
-        "text_id",
-        "word_types",
-        "is_marked_for_review",
-        "is_context_aware",
-        "type",
-        "is_active",
-        "label",
-        "explanation",
-        "emoji",
-        "url",
-        "tags",
-        "source",
-        "comment",
-        "ownedby",
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "lemma",
+                    "language",
+                    "text_id",
+                    "word_types",
+                    "is_marked_for_review",
+                    "is_context_aware",
+                    "type",
+                    "is_active",
+                    "tags",
+                ),
+            },
+        ),
+        (
+            "Custom Label",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": (
+                    "label",
+                    "explanation",
+                    "emoji",
+                    "url",
+                ),
+            },
+        ),
+        (
+            "Optional Fields",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": (
+                    "source",
+                    "comment",
+                    "ownedby",
+                ),
+            },
+        ),
     )
+
     radio_fields = {"type": admin.HORIZONTAL}
     search_fields = (
         "language",
@@ -288,6 +312,26 @@ class SourceAdmin(CreatedByAdmin):
 
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
+
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "name",
+                    "url",
+                    "tags",
+                ),
+            },
+        ),
+        (
+            "Reference",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": ("reference",),
+            },
+        ),
+    )
 
     list_display = (
         "name",

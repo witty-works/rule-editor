@@ -7,7 +7,6 @@ from django.conf import settings
 
 from django_enum import EnumField
 from ordered_model.models import OrderedModel
-from hidefield.fields import HideField
 from taggit.managers import TaggableManager
 
 import emoji
@@ -52,14 +51,6 @@ class RuleTypeEnum(models.TextChoices):
     SUBSTRING = "substring"
 
 
-class HideTextField(HideField, models.TextField):
-    pass
-
-
-class HideCharField(HideField, models.CharField):
-    pass
-
-
 class AutoDateTimeField(models.DateTimeField):
     def pre_save(self, model_instance, add):
         return timezone.now()
@@ -90,7 +81,7 @@ class BaseCreatedByModel(BaseModel):
 
 
 class BaseCommentableModel(BaseModel):
-    comment = HideTextField(null=True, blank=True, hide="no-data")
+    comment = models.TextField(null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -121,7 +112,7 @@ class Source(BaseTimestampedModel, BaseCreatedByModel):
 
     name = models.CharField(max_length=255, unique=True)
     url = models.CharField(max_length=255, null=True, blank=True)
-    reference = HideTextField(null=True, blank=True)
+    reference = models.TextField(null=True, blank=True)
     tags = TaggableManager(blank=True)
 
 
@@ -197,7 +188,7 @@ class BaseLemmaModel(BaseModel):
     word_types = models.CharField(max_length=255)
     word_types_json = models.JSONField(default=dict)
     is_active = models.BooleanField(default=True)
-    label = HideTextField(null=True, blank=True, hide="no-data")
+    label = models.TextField(null=True, blank=True)
 
 
 class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -305,15 +296,18 @@ class Rule(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="owner"
     )
 
-    explanation = HideCharField(max_length=255, null=True, blank=True, hide="no-data")
-    emoji = HideCharField(max_length=5, null=True, blank=True, hide="no-data")
-    url = HideCharField(max_length=255, null=True, blank=True, hide="no-data")
+    explanation = models.CharField(max_length=255, null=True, blank=True)
+    emoji = models.CharField(max_length=5, null=True, blank=True)
+    url = models.CharField(max_length=255, null=True, blank=True)
 
 
 class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
     class Meta:
         unique_together = (("rule", "diversity_dimension"),)
         ordering = ("order",)
+
+    def __str__(self):
+        return str(self.diversity_dimension)
 
     order_with_respect_to = "rule"
 
