@@ -206,6 +206,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
             {
                 "classes": ("grp-collapse grp-closed",),
                 "fields": (
+                    "label_type",
                     "label",
                     "explanation",
                     "emoji",
@@ -226,7 +227,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
         ),
     )
 
-    radio_fields = {"type": admin.HORIZONTAL}
+    radio_fields = {"type": admin.HORIZONTAL, "label_type": admin.HORIZONTAL}
     search_fields = (
         "language",
         "lemma",

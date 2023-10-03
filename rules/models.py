@@ -51,6 +51,15 @@ class RuleTypeEnum(models.TextChoices):
     SUBSTRING = "substring"
 
 
+class RuleLabelEnum(models.TextChoices):
+    DEFAULT = "default"
+    NOT_FOR_PEOPLE = "not_for_people"
+    BE_SPECIFIC = "be_specific"
+    NAME_DISABILITY = "name_disability"
+    ONLY_IF_GENDER_IDENTITY_RELEVANT = "only_if_gender_identity_relevant"
+    NOT_FOR_NON_COMBAT = "not_for_non_combat"
+
+
 class AutoDateTimeField(models.DateTimeField):
     def pre_save(self, model_instance, add):
         return timezone.now()
@@ -262,6 +271,11 @@ class Rule(
             if len(tokens) > 1:
                 errors["type"] = "Rules with a non default type can only have one token"
 
+        if self.label_type != "default" and self.label != "":
+            errors["label_type"] = errors[
+                "label"
+            ] = "Change label type to 'default' or change label to an empty string"
+
         if len(errors):
             raise ValidationError(errors)
 
@@ -280,6 +294,12 @@ class Rule(
         RuleTypeEnum,
         default=RuleTypeEnum.DEFAULT,
         help_text="Should the rule check on part of the lemma (only 'default' allows multiple token lemma).",
+    )
+
+    label_type = EnumField(
+        RuleLabelEnum,
+        default=RuleLabelEnum.DEFAULT,
+        help_text="Quick selections for custom labels (only change from 'default' if label is empty).",
     )
 
     is_context_aware = models.BooleanField(
