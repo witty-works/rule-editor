@@ -309,8 +309,12 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
     )
 
 
+class SourceResource(resources.ModelResource):
+    class Meta:
+        model = Source
+
 @admin.register(Source)
-class SourceAdmin(CreatedByAdmin):
+class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
     class Meta:
         model = Source
 
@@ -329,6 +333,8 @@ class SourceAdmin(CreatedByAdmin):
 
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
+
+    resource_class = SourceResource
 
     fieldsets = (
         (
