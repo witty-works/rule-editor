@@ -35,8 +35,8 @@ class Command(BaseCommand):
                 category.save()
 
             diversity_dimensions_driver.category = category
+            diversity_dimensions_driver.parent_name = name
             diversity_dimensions_driver.is_advanced = False
-
             diversity_dimensions_driver.save()
 
             self.stdout.write(self.style.SUCCESS(message))
@@ -57,7 +57,7 @@ class Command(BaseCommand):
                     )
 
                 child.category = category
-                child.parent = diversity_dimensions_driver
+                child.parent_name = name
                 child.is_advanced = True
                 child.save()
 
