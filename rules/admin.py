@@ -19,7 +19,6 @@ from dal import autocomplete
 from .models import (
     Rule,
     Alternative,
-    Category,
     DiversityDimension,
     RuleDiversityDimension,
     Source,
@@ -280,36 +279,31 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     ]
 
 
-class CategoryResource(resources.ModelResource):
-    class Meta:
-        model = Category
-
-
-@admin.register(Category)
-class CategoryAdmin(ImportExportModelAdmin):
-    class Meta:
-        model = Category
-
-    resource_class = CategoryResource
-    search_fields = ("name",)
-
-
-class DiversityDimensionResource(resources.ModelResource):
-    class Meta:
-        model = DiversityDimension
-
-
 @admin.register(DiversityDimension)
-class DiversityDimensionAdmin(OrderedModelAdmin, ImportExportModelAdmin):
+class DiversityDimensionAdmin(OrderedModelAdmin):
     class Meta:
         model = DiversityDimension
 
-    resource_class = DiversityDimensionResource
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+        if "delete_selected" in actions:
+            del actions["delete_selected"]
+        return actions
+
+    def __init__(self, model, admin_site):
+        super().__init__(model, admin_site)
+
+    def get_list_display_links(self, request, list_display):
+        super().get_list_display_links(request, list_display)
+        return None
+
+    def has_add_permission(self, request, obj=None): # Here
+        return False
+
     list_display = ("name", "move_up_down_links")
     search_fields = ("name",)
     list_filter = (
         "category",
-        "is_advanced",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )

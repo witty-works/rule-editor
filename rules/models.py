@@ -221,11 +221,14 @@ class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
 class DiversityDimension(
     OrderedModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
 ):
+    class Meta(OrderedModel.Meta):
+        unique_together = (("parent_name", "is_advanced"),)
+
     def __str__(self):
         return self.name
 
     name = models.CharField(max_length=255, unique=True)
-    parent = models.ForeignKey("self", on_delete=models.CASCADE, null=True, blank=True)
+    parent_name = models.CharField(max_length=255)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     is_advanced = models.BooleanField(default=True)
 
