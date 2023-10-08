@@ -33,7 +33,7 @@ class ProficiencyLevelEnum(models.TextChoices):
     ADVANCED = "advanced"
 
 
-class AlternativePLuralizationEnum(models.TextChoices):
+class AlternativePluralizationEnum(models.TextChoices):
     DEFAULT = "default"
     SINGULAR_ONLY = "singular_only"
     PLURAL_ONLY = "plural_only"
@@ -59,6 +59,14 @@ class RuleLabelEnum(models.TextChoices):
     NAME_DISABILITY = "name_disability"
     ONLY_IF_GENDER_IDENTITY_RELEVANT = "only_if_gender_identity_relevant"
     NOT_FOR_NON_COMBAT = "not_for_non_combat"
+    ASK_FOR_PREFERENCE = "ask_for_preference"
+    ASK_ABOUT_TRADITIONS = "ask_about_traditions"
+    ONLY_WHEN_REFERENCING_RELIGIOUS_PRACTICE = (
+        "only_when_referencing_religious_practice"
+    )
+    DONT_USE_FOR_SUBSTANCE_USE = "dont_use_for_substance_use"
+    DONT_USE_TO_DESCRIBE_QUALITY = "dont_use_to_describe_quality"
+    USE_IN_TECH_ONLY = "use_in_tech_only"
 
 
 class AutoDateTimeField(models.DateTimeField):
@@ -155,16 +163,19 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         if r.status_code != 200:
             body = r.json()
             error = body["detail"] if "detail" in body else r.text
-            raise ValidationError(error)
+            raise ValidationError(path + ": " + error)
 
         return r.json()
 
     def tokenize(self):
-        path = f"/tokenize?lang={self.language}&text={self.lemma}"
+        path = f"/tokenize?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}"
         return self.get_json(path)
 
     def parse_word_type(self):
-        path = f"/parse-word-type?lang={self.language}&text={self.lemma}&word_types={self.word_types}"
+        if self.word_types is None or len(self.word_types) == 0:
+            return None
+
+        path = f"/parse-word-type?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}&word_types={requests.utils.quote(self.word_types)}"
         return self.get_json(path)
 
     def save(self, *args, **kwargs):
@@ -180,7 +191,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
         try:
-            self.parse_word_type()
+            self.parsed_word_type = self.parse_word_type()
         except ValidationError as exception:
             errors["word_types"] = "Word_types validation failed: " + exception.message
 
@@ -191,6 +202,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         abstract = True
 
     tokenized = None
+    parsed_word_type = None
 
     lemma = models.CharField(max_length=255)
 
@@ -198,11 +210,11 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
     def lemma_json(self):
         return self.tokenized
 
-    word_types = models.CharField(max_length=255)
+    word_types = models.CharField(max_length=255, null=True, blank=True)
 
     @computed(models.JSONField(default=dict))
     def word_types_json(self):
-        return self.word_types.split("|")
+        return [] if self.parsed_word_type is None else self.parsed_word_type
 
     is_active = models.BooleanField(default=True)
     label = models.TextField(null=True, blank=True)
@@ -326,6 +338,34 @@ class Rule(
     emoji = models.CharField(max_length=5, null=True, blank=True)
     url = models.CharField(max_length=255, null=True, blank=True)
 
+    @computed(models.CharField(max_length=255, null=True, blank=True))
+    def first_token(self):
+        if self.lemma_json is None or len(self.lemma_json) == 0:
+            return None
+
+        return self.lemma_json[0]
+
+    @computed(models.CharField(max_length=255, null=True, blank=True))
+    def first_word_type(self):
+        if self.parsed_word_type is None or len(self.parsed_word_type) == 0:
+            return None
+
+        return self.parsed_word_type[0]["word_types"]
+
+    @computed(models.BooleanField(null=True, blank=True))
+    def first_is_word_type_lemmatize(self):
+        if self.parsed_word_type is None or len(self.parsed_word_type) == 0:
+            return None
+
+        return self.parsed_word_type[0]["lemmatize"]
+
+    @computed(models.BooleanField(null=True, blank=True))
+    def first_is_word_type_lower_case(self):
+        if self.parsed_word_type is None or len(self.parsed_word_type) == 0:
+            return None
+
+        return self.parsed_word_type[0]["lower_case"]
+
 
 class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
     class Meta:
@@ -363,10 +403,14 @@ class Alternative(
 
     type = EnumField(AlternativeTypeEnum, default=AlternativeTypeEnum.DEFAULT)
     pluralization = EnumField(
-        AlternativePLuralizationEnum, default=AlternativePLuralizationEnum.DEFAULT
+        AlternativePluralizationEnum, default=AlternativePluralizationEnum.DEFAULT
     )
     is_inspiration = models.BooleanField(default=False)
     is_advanced = models.BooleanField(default=True)
+
+    @computed(models.BooleanField(default=False))
+    def is_placeholder(self):
+        self.is_placeholder = "((" in self.lemma and "))" in self.lemma
 
     tags = TaggableManager(blank=True)
 
@@ -391,9 +435,12 @@ class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     def __str__(self):
         return self.false_positive
 
+    class Meta:
+        unique_together = (("rule", "false_positive"),)
+
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
 
-    false_positive = models.CharField(max_length=255, unique=True)
+    false_positive = models.CharField(max_length=255)
 
 
 class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
