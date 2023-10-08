@@ -21,6 +21,7 @@ django-taggit = "*"
 django-autocomplete-light = "*"
 django-grappelli = "*"
 django-computedfields = "*"
+django-taggit-bulk = "*"
 
 [dev-packages]
 
