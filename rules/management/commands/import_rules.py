@@ -51,6 +51,13 @@ class Command(BaseCommand):
                         )
                         continue
                     message = f"Successfully updated rule '{lemma}' / '{word_types}'"
+
+                    RuleDiversityDimension.objects.filter(rule=rule).delete()
+                    Alternative.objects.filter(rule=rule).delete()
+                    FalsePositive.objects.filter(rule=rule).delete()
+                    TrainingSentence.objects.filter(rule=rule).delete()
+                    for tag in rule.tags.all():
+                        tag.delete()
                 except Rule.DoesNotExist:
                     rule = Rule()
                     rule.lemma = lemma
@@ -60,7 +67,6 @@ class Command(BaseCommand):
 
                 rule.text_id = lemma
                 rule.type = RuleTypeEnum.DEFAULT
-                # TODO tags
                 rule.is_context_aware = lemma in [
                     "fossil",
                     "flexible",
@@ -98,14 +104,10 @@ class Command(BaseCommand):
 
                 rule.save()
 
-                RuleDiversityDimension.objects.filter(rule=rule).delete()
-
                 self.add_diversity_dimension(rule, row["Primary_subcategory"], 0)
 
                 if row["Secondary_subcategory"]:
                     self.add_diversity_dimension(rule, row["Secondary_subcategory"], 1)
-
-                Alternative.objects.filter(rule=rule).delete()
 
                 alternative_columns = {
                     "Alt_Field": {
@@ -237,7 +239,6 @@ class Command(BaseCommand):
                             continue
 
                         alternative = Alternative()
-                        # TODO tags
                         alternative.rule = rule
                         alternative.lemma = alternative_lemma.strip()
                         if alternative_columns[alternative_column]["word_types"]:
@@ -270,8 +271,6 @@ class Command(BaseCommand):
                         alternative.save()
 
                 # False_Positives
-                FalsePositive.objects.filter(rule=rule).delete()
-
                 false_positives = row["False_Positives"].strip()
                 false_positives = false_positives.split("|")
                 false_positive_texts = []
@@ -291,8 +290,6 @@ class Command(BaseCommand):
                     false_positive.save()
 
                 # Sample_Sentences,Generated Examples
-                TrainingSentence.objects.filter(rule=rule).delete()
-
                 training_sentences_columns = [
                     "Sample_Sentences",
                     "Generated Examples",
@@ -314,6 +311,7 @@ class Command(BaseCommand):
                         training_sentence.save()
 
                 self.stdout.write(self.style.SUCCESS(message))
+                break
 
     def add_diversity_dimension(self, rule: Rule, subcategory_name: str, order: int):
         subcategory_name = (
@@ -326,20 +324,13 @@ class Command(BaseCommand):
             diversity_dimensions_driver = DiversityDimension.objects.get(
                 name=subcategory_name
             )
-        except DiversityDimension.DoesNotExist:
-            # handle as tag?
-            self.stdout.write(
-                self.style.ERROR(
-                    f"Subcategory '{subcategory_name}' does not exist for lemma '{rule.lemma}' / '{rule.word_types}'"
-                )
+
+            rule_diversity_dimensions_driver = RuleDiversityDimension()
+            rule_diversity_dimensions_driver.rule = rule
+            rule_diversity_dimensions_driver.order = order
+            rule_diversity_dimensions_driver.diversity_dimension = (
+                diversity_dimensions_driver
             )
-
-            return
-
-        rule_diversity_dimensions_driver = RuleDiversityDimension()
-        rule_diversity_dimensions_driver.rule = rule
-        rule_diversity_dimensions_driver.order = order
-        rule_diversity_dimensions_driver.diversity_dimension = (
-            diversity_dimensions_driver
-        )
-        rule_diversity_dimensions_driver.save()
+            rule_diversity_dimensions_driver.save()
+        except DiversityDimension.DoesNotExist:
+            rule.tags.add(subcategory_name)
