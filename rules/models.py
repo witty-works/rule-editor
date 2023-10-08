@@ -21,18 +21,6 @@ class LanguageEnum(models.TextChoices):
     DE = "de", "German"
 
 
-class ContentEnum(models.TextChoices):
-    BASIC = "basic"
-    ADVANCED = "advanced"
-    VIDEO = "video"
-
-
-class ProficiencyLevelEnum(models.TextChoices):
-    HATE = "hate"
-    BASIC = "basic"
-    ADVANCED = "advanced"
-
-
 class AlternativePluralizationEnum(models.TextChoices):
     DEFAULT = "default"
     SINGULAR_ONLY = "singular_only"
