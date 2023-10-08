@@ -1,0 +1,345 @@
+from django.core.management.base import BaseCommand
+from rules.models import (
+    Rule,
+    Alternative,
+    FalsePositive,
+    TrainingSentence,
+    DiversityDimension,
+    RuleDiversityDimension,
+    Source,
+    RuleTypeEnum,
+    RuleLabelEnum,
+    AlternativeTypeEnum,
+    AlternativePluralizationEnum,
+)
+import csv
+
+
+class Command(BaseCommand):
+    help = "Imports or updates rules"
+
+    def add_arguments(self, parser):
+        parser.add_argument("--file", type=str)
+        parser.add_argument("--language", type=str)
+        parser.add_argument("--skip", type=bool, default=False)
+
+    def handle(self, *args, **options):
+        language = options["language"]
+
+        with open(options["file"]) as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                lemma = row["Lemma"].strip()
+                if len(lemma) == 0:
+                    continue
+
+                word_types = row["Word_Type"].strip()
+
+                self.stdout.write(
+                    self.style.NOTICE(f"Processing lemma '{lemma}' / '{word_types}'")
+                )
+
+                try:
+                    rule = Rule.objects.get(
+                        lemma=lemma, word_types=word_types, language=language
+                    )
+                    if options["skip"]:
+                        self.stdout.write(
+                            self.style.NOTICE(
+                                f"Skipping lemma '{lemma}' / '{word_types}'"
+                            )
+                        )
+                        continue
+                    message = f"Successfully updated rule '{lemma}' / '{word_types}'"
+                except Rule.DoesNotExist:
+                    rule = Rule()
+                    rule.lemma = lemma
+                    rule.word_types = word_types
+                    rule.language = language
+                    message = f"Successfully created rule '{lemma}' / '{word_types}'"
+
+                rule.text_id = lemma
+                rule.type = RuleTypeEnum.DEFAULT
+                # TODO tags
+                rule.is_context_aware = lemma in [
+                    "fossil",
+                    "flexible",
+                    "impact",
+                    "dynamic",
+                    "best",
+                    "alone",
+                    "retarded",
+                    "brilliant",
+                    "retard",
+                ]
+                rule.is_marked_for_review = True
+
+                # 3rd_party_alternatives,Notes,ToClarify
+                rule.comment = row["Notes"].strip()
+                if row["3rd_party_alternatives"].strip():
+                    rule.comment += (
+                        "\n3rd_party_alternatives:\n"
+                        + row["3rd_party_alternatives"].strip()
+                    )
+                if row["ToClarify"].strip():
+                    rule.comment += "\ToClarify:\n" + row["ToClarify"].strip()
+
+                # 3rd_party_source
+                source_name = row["3rd_party_source"].strip()
+                if len(source_name):
+                    try:
+                        source = Source.objects.get(name=source_name)
+                    except Source.DoesNotExist:
+                        source = Source()
+                        source.name = source_name
+                        source.save()
+
+                    rule.source = source
+
+                rule.save()
+
+                RuleDiversityDimension.objects.filter(rule=rule).delete()
+
+                self.add_diversity_dimension(rule, row["Primary_subcategory"], 0)
+
+                if row["Secondary_subcategory"]:
+                    self.add_diversity_dimension(rule, row["Secondary_subcategory"], 1)
+
+                Alternative.objects.filter(rule=rule).delete()
+
+                alternative_columns = {
+                    "Alt_Field": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Sg_Replacement": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": True,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Medical_term": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Identity_first": {
+                        "type": AlternativeTypeEnum.IDENTITY_FIRST,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Sg_people_first": {
+                        "type": AlternativeTypeEnum.PERSON_FIRST,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Sg_reframed": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": False,
+                        "is_inspiration": True,
+                        "is_advanced": False,
+                    },
+                    "Alt_Pl_collective_noun": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Pl": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Identity_first_pl": {
+                        "type": AlternativeTypeEnum.IDENTITY_FIRST,
+                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Pl_people_first": {
+                        "type": AlternativeTypeEnum.PERSON_FIRST,
+                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Pl_reframed": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
+                        "word_types": False,
+                        "is_inspiration": True,
+                        "is_advanced": False,
+                    },
+                }
+
+                label_types = {
+                    "be specific to build trust": RuleLabelEnum.BE_SPECIFIC,
+                    "Describe the specific concern": RuleLabelEnum.BE_SPECIFIC,
+                    "Try not to use this word to describe people": RuleLabelEnum.NOT_FOR_PEOPLE,
+                    "Don't use this word for people": RuleLabelEnum.NOT_FOR_PEOPLE,
+                    "Name the disability or condition": RuleLabelEnum.NAME_DISABILITY,
+                    "Only if gender identity is relevant | --- Only if self-identifies as female": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
+                    "Don't use in a non-combat context": RuleLabelEnum.NOT_FOR_NON_COMBAT,
+                    "if stated preference": RuleLabelEnum.ASK_FOR_PREFERENCE,
+                    "Ask about their traditions, if possible": RuleLabelEnum.ASK_ABOUT_TRADITIONS,
+                    "Only use in reference to religious practice": RuleLabelEnum.ONLY_WHEN_REFERENCING_RELIGIOUS_PRACTICE,
+                    "Use in programming only": RuleLabelEnum.USE_IN_TECH_ONLY,
+                    "Don't use to describe value or quality": RuleLabelEnum.DONT_USE_TO_DESCRIBE_QUALITY,
+                    "Don't use in the context of substance use": RuleLabelEnum.DONT_USE_FOR_SUBSTANCE_USE,
+                    "Ask about their traditions, if possible": RuleLabelEnum.ASK_ABOUT_TRADITIONS,
+                }
+
+                rule_tokens = rule.tokenize()
+                for alternative_column in alternative_columns:
+                    alternatives = row[alternative_column].strip()
+                    alternatives = alternatives.split("|")
+                    if len(alternatives) == 0:
+                        continue
+
+                    alternative_count = 0
+                    for alternative_lemma in alternatives:
+                        if alternative_lemma.strip() == "-":
+                            continue
+
+                        if alternative_lemma.startswith("---"):
+                            label = alternative_lemma.removeprefix("---").strip()
+
+                            if label in label_types:
+                                rule.label_type = label_types[label]
+                                rule.label = None
+                            else:
+                                rule.label_type = None
+                                rule.label = label
+
+                            continue
+                        else:
+                            rule.label_type = None
+                            rule.label = None
+
+                        alternative_lemma = alternative_lemma.strip()
+
+                        if len(alternative_lemma) == 0:
+                            continue
+
+                        alternative = Alternative()
+                        # TODO tags
+                        alternative.rule = rule
+                        alternative.lemma = alternative_lemma.strip()
+                        if alternative_columns[alternative_column]["word_types"]:
+                            alternative_rule_tokens = alternative.tokenize()
+                            if len(rule_tokens) == len(alternative_rule_tokens):
+                                alternative.word_types = rule.word_types
+
+                        alternative.order = alternative_count
+                        alternative_count += 1
+
+                        if " --- " in alternative_lemma:
+                            alternative_lemma, label = alternative_lemma.split(" --- ")
+                            alternative.label = label.strip()
+                        else:
+                            alternative.label = None
+
+                        alternative.type = alternative_columns[alternative_column][
+                            "type"
+                        ]
+                        alternative.pluralization = alternative_columns[
+                            alternative_column
+                        ]["pluralization"]
+                        alternative.is_inspiration = alternative_columns[
+                            alternative_column
+                        ]["is_inspiration"]
+                        alternative.is_advanced = alternative_columns[
+                            alternative_column
+                        ]["is_advanced"]
+
+                        alternative.save()
+
+                # False_Positives
+                FalsePositive.objects.filter(rule=rule).delete()
+
+                false_positives = row["False_Positives"].strip()
+                false_positives = false_positives.split("|")
+                false_positive_texts = []
+                for false_positive_text in false_positives:
+                    false_positive_text = false_positive_text.strip()
+                    if (
+                        len(false_positive_text) == 0
+                        or false_positive_text in false_positive_texts
+                    ):
+                        continue
+
+                    false_positive_texts.append(false_positive_text)
+
+                    false_positive = FalsePositive()
+                    false_positive.rule = rule
+                    false_positive.false_positive = false_positive_text
+                    false_positive.save()
+
+                # Sample_Sentences,Generated Examples
+                TrainingSentence.objects.filter(rule=rule).delete()
+
+                training_sentences_columns = [
+                    "Sample_Sentences",
+                    "Generated Examples",
+                ]
+                for training_sentences_column in training_sentences_columns:
+                    training_sentences = row[training_sentences_column].strip()
+                    training_sentences = training_sentences.split("\n")
+
+                    for training_sentence_text in training_sentences:
+                        training_sentence_text = training_sentence_text.strip()
+                        if len(training_sentence_text) == 0:
+                            continue
+
+                        training_sentence = TrainingSentence()
+                        training_sentence.rule = rule
+                        training_sentence.text = training_sentence_text
+                        training_sentence.is_false_positive = False
+                        training_sentence.is_training_data = False
+                        training_sentence.save()
+
+                self.stdout.write(self.style.SUCCESS(message))
+
+    def add_diversity_dimension(self, rule: Rule, subcategory_name: str, order: int):
+        subcategory_name = (
+            subcategory_name
+            if not subcategory_name.startswith("advanced_")
+            else subcategory_name.removeprefix("advanced_") + "_advanced"
+        )
+
+        try:
+            diversity_dimensions_driver = DiversityDimension.objects.get(
+                name=subcategory_name
+            )
+        except DiversityDimension.DoesNotExist:
+            # handle as tag?
+            self.stdout.write(
+                self.style.ERROR(
+                    f"Subcategory '{subcategory_name}' does not exist for lemma '{rule.lemma}' / '{rule.word_types}'"
+                )
+            )
+
+            return
+
+        rule_diversity_dimensions_driver = RuleDiversityDimension()
+        rule_diversity_dimensions_driver.rule = rule
+        rule_diversity_dimensions_driver.order = order
+        rule_diversity_dimensions_driver.diversity_dimension = (
+            diversity_dimensions_driver
+        )
+        rule_diversity_dimensions_driver.save()
