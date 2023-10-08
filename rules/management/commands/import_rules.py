@@ -104,10 +104,22 @@ class Command(BaseCommand):
 
                 rule.save()
 
-                self.add_diversity_dimension(rule, row["Primary_subcategory"], 0)
+                priorties = [s.strip() for s in row["Priority"].split("|")]
+                if "HR" in priorties:
+                    rule.tags.add("hr")
 
-                if row["Secondary_subcategory"]:
-                    self.add_diversity_dimension(rule, row["Secondary_subcategory"], 1)
+                is_basic = "basic" in priorties
+                self.add_diversity_dimension(
+                    rule, row["Primary_subcategory"], 0, is_basic
+                )
+
+                if (
+                    row["Secondary_subcategory"]
+                    and row["Secondary_subcategory"] != "generic_plural"
+                ):
+                    self.add_diversity_dimension(
+                        rule, row["Secondary_subcategory"], 1, is_basic
+                    )
 
                 alternative_columns = {
                     "Alt_Field": {
@@ -198,7 +210,6 @@ class Command(BaseCommand):
                     "Only if gender identity is relevant | --- Only if self-identifies as female": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
                     "Don't use in a non-combat context": RuleLabelEnum.NOT_FOR_NON_COMBAT,
                     "if stated preference": RuleLabelEnum.ASK_FOR_PREFERENCE,
-                    "Ask about their traditions, if possible": RuleLabelEnum.ASK_ABOUT_TRADITIONS,
                     "Only use in reference to religious practice": RuleLabelEnum.ONLY_WHEN_REFERENCING_RELIGIOUS_PRACTICE,
                     "Use in programming only": RuleLabelEnum.USE_IN_TECH_ONLY,
                     "Don't use to describe value or quality": RuleLabelEnum.DONT_USE_TO_DESCRIBE_QUALITY,
@@ -311,13 +322,18 @@ class Command(BaseCommand):
                         training_sentence.save()
 
                 self.stdout.write(self.style.SUCCESS(message))
-                break
 
-    def add_diversity_dimension(self, rule: Rule, subcategory_name: str, order: int):
+    def add_diversity_dimension(
+        self, rule: Rule, subcategory_name: str, order: int, is_basic: bool = False
+    ):
         subcategory_name = (
             subcategory_name
             if not subcategory_name.startswith("advanced_")
-            else subcategory_name.removeprefix("advanced_") + "_advanced"
+            else subcategory_name.removeprefix("advanced_")
+        )
+
+        subcategory_name = (
+            subcategory_name if is_basic else subcategory_name + "_advanced"
         )
 
         try:
