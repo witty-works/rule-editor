@@ -254,6 +254,16 @@ class Rule(
 ):
     class Meta:
         unique_together = (("language", "lemma", "word_types"),)
+        indexes = [
+            models.Index(
+                fields=[
+                    "first_token",
+                    "first_is_word_type_lemmatize",
+                    "first_is_word_type_lower_case",
+                    "first_word_type",
+                ]
+            ),
+        ]
 
     def clean(self):
         super().clean()
