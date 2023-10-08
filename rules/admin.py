@@ -15,6 +15,7 @@ from ordered_model.admin import (
 from rangefilter.filter import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
 from dal import autocomplete
+from taggit_bulk.actions import tag_wizard
 
 from .models import (
     Rule,
@@ -206,6 +207,8 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
 
+    actions = [tag_wizard]
+
     fieldsets = (
         (
             "",
@@ -297,7 +300,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
         super().get_list_display_links(request, list_display)
         return None
 
-    def has_add_permission(self, request, obj=None): # Here
+    def has_add_permission(self, request, obj=None):  # Here
         return False
 
     list_display = ("name", "move_up_down_links")
@@ -312,6 +315,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
 class SourceResource(resources.ModelResource):
     class Meta:
         model = Source
+
 
 @admin.register(Source)
 class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
@@ -333,6 +337,8 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
+
+    actions = [tag_wizard]
 
     resource_class = SourceResource
 
