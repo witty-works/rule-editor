@@ -1,4 +1,4 @@
-# Rule Editor 2
+# Rule Editor
 
 ## Installation
 
