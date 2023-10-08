@@ -324,12 +324,10 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(message))
 
     def add_diversity_dimension(
-        self, rule: Rule, subcategory_name: str, order: int, is_basic: bool = False
+        self, rule: Rule, name: str, order: int, is_basic: bool = False
     ):
         subcategory_name = (
-            subcategory_name
-            if not subcategory_name.startswith("advanced_")
-            else subcategory_name.removeprefix("advanced_")
+            name if not name.startswith("advanced_") else name.removeprefix("advanced_")
         )
 
         subcategory_name = (
@@ -349,4 +347,4 @@ class Command(BaseCommand):
             )
             rule_diversity_dimensions_driver.save()
         except DiversityDimension.DoesNotExist:
-            rule.tags.add(subcategory_name)
+            rule.tags.add(name)
