@@ -410,7 +410,7 @@ class Alternative(
 
     @computed(models.BooleanField(default=False))
     def is_placeholder(self):
-        self.is_placeholder = "((" in self.lemma and "))" in self.lemma
+        return "((" in self.lemma and "))" in self.lemma
 
     tags = TaggableManager(blank=True)
 
