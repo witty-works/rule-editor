@@ -405,7 +405,9 @@ class Alternative(
 
     order_with_respect_to = "rule"
 
-    rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
+    rule = models.ForeignKey(
+        Rule, related_name="alternatives", on_delete=models.CASCADE
+    )
 
     type = EnumField(AlternativeTypeEnum, default=AlternativeTypeEnum.DEFAULT)
     pluralization = EnumField(
@@ -427,7 +429,9 @@ class TrainingSentence(
     def __str__(self):
         return self.text
 
-    rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
+    rule = models.ForeignKey(
+        Rule, related_name="training_sentences", on_delete=models.CASCADE
+    )
 
     text = models.TextField(null=True, blank=True)
 
@@ -444,7 +448,9 @@ class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     class Meta:
         unique_together = (("rule", "false_positive"),)
 
-    rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
+    rule = models.ForeignKey(
+        Rule, related_name="false_positives", on_delete=models.CASCADE
+    )
 
     false_positive = models.CharField(max_length=255)
 
