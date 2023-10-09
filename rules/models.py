@@ -364,6 +364,14 @@ class Rule(
 
         return self.parsed_word_type[0]["lower_case"]
 
+    @computed(models.JSONField(default=dict))
+    def diversity_dimension_json(self):
+        diversity_dimensions = []
+        for diversity_dimension in self.diversity_dimensions.all():
+            diversity_dimensions.append(diversity_dimension.name)
+
+        return diversity_dimensions
+
 
 class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
     class Meta:
