@@ -4,18 +4,20 @@ from django.contrib import admin
 from django import forms
 from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy
+from django.conf import settings
+
+import requests
+import json
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from ordered_model.admin import (
-    OrderedStackedInline,
-    OrderedInlineModelAdminMixin,
-    OrderedModelAdmin,
-)
+from ordered_model.admin import OrderedModelAdmin
 from rangefilter.filter import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
 from dal import autocomplete
 from taggit_bulk.actions import tag_wizard
+from dynamic_forms import DynamicField, DynamicFormMixin
+from grappelli.forms import GrappelliSortableHiddenMixin
 
 from .models import (
     Rule,
@@ -26,14 +28,67 @@ from .models import (
     FalsePositive,
     TrainingSentence,
     Lemmatization,
-    Verb,
-    Adjective,
-    Noun,
+    EnglishVerb,
+    EnglishAdjective,
+    EnglishNoun,
+    fetch_json,
 )
 
 
 def get_class(class_name):
     return getattr(sys.modules[__name__], class_name)
+
+
+def generate_help_text(name, language, filters, token):
+    match language:
+        case "de":
+            class_name = "German" + name
+        case "en":
+            class_name = "English" + name
+        case _:
+            class_name = name
+
+    cls = get_class(class_name)
+    instances = cls.objects.filter(**filters)
+    if instances:
+        for instance in instances:
+            link = reverse(
+                f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
+            )
+            return f"{name} <a href=\"{link}\">data available</a> for '{token}'"
+
+    return f"No {name} data available for '{token}'"
+
+
+def collect_help_text(language, tokens, word_types):
+    help_text = []
+    for i in range(len(word_types)):
+        if word_types[i]["lemmatize"]:
+            filters = {}
+            if word_types[i]["lower_case"]:
+                filters["base_form"] = tokens[i]
+            else:
+                filters["base_form__iexact"] = tokens[i]
+
+            if "v" in word_types[i]["word_types"]:
+                help_text.append(
+                    generate_help_text("Verb", language, filters, tokens[i])
+                )
+            if "a" in word_types[i]["word_types"]:
+                help_text.append(
+                    generate_help_text("Adjective", language, filters, tokens[i])
+                )
+            if "s" in word_types[i]["word_types"]:
+                help_text.append(
+                    generate_help_text("Noun", language, filters, tokens[i])
+                )
+
+            filters = {"lemma": tokens[i], "language": language}
+            help_text.append(
+                generate_help_text("Lemmatization", None, filters, tokens[i])
+            )
+
+    return help_text
 
 
 class CreatedByAdmin(admin.ModelAdmin):
@@ -61,12 +116,13 @@ class AlternativeForm(forms.ModelForm):
         }
 
 
-class AlternativeInline(OrderedStackedInline):
+class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative
     form = AlternativeForm
     fields = (
         "lemma",
         "word_types",
+        "is_remove",
         "is_inspiration",
         "is_advanced",
         "pluralization",
@@ -76,12 +132,12 @@ class AlternativeInline(OrderedStackedInline):
         "tags",
         "source",
         "comment",
-        "move_up_down_links",
+        "order",
     )
     radio_fields = {"type": admin.HORIZONTAL, "pluralization": admin.HORIZONTAL}
-    readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
-    extra = 1
+    extra = 0
+    sortable_field_name = "order"
 
 
 class FalsePositiveInline(admin.StackedInline):
@@ -90,16 +146,91 @@ class FalsePositiveInline(admin.StackedInline):
         "false_positive",
         "comment",
     )
+    extra = 0
+
+
+def apply_rule(values):
+    if values is None or "rule" not in values or "text" not in values:
+        return None
+
+    rule = Rule.objects.get(pk=values["rule"])
+
+    alternatives = []
+    for alternative in rule.alternatives.all():
+        alternative = {
+            "lemma": alternative.lemma,
+            "word_types": alternative.word_types,
+            "type": str(alternative.type),
+            "pluralization": str(alternative.pluralization),
+            "is_inspiration": alternative.is_inspiration,
+            "is_advanced": alternative.is_advanced,
+        }
+        alternatives.append(alternative)
+
+    false_positives = []
+    for false_positive in rule.false_positives.all():
+        false_positives.append(false_positive.false_positive)
+
+    data = {
+        "text": values["text"],
+        "lang": str(rule.language),
+        "lemma": rule.lemma,
+        "word_types": rule.word_types,
+        "subcategories": rule.diversity_dimension_json,
+        "lower_case": True,
+        "alternatives": alternatives,
+        "false_positives": false_positives,
+    }
+
+    path = "/debug/rule"
+    return fetch_json(path, data)
+
+
+def apply_spacy(values):
+    if values is None or "rule" not in values or "text" not in values:
+        return None
+
+    rule = Rule.objects.get(pk=values["rule"])
+
+    text = values["text"]
+    path = f"/debug/spacy?lang={requests.utils.quote(rule.language)}&text={requests.utils.quote(text)}"
+    return fetch_json(path)
+
+
+class PrettyJSONEncoder(json.JSONEncoder):
+    def __init__(self, *args, indent, sort_keys, **kwargs):
+        super().__init__(*args, indent=2, sort_keys=True, **kwargs)
+
+
+class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
+    response = DynamicField(
+        forms.JSONField,
+        disabled=True,
+        required=False,
+        initial=lambda form: apply_rule(form.initial),
+        encoder=lambda form: PrettyJSONEncoder,
+    )
+    spacy = DynamicField(
+        forms.JSONField,
+        disabled=True,
+        required=False,
+        initial=lambda form: apply_spacy(form.initial),
+        encoder=lambda form: PrettyJSONEncoder,
+    )
 
 
 class TrainingSentenceInline(admin.StackedInline):
     model = TrainingSentence
+    form = TrainingSentenceForm
     fields = (
         "text",
         "is_false_positive",
         "is_training_data",
         "comment",
+        "spacy",
+        "response",
     )
+    extra = 0
 
 
 class RuleDiversityDimensionForm(forms.ModelForm):
@@ -115,7 +246,7 @@ class RuleDiversityDimensionForm(forms.ModelForm):
         }
 
 
-class RuleDiversityDimensionInline(OrderedStackedInline):
+class RuleDiversityDimensionInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     def get_formset(self, request, obj=None, **kwargs):
         res = super().get_formset(request, obj=None, **kwargs)
         for formfield in res.form.base_fields.values():
@@ -129,70 +260,31 @@ class RuleDiversityDimensionInline(OrderedStackedInline):
     form = RuleDiversityDimensionForm
     fields = (
         "diversity_dimension",
-        "move_up_down_links",
+        "order",
     )
-    readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
-    extra = 1
+    sortable_field_name = "order"
+    extra = 0
 
 
 @admin.register(Rule)
-class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
+class RuleAdmin(CreatedByAdmin):
     class Meta:
         model = Rule
 
     def all_diversity_dimensions(self, obj):
         return ", ".join([d.name for d in obj.diversity_dimensions.all()])
 
-    def generate_help_text(self, class_name, filters, token):
-        cls = get_class(class_name)
-        instances = cls.objects.filter(**filters)
-        if instances:
-            for instance in instances:
-                link = reverse(
-                    f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
-                )
-                return (
-                    f"{class_name} <a href=\"{link}\">data available</a> for '{token}'"
-                )
-
-        return f"No {class_name} data available for '{token}'"
-
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
-        help_text = []
         if obj:
-            tokens = obj.tokenize()
-            word_types = obj.parse_word_type()
-            for i in range(len(word_types)):
-                if word_types[i]["lemmatize"]:
-                    filters = {"language": obj.language}
-                    if word_types[i]["lower_case"]:
-                        filters["base_form"] = tokens[i]
-                    else:
-                        filters["base_form__iexact"] = tokens[i]
+            help_text = collect_help_text(
+                obj.language, obj.tokenize(), obj.parse_word_type()
+            )
 
-                    if "v" in word_types[i]["word_types"]:
-                        help_text.append(
-                            self.generate_help_text("Verb", filters, tokens[i])
-                        )
-                    if "a" in word_types[i]["word_types"]:
-                        help_text.append(
-                            self.generate_help_text("Adjective", filters, tokens[i])
-                        )
-                    if "s" in word_types[i]["word_types"]:
-                        help_text.append(
-                            self.generate_help_text("Noun", filters, tokens[i])
-                        )
-
-                    filters = {"lemma": tokens[i], "language": obj.language}
-                    help_text.append(
-                        self.generate_help_text("Lemmatization", filters, tokens[i])
-                    )
-
-        if len(help_text):
-            form.base_fields["lemma"].help_text = mark_safe("<br>".join(help_text))
+            if len(help_text):
+                form.base_fields["lemma"].help_text = mark_safe("<br>".join(help_text))
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
@@ -254,8 +346,11 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
 
     radio_fields = {"type": admin.HORIZONTAL, "label_type": admin.HORIZONTAL}
     search_fields = (
-        "language",
         "lemma",
+        "comment",
+        "label_type",
+        "label",
+        "alternatives__lemma",
     )
     list_filter = (
         "language",
@@ -268,6 +363,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     )
     list_display = (
         "lemma",
+        "word_types",
         "language",
         "is_active",
         "all_diversity_dimensions",
@@ -307,6 +403,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
     search_fields = ("name",)
     list_filter = (
         "category",
+        "is_advanced",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )
@@ -342,26 +439,7 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     resource_class = SourceResource
 
-    fieldsets = (
-        (
-            "",
-            {
-                "fields": (
-                    "name",
-                    "url",
-                    "tags",
-                ),
-            },
-        ),
-        (
-            "Reference",
-            {
-                "classes": ("grp-collapse grp-closed",),
-                "fields": ("reference",),
-            },
-        ),
-    )
-
+    fields = ("name", "url", "tags", "reference", "comment")
     list_display = (
         "name",
         "tag_list",
@@ -385,6 +463,8 @@ class LemmatizationAdmin(ImportExportModelAdmin):
         model = Lemmatization
 
     resource_class = LemmatizationResource
+
+    fields = ("text", "lemma", "language", "comment")
     search_fields = ("text", "lemma")
     list_filter = ("language",)
     list_display = (
@@ -394,46 +474,65 @@ class LemmatizationAdmin(ImportExportModelAdmin):
     )
 
 
-class VerbResource(resources.ModelResource):
+class EnglishVerbResource(resources.ModelResource):
     class Meta:
-        model = Verb
+        model = EnglishVerb
 
 
-@admin.register(Verb)
-class VerbAdmin(ImportExportModelAdmin):
+@admin.register(EnglishVerb)
+class EnglishVerbAdmin(ImportExportModelAdmin):
     class Meta:
-        model = Verb
+        model = EnglishVerb
 
-    resource_class = VerbResource
+    resource_class = EnglishVerbResource
     search_fields = ("base_form",)
-    list_filter = ("language",)
+    fields = (
+        "base_form",
+        "present_participle",
+        "third_person_singular",
+        "past_tense",
+        "past_participle",
+        "comment",
+    )
+    list_display = (
+        "base_form",
+        "present_participle",
+        "third_person_singular",
+        "past_tense",
+        "past_participle",
+    )
 
 
-class AdjectiveResource(resources.ModelResource):
+class EnglishAdjectiveResource(resources.ModelResource):
     class Meta:
-        model = Adjective
+        model = EnglishAdjective
 
 
-@admin.register(Adjective)
+@admin.register(EnglishAdjective)
 class AdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
-        model = Adjective
+        model = EnglishAdjective
 
-    resource_class = AdjectiveResource
+    resource_class = EnglishAdjectiveResource
     search_fields = ("base_form",)
-    list_filter = ("language",)
+    fields = ("base_form", "comparative", "superlative", "comment")
+    list_display = ("base_form", "comparative", "superlative")
 
 
-class NounResource(resources.ModelResource):
+class EnglishNounResource(resources.ModelResource):
     class Meta:
-        model = Noun
+        model = EnglishNoun
 
 
-@admin.register(Noun)
+@admin.register(EnglishNoun)
 class NounAdmin(ImportExportModelAdmin):
     class Meta:
-        model = Noun
+        model = EnglishNoun
 
-    resource_class = NounResource
+    resource_class = EnglishNounResource
     search_fields = ("base_form",)
-    list_filter = ("language",)
+    fields = ("base_form", "plural", "comment")
+    list_display = (
+        "base_form",
+        "plural",
+    )

@@ -22,6 +22,8 @@ django-autocomplete-light = "*"
 django-grappelli = "*"
 django-computedfields = "*"
 django-taggit-bulk = "*"
+django-forms-dynamic = "*"
+inflex = "*"
 
 [dev-packages]
 

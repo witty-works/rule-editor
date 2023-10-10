@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "c3e5ac3d70f0429df0458a28001966ac12c9bbe38973796363d9f76db4545a03"
+            "sha256": "b7787b5926b97134827db7bca734b3660d138238b9a43f86645c247315a2ceef"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -204,6 +204,14 @@
             ],
             "version": "==0.2.3"
         },
+        "django-forms-dynamic": {
+            "hashes": [
+                "sha256:38339fa12722c1eeebb2f22d9a996c80be19339f17de718784c16e2ba3d3bc6f",
+                "sha256:59ce7053b120727001cb1f21436d507017cbd8a91a0c65ebc731c399cbadab0c"
+            ],
+            "index": "pypi",
+            "version": "==1.0.0"
+        },
         "django-formtools": {
             "hashes": [
                 "sha256:21f8d5dac737f1e636fa8a0a10969c1c32f525a6dfa27c29592827ba70d9643a",
@@ -291,6 +299,14 @@
             ],
             "markers": "python_version >= '3.5'",
             "version": "==3.4"
+        },
+        "inflex": {
+            "hashes": [
+                "sha256:1f4a4786c53dd9a06ae9851c689d7d9e5bfcf037c284a035d03c7428980e6a0c",
+                "sha256:e3fe30ba6c68bff6edd0ddfe08a9bc48e70f74f0748157cc4ba1979a68681e22"
+            ],
+            "index": "pypi",
+            "version": "==1.0.6"
         },
         "markuppy": {
             "hashes": [

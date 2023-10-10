@@ -11,8 +11,12 @@ from rules.models import (
     RuleLabelEnum,
     AlternativeTypeEnum,
     AlternativePluralizationEnum,
+    EnglishVerb,
+    EnglishAdjective,
+    EnglishNoun,
 )
 import csv
+from inflex import Noun, Verb, Adjective
 
 
 class Command(BaseCommand):
@@ -22,6 +26,43 @@ class Command(BaseCommand):
         parser.add_argument("--file", type=str)
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
+
+    def handle_lemmas(self, lemma: str, word_types: str):
+        match word_types:
+            case "v":
+                inflex = Verb(lemma)
+                try:
+                    verb = EnglishVerb.objects.get(base_form=lemma)
+                except EnglishVerb.DoesNotExist:
+                    verb = EnglishVerb()
+                    verb.base_form = lemma
+
+                verb.past_tense = inflex.past()
+                verb.past_participle = inflex.past_part()
+                verb.present_participle = inflex.pres_part()
+                verb.third_person_singular = inflex.singular()
+                verb.save()
+            case "a":
+                inflex = Adjective(lemma)
+                try:
+                    adjective = EnglishAdjective.objects.get(base_form=lemma)
+                except EnglishAdjective.DoesNotExist:
+                    adjective = EnglishAdjective()
+                    adjective.base_form = lemma
+
+                adjective.comparative = inflex.comparative()
+                adjective.superlative = inflex.superlative()
+                adjective.save()
+            case "s":
+                inflex = Noun(lemma)
+                try:
+                    noun = EnglishNoun.objects.get(base_form=lemma)
+                except EnglishNoun.DoesNotExist:
+                    noun = EnglishNoun()
+                    noun.base_form = lemma
+
+                noun.plural = inflex.plural()
+                noun.save()
 
     def handle(self, *args, **options):
         language = options["language"]
@@ -104,11 +145,15 @@ class Command(BaseCommand):
 
                 rule.save()
 
+                self.handle_lemmas(rule.lemma, rule.word_types)
+
                 priorties = [s.strip() for s in row["Priority"].split("|")]
                 if "HR" in priorties:
                     rule.tags.add("hr")
 
-                is_basic = "basic" in priorties
+                is_basic = (
+                    "basic" in priorties or row["Category"] == "openly_discriminating"
+                )
                 self.add_diversity_dimension(
                     rule, row["Primary_subcategory"], 0, is_basic
                 )
@@ -218,6 +263,9 @@ class Command(BaseCommand):
                 }
 
                 rule_tokens = rule.tokenize()
+                rule.label_type = None
+                rule.label = None
+
                 for alternative_column in alternative_columns:
                     alternatives = row[alternative_column].strip()
                     alternatives = alternatives.split("|")
@@ -226,9 +274,6 @@ class Command(BaseCommand):
 
                     alternative_count = 0
                     for alternative_lemma in alternatives:
-                        if alternative_lemma.strip() == "-":
-                            continue
-
                         if alternative_lemma.startswith("---"):
                             label = alternative_lemma.removeprefix("---").strip()
 
@@ -240,9 +285,12 @@ class Command(BaseCommand):
                                 rule.label = label
 
                             continue
+
+                        if " --- " in alternative_lemma:
+                            alternative_lemma, label = alternative_lemma.split(" --- ")
+                            label = label.strip()
                         else:
-                            rule.label_type = None
-                            rule.label = None
+                            label = None
 
                         alternative_lemma = alternative_lemma.strip()
 
@@ -251,7 +299,11 @@ class Command(BaseCommand):
 
                         alternative = Alternative()
                         alternative.rule = rule
-                        alternative.lemma = alternative_lemma.strip()
+                        alternative.lemma = alternative_lemma
+
+                        if alternative_lemma == "-":
+                            alternative.is_remove = True
+
                         if alternative_columns[alternative_column]["word_types"]:
                             alternative_rule_tokens = alternative.tokenize()
                             if len(rule_tokens) == len(alternative_rule_tokens):
@@ -260,12 +312,7 @@ class Command(BaseCommand):
                         alternative.order = alternative_count
                         alternative_count += 1
 
-                        if " --- " in alternative_lemma:
-                            alternative_lemma, label = alternative_lemma.split(" --- ")
-                            alternative.label = label.strip()
-                        else:
-                            alternative.label = None
-
+                        alternative.label = label
                         alternative.type = alternative_columns[alternative_column][
                             "type"
                         ]
@@ -280,6 +327,8 @@ class Command(BaseCommand):
                         ]["is_advanced"]
 
                         alternative.save()
+
+                        self.handle_lemmas(alternative.lemma, alternative.word_types)
 
                 # False_Positives
                 false_positives = row["False_Positives"].strip()
@@ -307,6 +356,7 @@ class Command(BaseCommand):
                 ]
                 for training_sentences_column in training_sentences_columns:
                     training_sentences = row[training_sentences_column].strip()
+                    training_sentences = training_sentences.replace("|", "\n")
                     training_sentences = training_sentences.split("\n")
 
                     for training_sentence_text in training_sentences:
@@ -324,12 +374,10 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(message))
 
     def add_diversity_dimension(
-        self, rule: Rule, subcategory_name: str, order: int, is_basic: bool = False
+        self, rule: Rule, name: str, order: int, is_basic: bool = False
     ):
         subcategory_name = (
-            subcategory_name
-            if not subcategory_name.startswith("advanced_")
-            else subcategory_name.removeprefix("advanced_")
+            name if not name.startswith("advanced_") else name.removeprefix("advanced_")
         )
 
         subcategory_name = (
@@ -349,4 +397,4 @@ class Command(BaseCommand):
             )
             rule_diversity_dimensions_driver.save()
         except DiversityDimension.DoesNotExist:
-            rule.tags.add(subcategory_name)
+            rule.tags.add(name)
