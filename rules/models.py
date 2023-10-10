@@ -441,7 +441,7 @@ class Rule(
         return diversity_dimensions
 
 
-class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
+class RuleDiversityDimension(BaseTimestampedModel):
     class Meta:
         unique_together = (("rule", "diversity_dimension"),)
         ordering = ("order",)
@@ -449,7 +449,7 @@ class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
     def __str__(self):
         return str(self.diversity_dimension)
 
-    order_with_respect_to = "rule"
+    order = models.PositiveIntegerField("order", db_index=True)
 
     rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
     diversity_dimension = models.ForeignKey(
@@ -458,7 +458,6 @@ class RuleDiversityDimension(OrderedModel, BaseTimestampedModel):
 
 
 class Alternative(
-    OrderedModel,
     BaseLemmaModel,
     BaseTimestampedModel,
     BaseCreatedByModel,
@@ -482,7 +481,7 @@ class Alternative(
 
         return super().clean()
 
-    order_with_respect_to = "rule"
+    order = models.PositiveIntegerField("order", db_index=True)
 
     rule = models.ForeignKey(
         Rule, related_name="alternatives", on_delete=models.CASCADE

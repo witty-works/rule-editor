@@ -7,21 +7,17 @@ from django.urls import reverse, reverse_lazy
 from django.conf import settings
 
 import requests
-from requests.auth import HTTPBasicAuth
 import json
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from ordered_model.admin import (
-    OrderedStackedInline,
-    OrderedInlineModelAdminMixin,
-    OrderedModelAdmin,
-)
+from ordered_model.admin import OrderedModelAdmin
 from rangefilter.filter import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
 from dal import autocomplete
 from taggit_bulk.actions import tag_wizard
 from dynamic_forms import DynamicField, DynamicFormMixin
+from grappelli.forms import GrappelliSortableHiddenMixin
 
 from .models import (
     Rule,
@@ -120,7 +116,7 @@ class AlternativeForm(forms.ModelForm):
         }
 
 
-class AlternativeInline(OrderedStackedInline):
+class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative
     form = AlternativeForm
     fields = (
@@ -136,12 +132,12 @@ class AlternativeInline(OrderedStackedInline):
         "tags",
         "source",
         "comment",
-        "move_up_down_links",
+        "order",
     )
     radio_fields = {"type": admin.HORIZONTAL, "pluralization": admin.HORIZONTAL}
-    readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
-    extra = 1
+    extra = 0
+    sortable_field_name = "order"
 
 
 class FalsePositiveInline(admin.StackedInline):
@@ -150,6 +146,7 @@ class FalsePositiveInline(admin.StackedInline):
         "false_positive",
         "comment",
     )
+    extra = 0
 
 
 def apply_rule(values):
@@ -233,6 +230,7 @@ class TrainingSentenceInline(admin.StackedInline):
         "spacy",
         "response",
     )
+    extra = 0
 
 
 class RuleDiversityDimensionForm(forms.ModelForm):
@@ -248,7 +246,7 @@ class RuleDiversityDimensionForm(forms.ModelForm):
         }
 
 
-class RuleDiversityDimensionInline(OrderedStackedInline):
+class RuleDiversityDimensionInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     def get_formset(self, request, obj=None, **kwargs):
         res = super().get_formset(request, obj=None, **kwargs)
         for formfield in res.form.base_fields.values():
@@ -262,15 +260,15 @@ class RuleDiversityDimensionInline(OrderedStackedInline):
     form = RuleDiversityDimensionForm
     fields = (
         "diversity_dimension",
-        "move_up_down_links",
+        "order",
     )
-    readonly_fields = ("move_up_down_links",)
     ordering = ("order",)
-    extra = 1
+    sortable_field_name = "order"
+    extra = 0
 
 
 @admin.register(Rule)
-class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
+class RuleAdmin(CreatedByAdmin):
     class Meta:
         model = Rule
 
