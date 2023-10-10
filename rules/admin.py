@@ -416,7 +416,7 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     resource_class = SourceResource
 
-    fields = ("name", "url", "tags", "reference")
+    fields = ("name", "url", "tags", "reference", "comment")
     list_display = (
         "name",
         "tag_list",

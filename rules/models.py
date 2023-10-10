@@ -97,7 +97,7 @@ class BaseCommentableModel(BaseModel):
         abstract = True
 
 
-class Source(BaseTimestampedModel, BaseCreatedByModel):
+class Source(BaseTimestampedModel, BaseCommentableModel, BaseCreatedByModel):
     def __str__(self):
         return self.name
 
