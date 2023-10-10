@@ -16,6 +16,28 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
+def fetch_json(path, data=None):
+    url = settings.NLP_API + path
+
+    auth = (
+        HTTPBasicAuth(settings.NLP_API_USER, settings.NLP_API_PASSWORD)
+        if settings.NLP_API_USER is not None
+        else None
+    )
+
+    if data is None:
+        r = requests.get(url, auth=auth)
+    else:
+        r = requests.post(url, json=data, auth=auth)
+
+    if r.status_code != 200:
+        body = r.json()
+        error = body["detail"] if "detail" in body else r.text
+        raise ValidationError(path + ": " + error)
+
+    return r.json()
+
+
 class LanguageEnum(models.TextChoices):
     EN = "en", "English"
     DE = "de", "German"
@@ -151,34 +173,16 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
 
         return self.language
 
-    def get_json(self, path):
-        url = settings.NLP_API + path
-
-        auth = (
-            HTTPBasicAuth(settings.NLP_API_USER, settings.NLP_API_PASSWORD)
-            if settings.NLP_API_USER is not None
-            else None
-        )
-
-        r = requests.get(url, auth=auth)
-
-        if r.status_code != 200:
-            body = r.json()
-            error = body["detail"] if "detail" in body else r.text
-            raise ValidationError(path + ": " + error)
-
-        return r.json()
-
     def tokenize(self):
         path = f"/tokenize?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}"
-        return self.get_json(path)
+        return fetch_json(path)
 
     def parse_word_type(self):
         if self.word_types is None or len(self.word_types) == 0:
             return None
 
         path = f"/parse-word-type?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}&word_types={requests.utils.quote(self.word_types)}"
-        return self.get_json(path)
+        return fetch_json(path)
 
     def save(self, *args, **kwargs):
         self.full_clean()

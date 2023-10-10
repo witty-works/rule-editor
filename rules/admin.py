@@ -35,6 +35,7 @@ from .models import (
     Verb,
     Adjective,
     Noun,
+    fetch_json,
 )
 
 
@@ -103,14 +104,6 @@ def apply_rule(values):
     if values is None or "rule" not in values or "text" not in values:
         return None
 
-    url = settings.NLP_API + "/debug/rule"
-
-    auth = (
-        HTTPBasicAuth(settings.NLP_API_USER, settings.NLP_API_PASSWORD)
-        if settings.NLP_API_USER is not None
-        else None
-    )
-
     rule = Rule.objects.get(pk=values["rule"])
 
     alternatives = []
@@ -140,12 +133,19 @@ def apply_rule(values):
         "false_positives": false_positives,
     }
 
-    r = requests.post(url, json=data, auth=auth)
-    if r.status_code != 200:
-        body = r.json()
-        return body["detail"] if "detail" in body else r.text
+    path = "/debug/rule"
+    return fetch_json(path, data)
 
-    return r.json()
+
+def apply_spacy(values):
+    if values is None or "rule" not in values or "text" not in values:
+        return None
+
+    rule = Rule.objects.get(pk=values["rule"])
+
+    text = values["text"]
+    path = f"/debug/spacy?lang={requests.utils.quote(rule.language)}&text={requests.utils.quote(text)}"
+    return fetch_json(path)
 
 
 class PrettyJSONEncoder(json.JSONEncoder):
@@ -161,6 +161,13 @@ class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
         initial=lambda form: apply_rule(form.initial),
         encoder=lambda form: PrettyJSONEncoder,
     )
+    spacy = DynamicField(
+        forms.JSONField,
+        disabled=True,
+        required=False,
+        initial=lambda form: apply_spacy(form.initial),
+        encoder=lambda form: PrettyJSONEncoder,
+    )
 
 
 class TrainingSentenceInline(admin.StackedInline):
@@ -171,6 +178,7 @@ class TrainingSentenceInline(admin.StackedInline):
         "is_false_positive",
         "is_training_data",
         "comment",
+        "spacy",
         "response",
     )
 
