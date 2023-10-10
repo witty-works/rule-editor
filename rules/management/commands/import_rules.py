@@ -151,7 +151,9 @@ class Command(BaseCommand):
                 if "HR" in priorties:
                     rule.tags.add("hr")
 
-                is_basic = "basic" in priorties
+                is_basic = (
+                    "basic" in priorties or row["Category"] == "openly_discriminating"
+                )
                 self.add_diversity_dimension(
                     rule, row["Primary_subcategory"], 0, is_basic
                 )
