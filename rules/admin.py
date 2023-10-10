@@ -379,6 +379,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
     search_fields = ("name",)
     list_filter = (
         "category",
+        "is_advanced",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )
@@ -414,26 +415,7 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     resource_class = SourceResource
 
-    fieldsets = (
-        (
-            "",
-            {
-                "fields": (
-                    "name",
-                    "url",
-                    "tags",
-                ),
-            },
-        ),
-        (
-            "Reference",
-            {
-                "classes": ("grp-collapse grp-closed",),
-                "fields": ("reference",),
-            },
-        ),
-    )
-
+    fields = ("name", "url", "tags", "reference")
     list_display = (
         "name",
         "tag_list",
@@ -457,6 +439,8 @@ class LemmatizationAdmin(ImportExportModelAdmin):
         model = Lemmatization
 
     resource_class = LemmatizationResource
+
+    fields = ("text", "lemma", "language", "comment")
     search_fields = ("text", "lemma")
     list_filter = ("language",)
     list_display = (
