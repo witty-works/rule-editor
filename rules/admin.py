@@ -335,8 +335,11 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
 
     radio_fields = {"type": admin.HORIZONTAL, "label_type": admin.HORIZONTAL}
     search_fields = (
-        "language",
         "lemma",
+        "comment",
+        "label_type",
+        "label",
+        "alternatives__lemma",
     )
     list_filter = (
         "language",
@@ -349,6 +352,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     )
     list_display = (
         "lemma",
+        "word_types",
         "language",
         "is_active",
         "all_diversity_dimensions",
