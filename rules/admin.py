@@ -32,9 +32,9 @@ from .models import (
     FalsePositive,
     TrainingSentence,
     Lemmatization,
-    Verb,
-    Adjective,
-    Noun,
+    EnglishVerb,
+    EnglishAdjective,
+    EnglishNoun,
     fetch_json,
 )
 
@@ -225,7 +225,15 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     def all_diversity_dimensions(self, obj):
         return ", ".join([d.name for d in obj.diversity_dimensions.all()])
 
-    def generate_help_text(self, class_name, filters, token):
+    def generate_help_text(self, name, language, filters, token):
+        match language:
+            case "de":
+                class_name = "German" + name
+            case "en":
+                class_name = "English" + name
+            case _:
+                class_name = name
+
         cls = get_class(class_name)
         instances = cls.objects.filter(**filters)
         if instances:
@@ -233,11 +241,9 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
                 link = reverse(
                     f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
                 )
-                return (
-                    f"{class_name} <a href=\"{link}\">data available</a> for '{token}'"
-                )
+                return f"{name} <a href=\"{link}\">data available</a> for '{token}'"
 
-        return f"No {class_name} data available for '{token}'"
+        return f"No {name} data available for '{token}'"
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -248,7 +254,7 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
             word_types = obj.parse_word_type()
             for i in range(len(word_types)):
                 if word_types[i]["lemmatize"]:
-                    filters = {"language": obj.language}
+                    filters = {}
                     if word_types[i]["lower_case"]:
                         filters["base_form"] = tokens[i]
                     else:
@@ -256,20 +262,26 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
 
                     if "v" in word_types[i]["word_types"]:
                         help_text.append(
-                            self.generate_help_text("Verb", filters, tokens[i])
+                            self.generate_help_text(
+                                "Verb", obj.language, filters, tokens[i]
+                            )
                         )
                     if "a" in word_types[i]["word_types"]:
                         help_text.append(
-                            self.generate_help_text("Adjective", filters, tokens[i])
+                            self.generate_help_text(
+                                "Adjective", obj.language, filters, tokens[i]
+                            )
                         )
                     if "s" in word_types[i]["word_types"]:
                         help_text.append(
-                            self.generate_help_text("Noun", filters, tokens[i])
+                            self.generate_help_text(
+                                "Noun", obj.language, filters, tokens[i]
+                            )
                         )
 
                     filters = {"lemma": tokens[i], "language": obj.language}
                     help_text.append(
-                        self.generate_help_text("Lemmatization", filters, tokens[i])
+                        self.generate_help_text("Lemmatization", None, filters, tokens[i])
                     )
 
         if len(help_text):
@@ -463,46 +475,64 @@ class LemmatizationAdmin(ImportExportModelAdmin):
     )
 
 
-class VerbResource(resources.ModelResource):
+class EnglishVerbResource(resources.ModelResource):
     class Meta:
-        model = Verb
+        model = EnglishVerb
 
 
-@admin.register(Verb)
-class VerbAdmin(ImportExportModelAdmin):
+@admin.register(EnglishVerb)
+class EnglishVerbAdmin(ImportExportModelAdmin):
     class Meta:
-        model = Verb
+        model = EnglishVerb
 
-    resource_class = VerbResource
+    resource_class = EnglishVerbResource
     search_fields = ("base_form",)
-    list_filter = ("language",)
+    fields = (
+        "base_form",
+        "present_participle",
+        "third_person_singular",
+        "past_tense",
+        "past_participle",
+        "comment",
+    )
+    list_display = (
+        "base_form",
+        "present_participle",
+        "third_person_singular",
+        "past_tense",
+        "past_participle",
+    )
 
-
-class AdjectiveResource(resources.ModelResource):
+class EnglishAdjectiveResource(resources.ModelResource):
     class Meta:
-        model = Adjective
+        model = EnglishAdjective
 
 
-@admin.register(Adjective)
+@admin.register(EnglishAdjective)
 class AdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
-        model = Adjective
+        model = EnglishAdjective
 
-    resource_class = AdjectiveResource
+    resource_class = EnglishAdjectiveResource
     search_fields = ("base_form",)
-    list_filter = ("language",)
+    fields = ("base_form", "comparative", "superlative", "comment")
+    list_display = ("base_form", "comparative", "superlative")
 
 
-class NounResource(resources.ModelResource):
+class EnglishNounResource(resources.ModelResource):
     class Meta:
-        model = Noun
+        model = EnglishNoun
 
 
-@admin.register(Noun)
+@admin.register(EnglishNoun)
 class NounAdmin(ImportExportModelAdmin):
     class Meta:
-        model = Noun
+        model = EnglishNoun
 
-    resource_class = NounResource
+    resource_class = EnglishNounResource
     search_fields = ("base_form",)
-    list_filter = ("language",)
+    fields = ("base_form", "plural", "comment")
+    list_display = (
+        "base_form",
+        "plural",
+    )

@@ -560,34 +560,29 @@ class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     )
 
 
-class Verb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
 
-    class Meta:
-        unique_together = (("language", "base_form"),)
-
     base_form = models.CharField(max_length=255, unique=True)
-    language = EnumField(LanguageEnum, default=LanguageEnum.DE)
+    past_tense = models.CharField(max_length=255, null=True, blank=True)
+    past_participle = models.CharField(max_length=255, null=True, blank=True)
+    present_participle = models.CharField(max_length=255, null=True, blank=True)
+    third_person_singular = models.CharField(max_length=255, null=True, blank=True)
 
 
-class Adjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
 
-    class Meta:
-        unique_together = (("language", "base_form"),)
-
-    base_form = models.CharField(max_length=255, unique=True)
-    language = EnumField(LanguageEnum, default=LanguageEnum.DE)
+    base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
+    comparative = models.CharField(max_length=255, null=True, blank=True)
+    superlative = models.CharField(max_length=255, null=True, blank=True)
 
 
-class Noun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
 
-    class Meta:
-        unique_together = (("language", "base_form"),)
-
-    base_form = models.CharField(max_length=255, unique=True)
-    language = EnumField(LanguageEnum, default=LanguageEnum.DE)
+    base_form = models.CharField(max_length=255, unique=True, help_text="ie. singular")
+    plural = models.CharField(max_length=255, null=True, blank=True)

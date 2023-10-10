@@ -11,8 +11,12 @@ from rules.models import (
     RuleLabelEnum,
     AlternativeTypeEnum,
     AlternativePluralizationEnum,
+    EnglishVerb,
+    EnglishAdjective,
+    EnglishNoun,
 )
 import csv
+from inflex import Noun, Verb, Adjective
 
 
 class Command(BaseCommand):
@@ -22,6 +26,43 @@ class Command(BaseCommand):
         parser.add_argument("--file", type=str)
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
+
+    def handle_lemmas(self, lemma: str, word_types: str):
+        match word_types:
+            case "v":
+                inflex = Verb(lemma)
+                try:
+                    verb = EnglishVerb.objects.get(base_form=lemma)
+                except EnglishVerb.DoesNotExist:
+                    verb = EnglishVerb()
+                    verb.base_form = lemma
+
+                verb.past_tense = inflex.past()
+                verb.past_participle = inflex.past_part()
+                verb.present_participle = inflex.pres_part()
+                verb.third_person_singular = inflex.singular()
+                verb.save()
+            case "a":
+                inflex = Adjective(lemma)
+                try:
+                    adjective = EnglishAdjective.objects.get(base_form=lemma)
+                except EnglishAdjective.DoesNotExist:
+                    adjective = EnglishAdjective()
+                    adjective.base_form = lemma
+
+                adjective.comparative = inflex.comparative()
+                adjective.superlative = inflex.superlative()
+                adjective.save()
+            case "s":
+                inflex = Noun(lemma)
+                try:
+                    noun = EnglishNoun.objects.get(base_form=lemma)
+                except EnglishNoun.DoesNotExist:
+                    noun = EnglishNoun()
+                    noun.base_form = lemma
+
+                noun.plural = inflex.plural()
+                noun.save()
 
     def handle(self, *args, **options):
         language = options["language"]
@@ -103,6 +144,8 @@ class Command(BaseCommand):
                     rule.source = source
 
                 rule.save()
+
+                self.handle_lemmas(rule.lemma, rule.word_types)
 
                 priorties = [s.strip() for s in row["Priority"].split("|")]
                 if "HR" in priorties:
@@ -282,6 +325,8 @@ class Command(BaseCommand):
                         ]["is_advanced"]
 
                         alternative.save()
+
+                        self.handle_lemmas(alternative.lemma, alternative.word_types)
 
                 # False_Positives
                 false_positives = row["False_Positives"].strip()

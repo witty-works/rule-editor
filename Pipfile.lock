@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "464504cc41764c6ea8913ef148fa573a735e680d439a3518b67112276812c794"
+            "sha256": "b7787b5926b97134827db7bca734b3660d138238b9a43f86645c247315a2ceef"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -299,6 +299,14 @@
             ],
             "markers": "python_version >= '3.5'",
             "version": "==3.4"
+        },
+        "inflex": {
+            "hashes": [
+                "sha256:1f4a4786c53dd9a06ae9851c689d7d9e5bfcf037c284a035d03c7428980e6a0c",
+                "sha256:e3fe30ba6c68bff6edd0ddfe08a9bc48e70f74f0748157cc4ba1979a68681e22"
+            ],
+            "index": "pypi",
+            "version": "==1.0.6"
         },
         "markuppy": {
             "hashes": [
