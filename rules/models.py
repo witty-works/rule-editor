@@ -250,7 +250,11 @@ class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
 
 
 class DiversityDimension(
-    OrderedModel, ComputedFieldsModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
+    OrderedModel,
+    ComputedFieldsModel,
+    BaseTimestampedModel,
+    BaseCreatedByModel,
+    BaseCommentableModel,
 ):
     class Meta(OrderedModel.Meta):
         unique_together = (("parent_name", "is_advanced"),)
@@ -461,7 +465,7 @@ class Alternative(
         ordering = ("order",)
 
     def __str__(self):
-        return self.lemma[0:50]
+        return "[REMOVE]" if self.is_remove else self.lemma[0:50]
 
     def save(self, *args, **kwargs):
         self.full_clean()
@@ -471,6 +475,8 @@ class Alternative(
         if self.is_remove:
             self.lemma = "-"
             self.word_types = ""
+
+        return super().clean()
 
     order_with_respect_to = "rule"
 
@@ -483,7 +489,10 @@ class Alternative(
         AlternativePluralizationEnum,
         default=AlternativePluralizationEnum.DEFAULT,
         help_text="Show alternative in case rule triggered on",
-        AlternativePluralizationEnum, default=AlternativePluralizationEnum.DEFAULT
+    )
+    is_remove = models.BooleanField(
+        default=False,
+        help_text="User will be offered to remove the words instead of a text alternative",
     )
     is_inspiration = models.BooleanField(
         default=False,

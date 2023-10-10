@@ -73,6 +73,7 @@ class AlternativeInline(OrderedStackedInline):
     fields = (
         "lemma",
         "word_types",
+        "is_remove",
         "is_inspiration",
         "is_advanced",
         "pluralization",
