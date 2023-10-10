@@ -218,6 +218,9 @@ class Command(BaseCommand):
                 }
 
                 rule_tokens = rule.tokenize()
+                rule.label_type = None
+                rule.label = None
+
                 for alternative_column in alternative_columns:
                     alternatives = row[alternative_column].strip()
                     alternatives = alternatives.split("|")
@@ -226,9 +229,6 @@ class Command(BaseCommand):
 
                     alternative_count = 0
                     for alternative_lemma in alternatives:
-                        if alternative_lemma.strip() == "-":
-                            continue
-
                         if alternative_lemma.startswith("---"):
                             label = alternative_lemma.removeprefix("---").strip()
 
@@ -240,9 +240,12 @@ class Command(BaseCommand):
                                 rule.label = label
 
                             continue
+
+                        if " --- " in alternative_lemma:
+                            alternative_lemma, label = alternative_lemma.split(" --- ")
+                            label = label.strip()
                         else:
-                            rule.label_type = None
-                            rule.label = None
+                            label = None
 
                         alternative_lemma = alternative_lemma.strip()
 
@@ -251,7 +254,11 @@ class Command(BaseCommand):
 
                         alternative = Alternative()
                         alternative.rule = rule
-                        alternative.lemma = alternative_lemma.strip()
+                        alternative.lemma = alternative_lemma
+
+                        if alternative_lemma == "-":
+                            alternative.is_remove = True
+
                         if alternative_columns[alternative_column]["word_types"]:
                             alternative_rule_tokens = alternative.tokenize()
                             if len(rule_tokens) == len(alternative_rule_tokens):
@@ -260,12 +267,7 @@ class Command(BaseCommand):
                         alternative.order = alternative_count
                         alternative_count += 1
 
-                        if " --- " in alternative_lemma:
-                            alternative_lemma, label = alternative_lemma.split(" --- ")
-                            alternative.label = label.strip()
-                        else:
-                            alternative.label = None
-
+                        alternative.label = label
                         alternative.type = alternative_columns[alternative_column][
                             "type"
                         ]

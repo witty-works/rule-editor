@@ -4,6 +4,11 @@ from django.contrib import admin
 from django import forms
 from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy
+from django.conf import settings
+
+import requests
+from requests.auth import HTTPBasicAuth
+import json
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
@@ -16,6 +21,7 @@ from rangefilter.filter import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
 from dal import autocomplete
 from taggit_bulk.actions import tag_wizard
+from dynamic_forms import DynamicField, DynamicFormMixin
 
 from .models import (
     Rule,
@@ -29,6 +35,7 @@ from .models import (
     Verb,
     Adjective,
     Noun,
+    fetch_json,
 )
 
 
@@ -67,6 +74,7 @@ class AlternativeInline(OrderedStackedInline):
     fields = (
         "lemma",
         "word_types",
+        "is_remove",
         "is_inspiration",
         "is_advanced",
         "pluralization",
@@ -92,13 +100,86 @@ class FalsePositiveInline(admin.StackedInline):
     )
 
 
+def apply_rule(values):
+    if values is None or "rule" not in values or "text" not in values:
+        return None
+
+    rule = Rule.objects.get(pk=values["rule"])
+
+    alternatives = []
+    for alternative in rule.alternatives.all():
+        alternative = {
+            "lemma": alternative.lemma,
+            "word_types": alternative.word_types,
+            "type": str(alternative.type),
+            "pluralization": str(alternative.pluralization),
+            "is_inspiration": alternative.is_inspiration,
+            "is_advanced": alternative.is_advanced,
+        }
+        alternatives.append(alternative)
+
+    false_positives = []
+    for false_positive in rule.false_positives.all():
+        false_positives.append(false_positive.false_positive)
+
+    data = {
+        "text": values["text"],
+        "lang": str(rule.language),
+        "lemma": rule.lemma,
+        "word_types": rule.word_types,
+        "subcategories": rule.diversity_dimension_json,
+        "lower_case": True,
+        "alternatives": alternatives,
+        "false_positives": false_positives,
+    }
+
+    path = "/debug/rule"
+    return fetch_json(path, data)
+
+
+def apply_spacy(values):
+    if values is None or "rule" not in values or "text" not in values:
+        return None
+
+    rule = Rule.objects.get(pk=values["rule"])
+
+    text = values["text"]
+    path = f"/debug/spacy?lang={requests.utils.quote(rule.language)}&text={requests.utils.quote(text)}"
+    return fetch_json(path)
+
+
+class PrettyJSONEncoder(json.JSONEncoder):
+    def __init__(self, *args, indent, sort_keys, **kwargs):
+        super().__init__(*args, indent=2, sort_keys=True, **kwargs)
+
+
+class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
+    response = DynamicField(
+        forms.JSONField,
+        disabled=True,
+        required=False,
+        initial=lambda form: apply_rule(form.initial),
+        encoder=lambda form: PrettyJSONEncoder,
+    )
+    spacy = DynamicField(
+        forms.JSONField,
+        disabled=True,
+        required=False,
+        initial=lambda form: apply_spacy(form.initial),
+        encoder=lambda form: PrettyJSONEncoder,
+    )
+
+
 class TrainingSentenceInline(admin.StackedInline):
     model = TrainingSentence
+    form = TrainingSentenceForm
     fields = (
         "text",
         "is_false_positive",
         "is_training_data",
         "comment",
+        "spacy",
+        "response",
     )
 
 
@@ -307,6 +388,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
     search_fields = ("name",)
     list_filter = (
         "category",
+        "is_advanced",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )
@@ -342,26 +424,7 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     resource_class = SourceResource
 
-    fieldsets = (
-        (
-            "",
-            {
-                "fields": (
-                    "name",
-                    "url",
-                    "tags",
-                ),
-            },
-        ),
-        (
-            "Reference",
-            {
-                "classes": ("grp-collapse grp-closed",),
-                "fields": ("reference",),
-            },
-        ),
-    )
-
+    fields = ("name", "url", "tags", "reference", "comment")
     list_display = (
         "name",
         "tag_list",
@@ -385,6 +448,8 @@ class LemmatizationAdmin(ImportExportModelAdmin):
         model = Lemmatization
 
     resource_class = LemmatizationResource
+
+    fields = ("text", "lemma", "language", "comment")
     search_fields = ("text", "lemma")
     list_filter = ("language",)
     list_display = (
