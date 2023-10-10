@@ -87,7 +87,11 @@ class BaseCreatedByModel(BaseModel):
 
 
 class BaseCommentableModel(BaseModel):
-    comment = models.TextField(null=True, blank=True)
+    comment = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Any useful comments to keep for internal purposes.",
+    )
 
     class Meta:
         abstract = True
@@ -116,9 +120,19 @@ class Source(BaseTimestampedModel, BaseCreatedByModel):
         if len(errors):
             raise ValidationError(errors)
 
-    name = models.CharField(max_length=255, unique=True)
-    url = models.CharField(max_length=255, null=True, blank=True)
-    reference = models.TextField(null=True, blank=True)
+    name = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Some short text identifier for the source",
+    )
+    url = models.CharField(
+        max_length=255, null=True, blank=True, help_text="URL to the source"
+    )
+    reference = models.TextField(
+        null=True,
+        blank=True,
+        help_text="A reference to a non URL source, f.e. ISBN, journal name/number etc.",
+    )
     tags = TaggableManager(blank=True)
 
 
@@ -192,20 +206,33 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
     tokenized = None
     parsed_word_type = None
 
-    lemma = models.CharField(max_length=255)
+    lemma = models.CharField(
+        max_length=255,
+        help_text="Lemma is one or multiple words (tokens) either in lemmatized for or not (depending on the word_types)",
+    )
 
     @computed(models.JSONField(default=dict))
     def lemma_json(self):
         return self.tokenized
 
-    word_types = models.CharField(max_length=255, null=True, blank=True)
+    word_types = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="'|' separated list of word types (s, a, adv, v, conj, emoji) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
+    )
 
     @computed(models.JSONField(default=dict))
     def word_types_json(self):
         return [] if self.parsed_word_type is None else self.parsed_word_type
 
     is_active = models.BooleanField(default=True)
-    label = models.TextField(null=True, blank=True)
+    label = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Additional label to add to the short explanation/alternative",
+    )
 
 
 class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -215,11 +242,15 @@ class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.name
 
-    name = models.CharField(max_length=255, unique=True)
+    name = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Machine name of the category",
+    )
 
 
 class DiversityDimension(
-    OrderedModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
+    OrderedModel, ComputedFieldsModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
 ):
     class Meta(OrderedModel.Meta):
         unique_together = (("parent_name", "is_advanced"),)
@@ -227,10 +258,22 @@ class DiversityDimension(
     def __str__(self):
         return self.name
 
-    name = models.CharField(max_length=255, unique=True)
-    parent_name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    is_advanced = models.BooleanField(default=True)
+    name = models.CharField(
+        max_length=255,
+        unique=True,
+        help_text="Machine name of the diversity dimension (with optional '_advanced' suffix)",
+    )
+    parent_name = models.CharField(
+        max_length=255,
+        help_text="Machine name of the diversity dimension (without optional '_advanced' suffix)",
+    )
+    category = models.ForeignKey(
+        Category, on_delete=models.CASCADE, help_text="Top-level category"
+    )
+
+    @computed(models.BooleanField(null=True, blank=True))
+    def is_advanced(self):
+        self.is_advanced = self.name.endswith("_advanced")
 
 
 class Rule(
@@ -322,7 +365,9 @@ class Rule(
         default=False,
         help_text="Uses custom machine learning model to determine if to highlight in the given context.",
     )
-    is_marked_for_review = models.BooleanField(default=False)
+    is_marked_for_review = models.BooleanField(
+        default=False, help_text="Rule should be reviewed"
+    )
 
     diversity_dimensions = models.ManyToManyField(
         DiversityDimension, through="RuleDiversityDimension"
@@ -332,9 +377,24 @@ class Rule(
         User, null=True, blank=True, on_delete=models.SET_NULL, related_name="owner"
     )
 
-    explanation = models.CharField(max_length=255, null=True, blank=True)
-    emoji = models.CharField(max_length=5, null=True, blank=True)
-    url = models.CharField(max_length=255, null=True, blank=True)
+    explanation = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Override the diversity dimension text with a custom explanation",
+    )
+    emoji = models.CharField(
+        max_length=5,
+        null=True,
+        blank=True,
+        help_text="Override the diversity dimension emoji with a custom emoji",
+    )
+    url = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Override the diversity dimension URL with a custom URL",
+    )
 
     @computed(models.CharField(max_length=255, null=True, blank=True))
     def first_token(self):
@@ -403,6 +463,15 @@ class Alternative(
     def __str__(self):
         return self.lemma[0:50]
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        return super().save(*args, **kwargs)
+
+    def clean(self):
+        if self.is_remove:
+            self.lemma = "-"
+            self.word_types = ""
+
     order_with_respect_to = "rule"
 
     rule = models.ForeignKey(
@@ -411,10 +480,19 @@ class Alternative(
 
     type = EnumField(AlternativeTypeEnum, default=AlternativeTypeEnum.DEFAULT)
     pluralization = EnumField(
+        AlternativePluralizationEnum,
+        default=AlternativePluralizationEnum.DEFAULT,
+        help_text="Show alternative in case rule triggered on",
         AlternativePluralizationEnum, default=AlternativePluralizationEnum.DEFAULT
     )
-    is_inspiration = models.BooleanField(default=False)
-    is_advanced = models.BooleanField(default=True)
+    is_inspiration = models.BooleanField(
+        default=False,
+        help_text="Alternative will be marked as inspiration, hidden if user has inspiration disabled. Also never adjusted for grammatical correctness",
+    )
+    is_advanced = models.BooleanField(
+        default=True,
+        help_text="Only show if user has diversity dimension enabled at advanced level.",
+    )
 
     @computed(models.BooleanField(default=False))
     def is_placeholder(self):
@@ -462,9 +540,11 @@ class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     class Meta:
         unique_together = (("language", "text"),)
 
-    text = models.CharField(max_length=255)
+    text = models.CharField(max_length=255, help_text="Source text")
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
-    lemma = models.CharField(max_length=255)
+    lemma = models.CharField(
+        max_length=255, help_text="Lemma used for the given source text"
+    )
 
 
 class Verb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
