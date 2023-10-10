@@ -43,6 +43,58 @@ def get_class(class_name):
     return getattr(sys.modules[__name__], class_name)
 
 
+def generate_help_text(name, language, filters, token):
+    match language:
+        case "de":
+            class_name = "German" + name
+        case "en":
+            class_name = "English" + name
+        case _:
+            class_name = name
+
+    cls = get_class(class_name)
+    instances = cls.objects.filter(**filters)
+    if instances:
+        for instance in instances:
+            link = reverse(
+                f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
+            )
+            return f"{name} <a href=\"{link}\">data available</a> for '{token}'"
+
+    return f"No {name} data available for '{token}'"
+
+
+def collect_help_text(language, tokens, word_types):
+    help_text = []
+    for i in range(len(word_types)):
+        if word_types[i]["lemmatize"]:
+            filters = {}
+            if word_types[i]["lower_case"]:
+                filters["base_form"] = tokens[i]
+            else:
+                filters["base_form__iexact"] = tokens[i]
+
+            if "v" in word_types[i]["word_types"]:
+                help_text.append(
+                    generate_help_text("Verb", language, filters, tokens[i])
+                )
+            if "a" in word_types[i]["word_types"]:
+                help_text.append(
+                    generate_help_text("Adjective", language, filters, tokens[i])
+                )
+            if "s" in word_types[i]["word_types"]:
+                help_text.append(
+                    generate_help_text("Noun", language, filters, tokens[i])
+                )
+
+            filters = {"lemma": tokens[i], "language": language}
+            help_text.append(
+                generate_help_text("Lemmatization", None, filters, tokens[i])
+            )
+
+    return help_text
+
+
 class CreatedByAdmin(admin.ModelAdmin):
     base_readonly_fields = "created_by"
 
@@ -225,67 +277,16 @@ class RuleAdmin(OrderedInlineModelAdminMixin, CreatedByAdmin):
     def all_diversity_dimensions(self, obj):
         return ", ".join([d.name for d in obj.diversity_dimensions.all()])
 
-    def generate_help_text(self, name, language, filters, token):
-        match language:
-            case "de":
-                class_name = "German" + name
-            case "en":
-                class_name = "English" + name
-            case _:
-                class_name = name
-
-        cls = get_class(class_name)
-        instances = cls.objects.filter(**filters)
-        if instances:
-            for instance in instances:
-                link = reverse(
-                    f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
-                )
-                return f"{name} <a href=\"{link}\">data available</a> for '{token}'"
-
-        return f"No {name} data available for '{token}'"
-
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
-        help_text = []
         if obj:
-            tokens = obj.tokenize()
-            word_types = obj.parse_word_type()
-            for i in range(len(word_types)):
-                if word_types[i]["lemmatize"]:
-                    filters = {}
-                    if word_types[i]["lower_case"]:
-                        filters["base_form"] = tokens[i]
-                    else:
-                        filters["base_form__iexact"] = tokens[i]
+            help_text = collect_help_text(
+                obj.language, obj.tokenize(), obj.parse_word_type()
+            )
 
-                    if "v" in word_types[i]["word_types"]:
-                        help_text.append(
-                            self.generate_help_text(
-                                "Verb", obj.language, filters, tokens[i]
-                            )
-                        )
-                    if "a" in word_types[i]["word_types"]:
-                        help_text.append(
-                            self.generate_help_text(
-                                "Adjective", obj.language, filters, tokens[i]
-                            )
-                        )
-                    if "s" in word_types[i]["word_types"]:
-                        help_text.append(
-                            self.generate_help_text(
-                                "Noun", obj.language, filters, tokens[i]
-                            )
-                        )
-
-                    filters = {"lemma": tokens[i], "language": obj.language}
-                    help_text.append(
-                        self.generate_help_text("Lemmatization", None, filters, tokens[i])
-                    )
-
-        if len(help_text):
-            form.base_fields["lemma"].help_text = mark_safe("<br>".join(help_text))
+            if len(help_text):
+                form.base_fields["lemma"].help_text = mark_safe("<br>".join(help_text))
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
@@ -502,6 +503,7 @@ class EnglishVerbAdmin(ImportExportModelAdmin):
         "past_tense",
         "past_participle",
     )
+
 
 class EnglishAdjectiveResource(resources.ModelResource):
     class Meta:
