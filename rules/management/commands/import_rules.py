@@ -356,6 +356,7 @@ class Command(BaseCommand):
                 ]
                 for training_sentences_column in training_sentences_columns:
                     training_sentences = row[training_sentences_column].strip()
+                    training_sentences = training_sentences.replace("|", "\n")
                     training_sentences = training_sentences.split("\n")
 
                     for training_sentence_text in training_sentences:
