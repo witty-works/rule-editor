@@ -106,7 +106,6 @@ class AlternativeAdmin(CreatedByAdmin):
     class Meta:
         model = Alternative
 
-    list_display = ("name", "move_up_down_links")
 
 
 class AlternativeForm(forms.ModelForm):
