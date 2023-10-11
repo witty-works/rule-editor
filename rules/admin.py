@@ -5,6 +5,7 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
+from django.db.models import Q
 
 import requests
 import json
@@ -274,6 +275,35 @@ class RuleDiversityDimensionInline(GrappelliSortableHiddenMixin, admin.StackedIn
     extra = 0
 
 
+class InputFilter(admin.SimpleListFilter):
+    template = "admin/input_filter.html"
+
+    def lookups(self, request, model_admin):
+        # Dummy, required to show the filter.
+        return ((),)
+
+    def choices(self, changelist):
+        # Grab only the "all" option.
+        all_choice = next(super().choices(changelist))
+        all_choice["query_parts"] = (
+            (k, v)
+            for k, v in changelist.get_filters_params().items()
+            if k != self.parameter_name
+        )
+        yield all_choice
+
+
+class LemmaFilter(InputFilter):
+    parameter_name = "lemma"
+    title = "Lemma"
+
+    def queryset(self, request, queryset):
+        if self.value() is not None:
+            lemma = self.value()
+
+            return queryset.filter(Q(lemma=lemma))
+
+
 @admin.register(Rule)
 class RuleAdmin(CreatedByAdmin):
     class Meta:
@@ -355,6 +385,7 @@ class RuleAdmin(CreatedByAdmin):
         "alternatives__lemma",
     )
     list_filter = (
+        LemmaFilter,
         "language",
         "is_marked_for_review",
         "tags",
