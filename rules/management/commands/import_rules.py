@@ -27,42 +27,55 @@ class Command(BaseCommand):
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
 
-    def handle_lemmas(self, lemma: str, word_types: str):
-        match word_types:
-            case "v":
-                inflex = Verb(lemma)
+    def handle_lemmas(self, tokens: [], word_types: []):
+        if word_types is None:
+            return
+
+        for i in range(len(word_types)):
+            if not word_types[i]["lemmatize"]:
+                continue
+
+            if "v" in word_types[i]["word_types"]:
+                inflex = Verb(tokens[i])
                 try:
-                    verb = EnglishVerb.objects.get(base_form=lemma)
+                    EnglishVerb.objects.get(base_form=tokens[i])
                 except EnglishVerb.DoesNotExist:
                     verb = EnglishVerb()
-                    verb.base_form = lemma
+                    verb.base_form = tokens[i]
+                    verb.past_tense = inflex.past()
+                    verb.past_participle = inflex.past_part()
+                    verb.present_participle = inflex.pres_part()
+                    verb.third_person_singular = inflex.singular()
+                    verb.save()
 
-                verb.past_tense = inflex.past()
-                verb.past_participle = inflex.past_part()
-                verb.present_participle = inflex.pres_part()
-                verb.third_person_singular = inflex.singular()
-                verb.save()
-            case "a":
-                inflex = Adjective(lemma)
+                    self.stdout.write(self.style.SUCCESS(f"Verb added {tokens[i]}"))
+
+            if "a" in word_types[i]["word_types"]:
+                inflex = Adjective(tokens[i])
                 try:
-                    adjective = EnglishAdjective.objects.get(base_form=lemma)
+                    EnglishAdjective.objects.get(base_form=tokens[i])
                 except EnglishAdjective.DoesNotExist:
                     adjective = EnglishAdjective()
-                    adjective.base_form = lemma
+                    adjective.base_form = tokens[i]
+                    adjective.comparative = inflex.comparative()
+                    adjective.superlative = inflex.superlative()
+                    adjective.save()
 
-                adjective.comparative = inflex.comparative()
-                adjective.superlative = inflex.superlative()
-                adjective.save()
-            case "s":
-                inflex = Noun(lemma)
+                    self.stdout.write(
+                        self.style.SUCCESS(f"Adjective added {tokens[i]}")
+                    )
+
+            if "s" in word_types[i]["word_types"]:
+                inflex = Noun(tokens[i])
                 try:
-                    noun = EnglishNoun.objects.get(base_form=lemma)
+                    EnglishNoun.objects.get(base_form=tokens[i])
                 except EnglishNoun.DoesNotExist:
                     noun = EnglishNoun()
-                    noun.base_form = lemma
+                    noun.base_form = tokens[i]
+                    noun.plural = inflex.plural()
+                    noun.save()
 
-                noun.plural = inflex.plural()
-                noun.save()
+                    self.stdout.write(self.style.SUCCESS(f"Noun added {tokens[i]}"))
 
     def handle(self, *args, **options):
         language = options["language"]
@@ -145,7 +158,7 @@ class Command(BaseCommand):
 
                 rule.save()
 
-                self.handle_lemmas(rule.lemma, rule.word_types)
+                self.handle_lemmas(rule.tokenized, rule.parse_word_type())
 
                 priorties = [s.strip() for s in row["Priority"].split("|")]
                 if "HR" in priorties:
@@ -308,6 +321,10 @@ class Command(BaseCommand):
                             alternative_rule_tokens = alternative.tokenize()
                             if len(rule_tokens) == len(alternative_rule_tokens):
                                 alternative.word_types = rule.word_types
+                                self.handle_lemmas(
+                                    alternative_rule_tokens,
+                                    alternative.parse_word_type(),
+                                )
 
                         alternative.order = alternative_count
                         alternative_count += 1
@@ -327,8 +344,6 @@ class Command(BaseCommand):
                         ]["is_advanced"]
 
                         alternative.save()
-
-                        self.handle_lemmas(alternative.lemma, alternative.word_types)
 
                 # False_Positives
                 false_positives = row["False_Positives"].strip()
