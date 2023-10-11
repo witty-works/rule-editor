@@ -60,8 +60,11 @@ def generate_help_text(name, language, filters, token):
     return f"No {name} data available for '{token}'"
 
 
-def collect_help_text(language, tokens, word_types):
-    help_text = []
+def collect_help_text(language, tokens, word_types, help_text):
+    if word_types is None:
+        return help_text
+
+    help_texts = [help_text]
     for i in range(len(word_types)):
         if word_types[i]["lemmatize"]:
             filters = {}
@@ -71,24 +74,24 @@ def collect_help_text(language, tokens, word_types):
                 filters["base_form__iexact"] = tokens[i]
 
             if "v" in word_types[i]["word_types"]:
-                help_text.append(
+                help_texts.append(
                     generate_help_text("Verb", language, filters, tokens[i])
                 )
             if "a" in word_types[i]["word_types"]:
-                help_text.append(
+                help_texts.append(
                     generate_help_text("Adjective", language, filters, tokens[i])
                 )
             if "s" in word_types[i]["word_types"]:
-                help_text.append(
+                help_texts.append(
                     generate_help_text("Noun", language, filters, tokens[i])
                 )
 
             filters = {"lemma": tokens[i], "language": language}
-            help_text.append(
+            help_texts.append(
                 generate_help_text("Lemmatization", None, filters, tokens[i])
             )
 
-    return help_text
+    return mark_safe("<br>".join(help_texts))
 
 
 class CreatedByAdmin(admin.ModelAdmin):
@@ -279,12 +282,12 @@ class RuleAdmin(CreatedByAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            help_text = collect_help_text(
-                obj.language, obj.tokenize(), obj.parse_word_type()
+            form.base_fields["lemma"].help_text = collect_help_text(
+                obj.language,
+                obj.tokenize(),
+                obj.parse_word_type(),
+                form.base_fields["lemma"].help_text,
             )
-
-            if len(help_text):
-                form.base_fields["lemma"].help_text = mark_safe("<br>".join(help_text))
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
