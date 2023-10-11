@@ -60,38 +60,38 @@ def generate_help_text(name, language, filters, token):
     return f"No {name} data available for '{token}'"
 
 
-def collect_help_text(language, tokens, word_types, help_text):
+def update_help_text(obj, field):
+    tokens = obj.tokenize()
+    word_types = obj.parse_word_type()
     if word_types is None:
-        return help_text
+        return
 
-    help_texts = [help_text]
+    help_texts = [field.help_text]
+    word_type_map = {
+        "v": "Verb",
+        "a": "Adjective",
+        "s": "Noun",
+    }
+
     for i in range(len(word_types)):
         if word_types[i]["lemmatize"]:
-            filters = {}
-            if word_types[i]["lower_case"]:
-                filters["base_form"] = tokens[i]
-            else:
-                filters["base_form__iexact"] = tokens[i]
+            key = "base_form" if word_types[i]["lower_case"] else "base_form__iexact"
+            filters = {key: tokens[i]}
 
-            if "v" in word_types[i]["word_types"]:
-                help_texts.append(
-                    generate_help_text("Verb", language, filters, tokens[i])
-                )
-            if "a" in word_types[i]["word_types"]:
-                help_texts.append(
-                    generate_help_text("Adjective", language, filters, tokens[i])
-                )
-            if "s" in word_types[i]["word_types"]:
-                help_texts.append(
-                    generate_help_text("Noun", language, filters, tokens[i])
-                )
+            for word_type in word_type_map:
+                if word_type in word_types[i]["word_types"]:
+                    help_texts.append(
+                        generate_help_text(
+                            word_type_map[word_type], obj.language, filters, tokens[i]
+                        )
+                    )
 
-            filters = {"lemma": tokens[i], "language": language}
+            filters = {"lemma": tokens[i], "language": obj.language}
             help_texts.append(
                 generate_help_text("Lemmatization", None, filters, tokens[i])
             )
 
-    return mark_safe("<br>".join(help_texts))
+    field.help_text = mark_safe("<br>".join(help_texts))
 
 
 class CreatedByAdmin(admin.ModelAdmin):
@@ -107,7 +107,6 @@ class AlternativeAdmin(CreatedByAdmin):
         model = Alternative
 
 
-
 class AlternativeForm(forms.ModelForm):
     class Meta:
         widgets = {
@@ -116,6 +115,12 @@ class AlternativeForm(forms.ModelForm):
                 attrs={"class": "form-control", "data-placeholder": "Tag names .."},
             )
         }
+
+    def __init__(self, *args, **kwargs):
+        super(AlternativeForm, self).__init__(*args, **kwargs)
+        instance = getattr(self, "instance", None)
+        if instance and isinstance(instance, Alternative):
+            update_help_text(instance, self.fields["lemma"])
 
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
@@ -281,12 +286,7 @@ class RuleAdmin(CreatedByAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            form.base_fields["lemma"].help_text = collect_help_text(
-                obj.language,
-                obj.tokenize(),
-                obj.parse_word_type(),
-                form.base_fields["lemma"].help_text,
-            )
+            update_help_text(obj, form.base_fields["lemma"])
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),

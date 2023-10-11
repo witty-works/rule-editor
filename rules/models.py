@@ -166,13 +166,6 @@ class BaseSourcedModel(BaseModel):
 
 
 class BaseLemmaModel(ComputedFieldsModel, BaseModel):
-    @property
-    def language(self):
-        if self.rule:
-            return self.rule.language
-
-        return self.language
-
     def tokenize(self):
         path = f"/tokenize?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}"
         return fetch_json(path)
@@ -509,6 +502,10 @@ class Alternative(
     @computed(models.BooleanField(default=False))
     def is_placeholder(self):
         return "((" in self.lemma and "))" in self.lemma
+
+    @computed(EnumField(LanguageEnum, default=LanguageEnum.EN))
+    def language(self):
+        return self.rule.language
 
     tags = TaggableManager(blank=True)
 
