@@ -6,6 +6,7 @@ from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from django.db.models import Q
+from django.conf import settings
 
 import requests
 import json
@@ -52,22 +53,28 @@ def generate_help_text(name, language, filters, token):
     cls = get_class(class_name)
     instances = cls.objects.filter(**filters)
     if instances:
+        help_texts = []
         for instance in instances:
             link = reverse(
                 f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
             )
-            return f"{name} <a href=\"{link}\">data available</a> for '{token}'"
+            help_texts.append(
+                f"{name} <a href=\"{link}\">data available</a> for '{token}'"
+            )
+
+        return "<br>".join(help_texts)
 
     return f"No {name} data available for '{token}'"
 
 
-def update_help_text(obj, field):
+def update_lemma_help_text(obj, field):
     tokens = obj.tokenize()
     word_types = obj.parse_word_type()
     if word_types is None:
         return
 
     help_texts = [field.help_text]
+
     word_type_map = {
         "v": "Verb",
         "a": "Adjective",
@@ -91,6 +98,15 @@ def update_help_text(obj, field):
             help_texts.append(
                 generate_help_text("Lemmatization", None, filters, tokens[i])
             )
+
+    field.help_text = mark_safe("<br>".join(help_texts))
+
+
+def update_base_form_help_text(obj, field, language):
+    help_texts = [field.help_text]
+
+    filters = {"lemma__iregex": f"\b{obj.base_form}\b", "language": language}
+    help_texts.append(generate_help_text("Rule", None, filters, obj.base_form))
 
     field.help_text = mark_safe("<br>".join(help_texts))
 
@@ -121,7 +137,7 @@ class AlternativeForm(forms.ModelForm):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
         if instance and isinstance(instance, Alternative):
-            update_help_text(instance, self.fields["lemma"])
+            update_lemma_help_text(instance, self.fields["lemma"])
 
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
@@ -205,6 +221,29 @@ def apply_spacy(values):
     return fetch_json(path)
 
 
+from django.template.loader import render_to_string
+import hashlib
+
+
+def visualize_sentence(values):
+    if values is None or "rule" not in values or "text" not in values:
+        return None
+
+    rule = Rule.objects.get(pk=values["rule"])
+
+    text = values["text"]
+    path = f"/debug/displacy?lang={requests.utils.quote(rule.language)}&text={requests.utils.quote(text)}"
+    url = settings.NLP_API + path
+    sentence_hash = hashlib.md5(text.encode()).hexdigest()
+
+    html = render_to_string(
+        "admin/displacy.html",
+        context={"url": mark_safe(url), "id": mark_safe(sentence_hash)},
+    )
+
+    return mark_safe(html)
+
+
 class PrettyJSONEncoder(json.JSONEncoder):
     def __init__(self, *args, indent, sort_keys, **kwargs):
         super().__init__(*args, indent=2, sort_keys=True, **kwargs)
@@ -224,6 +263,7 @@ class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
         required=False,
         initial=lambda form: apply_spacy(form.initial),
         encoder=lambda form: PrettyJSONEncoder,
+        help_text=lambda form: visualize_sentence(form.initial),
     )
 
 
@@ -316,7 +356,7 @@ class RuleAdmin(CreatedByAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_help_text(obj, form.base_fields["lemma"])
+            update_lemma_help_text(obj, form.base_fields["lemma"])
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
@@ -432,10 +472,11 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
     def has_add_permission(self, request, obj=None):  # Here
         return False
 
-    list_display = ("name", "move_up_down_links")
+    list_display = ("name", "category", "proficiency_level", "move_up_down_links")
     search_fields = ("name",)
     list_filter = (
         "category",
+        "proficiency_level",
         "is_advanced",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
@@ -517,6 +558,14 @@ class EnglishVerbAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishVerb
 
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
+
     resource_class = EnglishVerbResource
     search_fields = ("base_form",)
     fields = (
@@ -546,6 +595,14 @@ class AdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishAdjective
 
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
+
     resource_class = EnglishAdjectiveResource
     search_fields = ("base_form",)
     fields = ("base_form", "comparative", "superlative", "comment")
@@ -561,6 +618,14 @@ class EnglishNounResource(resources.ModelResource):
 class NounAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishNoun
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
 
     resource_class = EnglishNounResource
     search_fields = ("base_form",)

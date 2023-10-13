@@ -57,8 +57,12 @@ class Command(BaseCommand):
                 except EnglishAdjective.DoesNotExist:
                     adjective = EnglishAdjective()
                     adjective.base_form = tokens[i]
-                    adjective.comparative = inflex.comparative()
-                    adjective.superlative = inflex.superlative()
+                    if tokens[i].isupper():
+                        adjective.comparative = tokens[i]
+                        adjective.superlative = tokens[i]
+                    else:
+                        adjective.comparative = inflex.comparative()
+                        adjective.superlative = inflex.superlative()
                     adjective.save()
 
                     self.stdout.write(
