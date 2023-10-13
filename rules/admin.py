@@ -53,22 +53,28 @@ def generate_help_text(name, language, filters, token):
     cls = get_class(class_name)
     instances = cls.objects.filter(**filters)
     if instances:
+        help_texts = []
         for instance in instances:
             link = reverse(
                 f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
             )
-            return f"{name} <a href=\"{link}\">data available</a> for '{token}'"
+            help_texts.append(
+                f"{name} <a href=\"{link}\">data available</a> for '{token}'"
+            )
+
+        return "<br>".join(help_texts)
 
     return f"No {name} data available for '{token}'"
 
 
-def update_help_text(obj, field):
+def update_lemma_help_text(obj, field):
     tokens = obj.tokenize()
     word_types = obj.parse_word_type()
     if word_types is None:
         return
 
     help_texts = [field.help_text]
+
     word_type_map = {
         "v": "Verb",
         "a": "Adjective",
@@ -92,6 +98,15 @@ def update_help_text(obj, field):
             help_texts.append(
                 generate_help_text("Lemmatization", None, filters, tokens[i])
             )
+
+    field.help_text = mark_safe("<br>".join(help_texts))
+
+
+def update_base_form_help_text(obj, field, language):
+    help_texts = [field.help_text]
+
+    filters = {"lemma__iregex": f"\b{obj.base_form}\b", "language": language}
+    help_texts.append(generate_help_text("Rule", None, filters, obj.base_form))
 
     field.help_text = mark_safe("<br>".join(help_texts))
 
@@ -122,7 +137,7 @@ class AlternativeForm(forms.ModelForm):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
         if instance and isinstance(instance, Alternative):
-            update_help_text(instance, self.fields["lemma"])
+            update_lemma_help_text(instance, self.fields["lemma"])
 
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
@@ -222,7 +237,8 @@ def visualize_sentence(values):
     sentence_hash = hashlib.md5(text.encode()).hexdigest()
 
     html = render_to_string(
-        "admin/displacy.html", context={"url": mark_safe(url), "id": mark_safe(sentence_hash)}
+        "admin/displacy.html",
+        context={"url": mark_safe(url), "id": mark_safe(sentence_hash)},
     )
 
     return mark_safe(html)
@@ -340,7 +356,7 @@ class RuleAdmin(CreatedByAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_help_text(obj, form.base_fields["lemma"])
+            update_lemma_help_text(obj, form.base_fields["lemma"])
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
@@ -542,6 +558,14 @@ class EnglishVerbAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishVerb
 
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
+
     resource_class = EnglishVerbResource
     search_fields = ("base_form",)
     fields = (
@@ -571,6 +595,14 @@ class AdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishAdjective
 
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
+
     resource_class = EnglishAdjectiveResource
     search_fields = ("base_form",)
     fields = ("base_form", "comparative", "superlative", "comment")
@@ -586,6 +618,14 @@ class EnglishNounResource(resources.ModelResource):
 class NounAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishNoun
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
 
     resource_class = EnglishNounResource
     search_fields = ("base_form",)
