@@ -1,0 +1,16 @@
+<script>
+    jQuery(function ($) {
+        $(document).ready(function () {
+            $.ajax({
+                type: "GET",
+                url: "{{ url }}",
+                dataType: "xml",
+                success: function (xml) {
+                    console.log(xml)
+                    $('#{{ id }}').html(xml.rootElement.outerHTML);
+                }
+            });
+        });
+    });
+</script>
+<div id="{{ id }}" style="transform:scale(0.6);"></div>

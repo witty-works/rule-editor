@@ -6,6 +6,7 @@ from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from django.db.models import Q
+from django.conf import settings
 
 import requests
 import json
@@ -205,6 +206,28 @@ def apply_spacy(values):
     return fetch_json(path)
 
 
+from django.template.loader import render_to_string
+import hashlib
+
+
+def visualize_sentence(values):
+    if values is None or "rule" not in values or "text" not in values:
+        return None
+
+    rule = Rule.objects.get(pk=values["rule"])
+
+    text = values["text"]
+    path = f"/debug/displacy?lang={requests.utils.quote(rule.language)}&text={requests.utils.quote(text)}"
+    url = settings.NLP_API + path
+    sentence_hash = hashlib.md5(text.encode()).hexdigest()
+
+    html = render_to_string(
+        "admin/displacy.html", context={"url": mark_safe(url), "id": mark_safe(sentence_hash)}
+    )
+
+    return mark_safe(html)
+
+
 class PrettyJSONEncoder(json.JSONEncoder):
     def __init__(self, *args, indent, sort_keys, **kwargs):
         super().__init__(*args, indent=2, sort_keys=True, **kwargs)
@@ -224,6 +247,7 @@ class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
         required=False,
         initial=lambda form: apply_spacy(form.initial),
         encoder=lambda form: PrettyJSONEncoder,
+        help_text=lambda form: visualize_sentence(form.initial),
     )
 
 
