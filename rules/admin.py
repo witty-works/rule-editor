@@ -456,10 +456,11 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
     def has_add_permission(self, request, obj=None):  # Here
         return False
 
-    list_display = ("name", "move_up_down_links")
+    list_display = ("name", "category", "proficiency_level", "move_up_down_links")
     search_fields = ("name",)
     list_filter = (
         "category",
+        "proficiency_level",
         "is_advanced",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),

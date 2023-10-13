@@ -271,6 +271,10 @@ class DiversityDimension(
     category = models.ForeignKey(
         Category, on_delete=models.CASCADE, help_text="Top-level category"
     )
+    proficiency_level = models.CharField(
+        max_length=255,
+        help_text="Proficiency level of the diversity dimension ('inclusive', 'unconscious_bias', 'openly_discriminating', ..)",
+    )
 
     @computed(models.BooleanField(null=True, blank=True))
     def is_advanced(self):
