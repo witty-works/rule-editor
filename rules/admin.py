@@ -44,7 +44,7 @@ def get_class(class_name):
 def generate_help_text(name, language, filters, token):
     match language:
         case "de":
-            class_name = "German" + name
+            return f"No {name} data available for '{token}'"
         case "en":
             class_name = "English" + name
         case _:
@@ -55,11 +55,18 @@ def generate_help_text(name, language, filters, token):
     if instances:
         help_texts = []
         for instance in instances:
-            link = reverse(
-                f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
-            )
+            if isinstance(instance, Alternative):
+                link = reverse(
+                    f"admin:rules_rule_change", args=[instance.rule.id]
+                )
+            else:
+                link = reverse(
+                    f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
+                )
+
+            word = instance.lemma if isinstance(instance, Rule) else token
             help_texts.append(
-                f"{name} <a href=\"{link}\">data available</a> for '{token}'"
+                f"{name} <a href=\"{link}\">data available</a> for '{word}'"
             )
 
         return "<br>".join(help_texts)
@@ -105,8 +112,9 @@ def update_lemma_help_text(obj, field):
 def update_base_form_help_text(obj, field, language):
     help_texts = [field.help_text]
 
-    filters = {"lemma__iregex": f"\b{obj.base_form}\b", "language": language}
+    filters = {"lemma__regex": "\\b(?<!-)" + obj.base_form + "(?!-)\\b", "language": language}
     help_texts.append(generate_help_text("Rule", None, filters, obj.base_form))
+    help_texts.append(generate_help_text("Alternative", None, filters, obj.base_form))
 
     field.help_text = mark_safe("<br>".join(help_texts))
 
