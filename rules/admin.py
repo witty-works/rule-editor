@@ -74,7 +74,7 @@ def generate_help_text(name, language, filters, token):
 
 def update_lemma_help_text(obj, field):
     tokens, lemmas = obj.tokenize()
-    word_types = obj.parse_word_type()
+    word_types = obj.parse_word_types()
     if word_types is None:
         return
 
@@ -96,7 +96,7 @@ def update_lemma_help_text(obj, field):
             filters = {key: tokens[i]}
 
             for word_type in word_type_map:
-                if word_type in word_types[i]["word_types"]:
+                if word_type in word_types[i]["word_type"]:
                     help_texts.append(
                         generate_help_text(
                             word_type_map[word_type], obj.language, filters, tokens[i]

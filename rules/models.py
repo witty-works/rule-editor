@@ -181,11 +181,11 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
 
         return tokens, lemmas
 
-    def parse_word_type(self):
+    def parse_word_types(self):
         if self.word_types is None or len(self.word_types) == 0:
             return None
 
-        path = f"/parse-word-type?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}&word_types={requests.utils.quote(self.word_types)}"
+        path = f"/parse-word-types?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}&word_types={requests.utils.quote(self.word_types)}"
         return fetch_json(path)
 
     def save(self, *args, **kwargs):
@@ -201,7 +201,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
         try:
-            self.parsed_word_type = self.parse_word_type()
+            self.parsed_word_types = self.parse_word_types()
         except ValidationError as exception:
             errors["word_types"] = "Word_types validation failed: " + exception.message
 
@@ -212,7 +212,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         abstract = True
 
     tokenized = None
-    parsed_word_type = None
+    parsed_word_types = None
 
     lemma = models.CharField(
         max_length=255,
@@ -232,7 +232,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
 
     @computed(models.JSONField(default=dict))
     def word_types_json(self):
-        return [] if self.parsed_word_type is None else self.parsed_word_type
+        return [] if self.parsed_word_types is None else self.parsed_word_types
 
     is_active = models.BooleanField(default=True)
     label = models.CharField(
@@ -421,24 +421,24 @@ class Rule(
 
     @computed(models.CharField(max_length=255, null=True, blank=True))
     def first_word_type(self):
-        if self.parsed_word_type is None or len(self.parsed_word_type) == 0:
+        if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
             return None
 
-        return self.parsed_word_type[0]["word_types"]
+        return self.parsed_word_types[0]["word_type"]
 
     @computed(models.BooleanField(null=True, blank=True))
     def first_is_word_type_lemmatize(self):
-        if self.parsed_word_type is None or len(self.parsed_word_type) == 0:
+        if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
             return None
 
-        return self.parsed_word_type[0]["lemmatize"]
+        return self.parsed_word_types[0]["lemmatize"]
 
     @computed(models.BooleanField(null=True, blank=True))
     def first_is_word_type_lower_case(self):
-        if self.parsed_word_type is None or len(self.parsed_word_type) == 0:
+        if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
             return None
 
-        return self.parsed_word_type[0]["lower_case"]
+        return self.parsed_word_types[0]["lower_case"]
 
     @computed(models.JSONField(default=dict))
     def diversity_dimension_json(self):
