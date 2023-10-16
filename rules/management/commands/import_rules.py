@@ -35,7 +35,7 @@ class Command(BaseCommand):
             if not word_types[i]["lemmatize"]:
                 continue
 
-            if "v" in word_types[i]["word_types"]:
+            if "v" in word_types[i]["word_type"]:
                 inflex = Verb(tokens[i])
                 try:
                     EnglishVerb.objects.get(base_form=tokens[i])
@@ -50,7 +50,7 @@ class Command(BaseCommand):
 
                     self.stdout.write(self.style.SUCCESS(f"Verb added {tokens[i]}"))
 
-            if "a" in word_types[i]["word_types"]:
+            if "a" in word_types[i]["word_type"]:
                 inflex = Adjective(tokens[i])
                 try:
                     EnglishAdjective.objects.get(base_form=tokens[i])
@@ -69,7 +69,7 @@ class Command(BaseCommand):
                         self.style.SUCCESS(f"Adjective added {tokens[i]}")
                     )
 
-            if "s" in word_types[i]["word_types"]:
+            if "s" in word_types[i]["word_type"]:
                 inflex = Noun(tokens[i])
                 try:
                     EnglishNoun.objects.get(base_form=tokens[i])
@@ -162,7 +162,7 @@ class Command(BaseCommand):
 
                 rule.save()
 
-                self.handle_lemmas(rule.tokenized, rule.parse_word_type())
+                self.handle_lemmas(rule.tokenized, rule.parse_word_types())
 
                 priorties = [s.strip() for s in row["Priority"].split("|")]
                 if "HR" in priorties:
@@ -279,7 +279,7 @@ class Command(BaseCommand):
                     "Ask about their traditions, if possible": RuleLabelEnum.ASK_ABOUT_TRADITIONS,
                 }
 
-                rule_tokens = rule.tokenize()
+                rule_tokens, rule_lemmas = rule.tokenize()
                 rule.label_type = None
                 rule.label = None
 
@@ -322,12 +322,15 @@ class Command(BaseCommand):
                             alternative.is_remove = True
 
                         if alternative_columns[alternative_column]["word_types"]:
-                            alternative_rule_tokens = alternative.tokenize()
+                            (
+                                alternative_rule_tokens,
+                                alternative_rule_lemmas,
+                            ) = alternative.tokenize()
                             if len(rule_tokens) == len(alternative_rule_tokens):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
                                     alternative_rule_tokens,
-                                    alternative.parse_word_type(),
+                                    alternative.parse_word_types(),
                                 )
 
                         alternative.order = alternative_count

@@ -12,9 +12,12 @@
             <input class="grp-filter-choice" type="text" value="{{ spec.value|default_if_none:'' }}"
                 name="{{ spec.parameter_name }}" />
 
-            {% if not all_choice.selected %}
-            <strong><a href="{{ all_choice.query_string }}">⨉ Remove</a></strong>
-            {% endif %}
+            <div class="controls">
+                <input type="submit" class="button" value="Search">
+                <input type="button" onclick="location.href='{{ all_choice.query_string }}';" class="button"
+                    value="Reset" />
+
+            </div>
         </form>
         {% endwith %}
     </div>
