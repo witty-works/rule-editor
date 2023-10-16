@@ -167,8 +167,19 @@ class BaseSourcedModel(BaseModel):
 
 class BaseLemmaModel(ComputedFieldsModel, BaseModel):
     def tokenize(self):
-        path = f"/tokenize?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}"
-        return fetch_json(path)
+        if self.lemma == "-":
+            return ["-"], ["-"]
+
+        path = f"/debug/spacy?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}"
+        result = fetch_json(path)
+        result.pop(0)
+        tokens = []
+        lemmas = []
+        for token in result:
+            tokens.append(token["text"])
+            lemmas.append(token["lemma"])
+
+        return tokens, lemmas
 
     def parse_word_type(self):
         if self.word_types is None or len(self.word_types) == 0:
@@ -185,7 +196,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         errors = {}
 
         try:
-            self.tokenized = self.tokenize()
+            self.tokenized, lemmas = self.tokenize()
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 

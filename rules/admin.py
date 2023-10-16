@@ -56,9 +56,7 @@ def generate_help_text(name, language, filters, token):
         help_texts = []
         for instance in instances:
             if isinstance(instance, Alternative):
-                link = reverse(
-                    f"admin:rules_rule_change", args=[instance.rule.id]
-                )
+                link = reverse(f"admin:rules_rule_change", args=[instance.rule.id])
             else:
                 link = reverse(
                     f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
@@ -75,7 +73,7 @@ def generate_help_text(name, language, filters, token):
 
 
 def update_lemma_help_text(obj, field):
-    tokens = obj.tokenize()
+    tokens, lemmas = obj.tokenize()
     word_types = obj.parse_word_type()
     if word_types is None:
         return
@@ -90,6 +88,10 @@ def update_lemma_help_text(obj, field):
 
     for i in range(len(word_types)):
         if word_types[i]["lemmatize"]:
+            if tokens[i] != lemmas[i]:
+                help_texts.append(
+                    f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
+                )
             key = "base_form" if word_types[i]["lower_case"] else "base_form__iexact"
             filters = {key: tokens[i]}
 
@@ -112,7 +114,10 @@ def update_lemma_help_text(obj, field):
 def update_base_form_help_text(obj, field, language):
     help_texts = [field.help_text]
 
-    filters = {"lemma__regex": "\\b(?<!-)" + obj.base_form + "(?!-)\\b", "language": language}
+    filters = {
+        "lemma__regex": "\\b(?<!-)" + obj.base_form + "(?!-)\\b",
+        "language": language,
+    }
     help_texts.append(generate_help_text("Rule", None, filters, obj.base_form))
     help_texts.append(generate_help_text("Alternative", None, filters, obj.base_form))
 

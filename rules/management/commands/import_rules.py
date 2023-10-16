@@ -279,7 +279,7 @@ class Command(BaseCommand):
                     "Ask about their traditions, if possible": RuleLabelEnum.ASK_ABOUT_TRADITIONS,
                 }
 
-                rule_tokens = rule.tokenize()
+                rule_tokens, rule_lemmas = rule.tokenize()
                 rule.label_type = None
                 rule.label = None
 
@@ -322,7 +322,10 @@ class Command(BaseCommand):
                             alternative.is_remove = True
 
                         if alternative_columns[alternative_column]["word_types"]:
-                            alternative_rule_tokens = alternative.tokenize()
+                            (
+                                alternative_rule_tokens,
+                                alternative_rule_lemmas,
+                            ) = alternative.tokenize()
                             if len(rule_tokens) == len(alternative_rule_tokens):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
