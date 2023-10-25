@@ -139,13 +139,17 @@ class Command(BaseCommand):
                 rule.is_marked_for_review = True
 
                 # 3rd_party_alternatives,Notes,ToClarify
-                rule.comment = row["Notes"].strip()
-                if row["3rd_party_alternatives"].strip():
+                if row["Notes"] is not None:
+                    rule.comment = row["Notes"].strip()
+                if (
+                    row["3rd_party_alternatives"] is not None
+                    and row["3rd_party_alternatives"].strip()
+                ):
                     rule.comment += (
                         "\n3rd_party_alternatives:\n"
                         + row["3rd_party_alternatives"].strip()
                     )
-                if row["ToClarify"].strip():
+                if row["ToClarify"] is not None and row["ToClarify"].strip():
                     rule.comment += "\ToClarify:\n" + row["ToClarify"].strip()
 
                 # 3rd_party_source
