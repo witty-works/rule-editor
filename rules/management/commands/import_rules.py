@@ -280,7 +280,7 @@ class Command(BaseCommand):
                 }
 
                 rule_tokens, rule_lemmas = rule.tokenize()
-                rule.label_type = None
+                rule.label_type = RuleLabelEnum.DEFAULT
                 rule.label = None
 
                 for alternative_column in alternative_columns:
@@ -298,7 +298,7 @@ class Command(BaseCommand):
                                 rule.label_type = label_types[label]
                                 rule.label = None
                             else:
-                                rule.label_type = None
+                                rule.label_type = RuleLabelEnum.DEFAULT
                                 rule.label = label
 
                             continue
