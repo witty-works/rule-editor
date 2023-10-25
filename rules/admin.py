@@ -443,6 +443,7 @@ class RuleAdmin(CreatedByAdmin):
         "is_marked_for_review",
         "tags",
         "is_active",
+        "has_training_sentences",
         ("diversity_dimensions", MultiSelectRelatedOnlyFilter),
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),

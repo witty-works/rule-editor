@@ -435,6 +435,10 @@ class Rule(
 
         return self.parsed_word_types[0]["lower_case"]
 
+    @computed(models.BooleanField(null=True, blank=True))
+    def has_training_sentences(self):
+        return bool(len(self.training_sentences.all()))
+
     @computed(models.JSONField(default=dict))
     def diversity_dimension_json(self):
         diversity_dimensions = []
