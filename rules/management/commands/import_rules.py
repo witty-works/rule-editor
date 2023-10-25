@@ -393,6 +393,8 @@ class Command(BaseCommand):
                         training_sentence.is_training_data = False
                         training_sentence.save()
 
+                rule.save()
+
                 self.stdout.write(self.style.SUCCESS(message))
 
     def add_diversity_dimension(
