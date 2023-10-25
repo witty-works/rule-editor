@@ -346,11 +346,6 @@ class Rule(
             if self.tokenized is not None and len(self.tokenized) > 1:
                 errors["type"] = "Rules with a non default type can only have one token"
 
-        if self.label_type != "default" and self.label != "":
-            errors["label_type"] = errors[
-                "label"
-            ] = "Change label type to 'default' or change label to an empty string"
-
         if len(errors):
             raise ValidationError(errors)
 
