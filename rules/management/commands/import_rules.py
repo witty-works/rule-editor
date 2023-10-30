@@ -27,8 +27,8 @@ class Command(BaseCommand):
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
 
-    def handle_lemmas(self, tokens: [], word_types: []):
-        if word_types is None:
+    def handle_lemmas(self, language, tokens: [], word_types: []):
+        if word_types is None or language == "de":
             return
 
         for i in range(len(word_types)):
@@ -166,7 +166,7 @@ class Command(BaseCommand):
 
                 rule.save()
 
-                self.handle_lemmas(rule.tokenized, rule.parse_word_types())
+                self.handle_lemmas(language, rule.tokenized, rule.parse_word_types())
 
                 priorties = [s.strip() for s in row["Priority"].split("|")]
                 if "HR" in priorties:
@@ -196,6 +196,13 @@ class Command(BaseCommand):
                         "is_advanced": False,
                     },
                     "Alt_Sg_Replacement": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": True,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Sg_/_and_inclusive_form": {
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.DEFAULT,
                         "word_types": True,
@@ -238,6 +245,13 @@ class Command(BaseCommand):
                         "is_advanced": False,
                     },
                     "Alt_Pl": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Pl_pair_and_inclusive_form": {
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
                         "word_types": False,
@@ -288,6 +302,12 @@ class Command(BaseCommand):
                 rule.label = None
 
                 for alternative_column in alternative_columns:
+                    if alternative_column not in row:
+                        self.stdout.write(
+                            self.style.NOTICE(f"Column missing {alternative_column}")
+                        )
+                        continue
+
                     alternatives = row[alternative_column].strip()
                     alternatives = alternatives.split("|")
                     if len(alternatives) == 0:
@@ -333,6 +353,7 @@ class Command(BaseCommand):
                             if len(rule_tokens) == len(alternative_rule_tokens):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
+                                    language,
                                     alternative_rule_tokens,
                                     alternative.parse_word_types(),
                                 )
@@ -381,6 +402,14 @@ class Command(BaseCommand):
                     "Generated Examples",
                 ]
                 for training_sentences_column in training_sentences_columns:
+                    if training_sentences_column not in row:
+                        self.stdout.write(
+                            self.style.NOTICE(
+                                f"Column missing {training_sentences_column}"
+                            )
+                        )
+                        continue
+
                     training_sentences = row[training_sentences_column].strip()
                     training_sentences = training_sentences.replace("|", "\n")
                     training_sentences = training_sentences.split("\n")
