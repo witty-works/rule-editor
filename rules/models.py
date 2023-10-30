@@ -437,13 +437,14 @@ class Rule(
 
     @computed(models.BooleanField(null=True, blank=True))
     def has_training_sentences(self):
-        return bool(len(self.training_sentences.all()))
+        return bool(len(self.training_sentences.all())) if self.id else False
 
     @computed(models.JSONField(default=dict))
     def diversity_dimension_json(self):
         diversity_dimensions = []
-        for diversity_dimension in self.diversity_dimensions.all():
-            diversity_dimensions.append(diversity_dimension.name)
+        if self.id:
+            for diversity_dimension in self.diversity_dimensions.all():
+                diversity_dimensions.append(diversity_dimension.name)
 
         return diversity_dimensions
 
