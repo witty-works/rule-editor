@@ -419,6 +419,10 @@ class Command(BaseCommand):
                         if len(training_sentence_text) == 0:
                             continue
 
+                        x = re.search("\d+\. (.+)", training_sentence_text)
+                        if x:
+                            training_sentence_text = x.group(1)
+
                         training_sentence = TrainingSentence()
                         training_sentence.rule = rule
                         training_sentence.text = training_sentence_text
