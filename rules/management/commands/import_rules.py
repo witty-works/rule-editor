@@ -16,6 +16,7 @@ from rules.models import (
     EnglishNoun,
 )
 import csv
+import re
 from inflex import Noun, Verb, Adjective
 
 
@@ -440,6 +441,11 @@ class Command(BaseCommand):
         subcategory_name = (
             name if not name.startswith("advanced_") else name.removeprefix("advanced_")
         )
+
+        subcategory_name = name
+        if name.endswith("_base"):
+            subcategory_name = subcategory_name.removesuffix("_base")
+            rule.type = RuleTypeEnum.SUFFIX
 
         subcategory_name = (
             subcategory_name if is_basic else subcategory_name + "_advanced"
