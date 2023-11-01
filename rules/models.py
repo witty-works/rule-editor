@@ -412,7 +412,15 @@ class Rule(
         if self.lemma_json is None or len(self.lemma_json) == 0:
             return None
 
-        return self.lemma_json[0]
+        first_token = self.lemma_json[0]
+        if (
+            self.parsed_word_types is not None
+            and len(self.parsed_word_types)
+            and self.parsed_word_types[0]["lemmatize"]
+        ):
+            first_token = first_token.lower()
+
+        return first_token
 
     @computed(models.CharField(max_length=255, null=True, blank=True))
     def first_word_type(self):
