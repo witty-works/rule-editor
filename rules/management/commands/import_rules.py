@@ -394,7 +394,12 @@ class Command(BaseCommand):
                         alternative.pluralization = alternative_columns[
                             alternative_column
                         ]["pluralization"]
-                        if "..." in alternative.lemma:
+                        if "..." in alternative.lemma or (
+                            "(" in alternative.lemma
+                            and ")" in alternative.lemma
+                            and "((" not in alternative.lemma
+                            and "))" not in alternative.lemma
+                        ):
                             alternative.is_inspiration = True
                         else:
                             alternative.is_inspiration = alternative_columns[
