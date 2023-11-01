@@ -442,7 +442,6 @@ class Command(BaseCommand):
             name if not name.startswith("advanced_") else name.removeprefix("advanced_")
         )
 
-        subcategory_name = name
         if name.endswith("_base"):
             subcategory_name = subcategory_name.removesuffix("_base")
             rule.type = RuleTypeEnum.SUFFIX
@@ -463,5 +462,12 @@ class Command(BaseCommand):
                 diversity_dimensions_driver
             )
             rule_diversity_dimensions_driver.save()
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Added diversity dimension '{subcategory_name}' from '{name}'."
+                )
+            )
+
         except DiversityDimension.DoesNotExist:
             rule.tags.add(name)
+            self.stdout.write(self.style.SUCCESS(f"Added tag '{name}'."))
