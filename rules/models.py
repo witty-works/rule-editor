@@ -216,7 +216,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
 
     lemma = models.CharField(
         max_length=255,
-        help_text="Lemma is one or multiple words (tokens) either in lemmatized for or not (depending on the word_types)",
+        help_text="Lemma is one or multiple words (tokens) either in lemmatized form or not (depending on the word_types)",
     )
 
     @computed(models.JSONField(default=dict))

@@ -67,7 +67,7 @@ class Migration(migrations.Migration):
             model_name="alternative",
             name="lemma",
             field=models.CharField(
-                help_text="Lemma is one or multiple words (tokens) either in lemmatized for or not (depending on the word_types)",
+                help_text="Lemma is one or multiple words (tokens) either in lemmatized form or not (depending on the word_types)",
                 max_length=255,
             ),
         ),
@@ -258,7 +258,7 @@ class Migration(migrations.Migration):
             model_name="rule",
             name="lemma",
             field=models.CharField(
-                help_text="Lemma is one or multiple words (tokens) either in lemmatized for or not (depending on the word_types)",
+                help_text="Lemma is one or multiple words (tokens) either in lemmatized form or not (depending on the word_types)",
                 max_length=255,
             ),
         ),
