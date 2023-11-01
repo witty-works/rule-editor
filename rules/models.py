@@ -577,6 +577,9 @@ class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     lemma = models.CharField(
         max_length=255, help_text="Lemma used for the given source text"
     )
+    is_plural = models.BooleanField(
+        help_text="If the text is plural"
+    )
 
 
 class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -605,3 +608,24 @@ class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
 
     base_form = models.CharField(max_length=255, unique=True, help_text="ie. singular")
     plural = models.CharField(max_length=255, null=True, blank=True)
+
+
+class GermanVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    base_form = models.CharField(max_length=255, unique=True)
+
+
+class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
+
+
+class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    base_form = models.CharField(max_length=255, unique=True, help_text="ie. singular")
