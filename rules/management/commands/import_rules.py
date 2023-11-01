@@ -394,9 +394,12 @@ class Command(BaseCommand):
                         alternative.pluralization = alternative_columns[
                             alternative_column
                         ]["pluralization"]
-                        alternative.is_inspiration = alternative_columns[
-                            alternative_column
-                        ]["is_inspiration"]
+                        if "..." in alternative.lemma:
+                            alternative.is_inspiration = True
+                        else:
+                            alternative.is_inspiration = alternative_columns[
+                                alternative_column
+                            ]["is_inspiration"]
                         alternative.is_advanced = alternative_columns[
                             alternative_column
                         ]["is_advanced"]
