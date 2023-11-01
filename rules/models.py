@@ -216,7 +216,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
 
     lemma = models.CharField(
         max_length=255,
-        help_text="Lemma is one or multiple words (tokens) either in lemmatized for or not (depending on the word_types)",
+        help_text="Lemma is one or multiple words (tokens) either in lemmatized form or not (depending on the word_types)",
     )
 
     @computed(models.JSONField(default=dict))
@@ -346,11 +346,6 @@ class Rule(
             if self.tokenized is not None and len(self.tokenized) > 1:
                 errors["type"] = "Rules with a non default type can only have one token"
 
-        if self.label_type != "default" and self.label != "":
-            errors["label_type"] = errors[
-                "label"
-            ] = "Change label type to 'default' or change label to an empty string"
-
         if len(errors):
             raise ValidationError(errors)
 
@@ -417,7 +412,15 @@ class Rule(
         if self.lemma_json is None or len(self.lemma_json) == 0:
             return None
 
-        return self.lemma_json[0]
+        first_token = self.lemma_json[0]
+        if (
+            self.parsed_word_types is not None
+            and len(self.parsed_word_types)
+            and self.parsed_word_types[0]["lemmatize"]
+        ):
+            first_token = first_token.lower()
+
+        return first_token
 
     @computed(models.CharField(max_length=255, null=True, blank=True))
     def first_word_type(self):
@@ -440,11 +443,16 @@ class Rule(
 
         return self.parsed_word_types[0]["lower_case"]
 
+    @computed(models.BooleanField(null=True, blank=True))
+    def has_training_sentences(self):
+        return bool(len(self.training_sentences.all())) if self.id else False
+
     @computed(models.JSONField(default=dict))
     def diversity_dimension_json(self):
         diversity_dimensions = []
-        for diversity_dimension in self.diversity_dimensions.all():
-            diversity_dimensions.append(diversity_dimension.name)
+        if self.id:
+            for diversity_dimension in self.diversity_dimensions.all():
+                diversity_dimensions.append(diversity_dimension.name)
 
         return diversity_dimensions
 

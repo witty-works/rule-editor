@@ -16,6 +16,7 @@ from rules.models import (
     EnglishNoun,
 )
 import csv
+import re
 from inflex import Noun, Verb, Adjective
 
 
@@ -27,8 +28,8 @@ class Command(BaseCommand):
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
 
-    def handle_lemmas(self, tokens: [], word_types: []):
-        if word_types is None:
+    def handle_lemmas(self, language, tokens: [], word_types: []):
+        if word_types is None or language == "de":
             return
 
         for i in range(len(word_types)):
@@ -139,13 +140,17 @@ class Command(BaseCommand):
                 rule.is_marked_for_review = True
 
                 # 3rd_party_alternatives,Notes,ToClarify
-                rule.comment = row["Notes"].strip()
-                if row["3rd_party_alternatives"].strip():
+                if row["Notes"] is not None:
+                    rule.comment = row["Notes"].strip()
+                if (
+                    row["3rd_party_alternatives"] is not None
+                    and row["3rd_party_alternatives"].strip()
+                ):
                     rule.comment += (
                         "\n3rd_party_alternatives:\n"
                         + row["3rd_party_alternatives"].strip()
                     )
-                if row["ToClarify"].strip():
+                if row["ToClarify"] is not None and row["ToClarify"].strip():
                     rule.comment += "\ToClarify:\n" + row["ToClarify"].strip()
 
                 # 3rd_party_source
@@ -162,7 +167,7 @@ class Command(BaseCommand):
 
                 rule.save()
 
-                self.handle_lemmas(rule.tokenized, rule.parse_word_types())
+                self.handle_lemmas(language, rule.tokenized, rule.parse_word_types())
 
                 priorties = [s.strip() for s in row["Priority"].split("|")]
                 if "HR" in priorties:
@@ -184,6 +189,13 @@ class Command(BaseCommand):
                     )
 
                 alternative_columns = {
+                    "Alt_Sg_Replacement": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": True,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
                     "Alt_Field": {
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.DEFAULT,
@@ -191,9 +203,9 @@ class Command(BaseCommand):
                         "is_inspiration": False,
                         "is_advanced": False,
                     },
-                    "Alt_Sg_Replacement": {
+                    "Alt_Sg_/_and_inclusive_form": {
                         "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": True,
                         "is_inspiration": False,
                         "is_advanced": False,
@@ -240,6 +252,13 @@ class Command(BaseCommand):
                         "is_inspiration": False,
                         "is_advanced": False,
                     },
+                    "Alt_Pl_pair_and_inclusive_form": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
                     "Identity_first_pl": {
                         "type": AlternativeTypeEnum.IDENTITY_FIRST,
                         "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
@@ -269,7 +288,8 @@ class Command(BaseCommand):
                     "Try not to use this word to describe people": RuleLabelEnum.NOT_FOR_PEOPLE,
                     "Don't use this word for people": RuleLabelEnum.NOT_FOR_PEOPLE,
                     "Name the disability or condition": RuleLabelEnum.NAME_DISABILITY,
-                    "Only if gender identity is relevant | --- Only if self-identifies as female": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
+                    "Only if gender identity is relevant": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
+                    "Only if self-identifies as female": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
                     "Don't use in a non-combat context": RuleLabelEnum.NOT_FOR_NON_COMBAT,
                     "if stated preference": RuleLabelEnum.ASK_FOR_PREFERENCE,
                     "Only use in reference to religious practice": RuleLabelEnum.ONLY_WHEN_REFERENCING_RELIGIOUS_PRACTICE,
@@ -280,16 +300,22 @@ class Command(BaseCommand):
                 }
 
                 rule_tokens, rule_lemmas = rule.tokenize()
-                rule.label_type = None
+                rule.label_type = RuleLabelEnum.DEFAULT
                 rule.label = None
 
+                alternative_count = 0
                 for alternative_column in alternative_columns:
+                    if alternative_column not in row:
+                        self.stdout.write(
+                            self.style.NOTICE(f"Column missing {alternative_column}")
+                        )
+                        continue
+
                     alternatives = row[alternative_column].strip()
                     alternatives = alternatives.split("|")
                     if len(alternatives) == 0:
                         continue
 
-                    alternative_count = 0
                     for alternative_lemma in alternatives:
                         if alternative_lemma.startswith("---"):
                             label = alternative_lemma.removeprefix("---").strip()
@@ -298,7 +324,7 @@ class Command(BaseCommand):
                                 rule.label_type = label_types[label]
                                 rule.label = None
                             else:
-                                rule.label_type = None
+                                rule.label_type = RuleLabelEnum.DEFAULT
                                 rule.label = label
 
                             continue
@@ -329,12 +355,10 @@ class Command(BaseCommand):
                             if len(rule_tokens) == len(alternative_rule_tokens):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
+                                    language,
                                     alternative_rule_tokens,
                                     alternative.parse_word_types(),
                                 )
-
-                        alternative.order = alternative_count
-                        alternative_count += 1
 
                         alternative.label = label
                         alternative.type = alternative_columns[alternative_column][
@@ -350,7 +374,9 @@ class Command(BaseCommand):
                             alternative_column
                         ]["is_advanced"]
 
+                        alternative.order = alternative_count
                         alternative.save()
+                        alternative_count += 1
 
                 # False_Positives
                 false_positives = row["False_Positives"].strip()
@@ -377,6 +403,17 @@ class Command(BaseCommand):
                     "Generated Examples",
                 ]
                 for training_sentences_column in training_sentences_columns:
+                    if training_sentences_column not in row:
+                        self.stdout.write(
+                            self.style.NOTICE(
+                                f"Column missing {training_sentences_column}"
+                            )
+                        )
+                        continue
+
+                    if row[training_sentences_column] is None:
+                        continue
+
                     training_sentences = row[training_sentences_column].strip()
                     training_sentences = training_sentences.replace("|", "\n")
                     training_sentences = training_sentences.split("\n")
@@ -386,12 +423,18 @@ class Command(BaseCommand):
                         if len(training_sentence_text) == 0:
                             continue
 
+                        x = re.search("\d+\. (.+)", training_sentence_text)
+                        if x:
+                            training_sentence_text = x.group(1)
+
                         training_sentence = TrainingSentence()
                         training_sentence.rule = rule
                         training_sentence.text = training_sentence_text
                         training_sentence.is_false_positive = False
                         training_sentence.is_training_data = False
                         training_sentence.save()
+
+                rule.save()
 
                 self.stdout.write(self.style.SUCCESS(message))
 
@@ -401,6 +444,10 @@ class Command(BaseCommand):
         subcategory_name = (
             name if not name.startswith("advanced_") else name.removeprefix("advanced_")
         )
+
+        if name.endswith("_base"):
+            subcategory_name = subcategory_name.removesuffix("_base")
+            rule.type = RuleTypeEnum.SUFFIX
 
         subcategory_name = (
             subcategory_name if is_basic else subcategory_name + "_advanced"
@@ -418,5 +465,12 @@ class Command(BaseCommand):
                 diversity_dimensions_driver
             )
             rule_diversity_dimensions_driver.save()
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Added diversity dimension '{subcategory_name}' from '{name}'."
+                )
+            )
+
         except DiversityDimension.DoesNotExist:
             rule.tags.add(name)
+            self.stdout.write(self.style.SUCCESS(f"Added tag '{name}'."))
