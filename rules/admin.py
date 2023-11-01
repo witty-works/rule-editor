@@ -33,6 +33,9 @@ from .models import (
     EnglishVerb,
     EnglishAdjective,
     EnglishNoun,
+    GermanVerb,
+    GermanAdjective,
+    GermanNoun,
     fetch_json,
 )
 
@@ -44,7 +47,7 @@ def get_class(class_name):
 def generate_help_text(name, language, filters, token):
     match language:
         case "de":
-            return f"No {name} data available for '{token}'"
+            class_name = "German" + name
         case "en":
             class_name = "English" + name
         case _:
@@ -607,7 +610,7 @@ class EnglishAdjectiveResource(resources.ModelResource):
 
 
 @admin.register(EnglishAdjective)
-class AdjectiveAdmin(ImportExportModelAdmin):
+class EnglishAdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishAdjective
 
@@ -650,3 +653,75 @@ class NounAdmin(ImportExportModelAdmin):
         "base_form",
         "plural",
     )
+
+
+class GermanVerbResource(resources.ModelResource):
+    class Meta:
+        model = GermanVerb
+
+
+@admin.register(GermanVerb)
+class GermanVerbAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = GermanVerb
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
+
+    resource_class = GermanVerbResource
+    search_fields = ("base_form",)
+    fields = ("base_form", "comment")
+    list_display = ("base_form",)
+
+
+class GermanAdjectiveResource(resources.ModelResource):
+    class Meta:
+        model = GermanAdjective
+
+
+@admin.register(GermanAdjective)
+class GermanAdjectiveAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = GermanAdjective
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
+
+    resource_class = GermanAdjectiveResource
+    search_fields = ("base_form",)
+    fields = ("base_form", "comment")
+    list_display = ("base_form",)
+
+
+class GermanNounResource(resources.ModelResource):
+    class Meta:
+        model = GermanNoun
+
+
+@admin.register(GermanNoun)
+class NounAdmin(ImportExportModelAdmin):
+    class Meta:
+        model = GermanNoun
+
+    def get_form(self, request, obj=None, change=False, **kwargs):
+        form = super().get_form(request, obj=obj, change=change, **kwargs)
+
+        if obj:
+            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+
+        return form
+
+    resource_class = GermanNounResource
+    search_fields = ("base_form",)
+    fields = ("base_form", "comment")
+    list_display = ("base_form",)

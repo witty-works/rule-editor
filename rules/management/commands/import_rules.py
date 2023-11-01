@@ -14,6 +14,9 @@ from rules.models import (
     EnglishVerb,
     EnglishAdjective,
     EnglishNoun,
+    GermanVerb,
+    GermanAdjective,
+    GermanNoun,
 )
 import csv
 import re
@@ -29,7 +32,7 @@ class Command(BaseCommand):
         parser.add_argument("--skip", type=bool, default=False)
 
     def handle_lemmas(self, language, tokens: [], word_types: []):
-        if word_types is None or language == "de":
+        if word_types is None:
             return
 
         for i in range(len(word_types)):
@@ -37,50 +40,74 @@ class Command(BaseCommand):
                 continue
 
             if "v" in word_types[i]["word_type"]:
-                inflex = Verb(tokens[i])
-                try:
-                    EnglishVerb.objects.get(base_form=tokens[i])
-                except EnglishVerb.DoesNotExist:
-                    verb = EnglishVerb()
-                    verb.base_form = tokens[i]
-                    verb.past_tense = inflex.past()
-                    verb.past_participle = inflex.past_part()
-                    verb.present_participle = inflex.pres_part()
-                    verb.third_person_singular = inflex.singular()
-                    verb.save()
+                if language == "de":
+                    try:
+                        GermanVerb.objects.get(base_form=tokens[i])
+                    except GermanVerb.DoesNotExist:
+                        verb = GermanVerb()
+                        verb.base_form = tokens[i]
+                        verb.save()
+                else:
+                    inflex = Verb(tokens[i])
+                    try:
+                        EnglishVerb.objects.get(base_form=tokens[i])
+                    except EnglishVerb.DoesNotExist:
+                        verb = EnglishVerb()
+                        verb.base_form = tokens[i]
+                        verb.past_tense = inflex.past()
+                        verb.past_participle = inflex.past_part()
+                        verb.present_participle = inflex.pres_part()
+                        verb.third_person_singular = inflex.singular()
+                        verb.save()
 
-                    self.stdout.write(self.style.SUCCESS(f"Verb added {tokens[i]}"))
+                        self.stdout.write(self.style.SUCCESS(f"Verb added {tokens[i]}"))
 
             if "a" in word_types[i]["word_type"]:
-                inflex = Adjective(tokens[i])
-                try:
-                    EnglishAdjective.objects.get(base_form=tokens[i])
-                except EnglishAdjective.DoesNotExist:
-                    adjective = EnglishAdjective()
-                    adjective.base_form = tokens[i]
-                    if tokens[i].isupper():
-                        adjective.comparative = tokens[i]
-                        adjective.superlative = tokens[i]
-                    else:
-                        adjective.comparative = inflex.comparative()
-                        adjective.superlative = inflex.superlative()
-                    adjective.save()
+                if language == "de":
+                    try:
+                        GermanAdjective.objects.get(base_form=tokens[i])
+                    except GermanAdjective.DoesNotExist:
+                        verb = GermanAdjective()
+                        verb.base_form = tokens[i]
+                        verb.save()
+                else:
+                    inflex = Adjective(tokens[i])
+                    try:
+                        EnglishAdjective.objects.get(base_form=tokens[i])
+                    except EnglishAdjective.DoesNotExist:
+                        adjective = EnglishAdjective()
+                        adjective.base_form = tokens[i]
+                        if tokens[i].isupper():
+                            adjective.comparative = tokens[i]
+                            adjective.superlative = tokens[i]
+                        else:
+                            adjective.comparative = inflex.comparative()
+                            adjective.superlative = inflex.superlative()
+                        adjective.save()
 
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Adjective added {tokens[i]}")
-                    )
+                        self.stdout.write(
+                            self.style.SUCCESS(f"Adjective added {tokens[i]}")
+                        )
 
             if "s" in word_types[i]["word_type"]:
-                inflex = Noun(tokens[i])
-                try:
-                    EnglishNoun.objects.get(base_form=tokens[i])
-                except EnglishNoun.DoesNotExist:
-                    noun = EnglishNoun()
-                    noun.base_form = tokens[i]
-                    noun.plural = inflex.plural()
-                    noun.save()
+                if language == "de":
+                    try:
+                        GermanNoun.objects.get(base_form=tokens[i])
+                    except GermanNoun.DoesNotExist:
+                        verb = GermanNoun()
+                        verb.base_form = tokens[i]
+                        verb.save()
+                else:
+                    inflex = Noun(tokens[i])
+                    try:
+                        EnglishNoun.objects.get(base_form=tokens[i])
+                    except EnglishNoun.DoesNotExist:
+                        noun = EnglishNoun()
+                        noun.base_form = tokens[i]
+                        noun.plural = inflex.plural()
+                        noun.save()
 
-                    self.stdout.write(self.style.SUCCESS(f"Noun added {tokens[i]}"))
+                        self.stdout.write(self.style.SUCCESS(f"Noun added {tokens[i]}"))
 
     def handle(self, *args, **options):
         language = options["language"]
