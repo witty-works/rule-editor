@@ -265,6 +265,13 @@ class Command(BaseCommand):
                         "is_inspiration": True,
                         "is_advanced": False,
                     },
+                    "Alt_Pl_pair_and_inclusive_form": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
                     "Alt_Pl_collective_noun": {
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
@@ -273,13 +280,6 @@ class Command(BaseCommand):
                         "is_advanced": False,
                     },
                     "Alt_Pl": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Pl_pair_and_inclusive_form": {
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
                         "word_types": False,
