@@ -189,13 +189,6 @@ class Command(BaseCommand):
                     )
 
                 alternative_columns = {
-                    "Alt_Field": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
                     "Alt_Sg_Replacement": {
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.DEFAULT,
@@ -203,9 +196,16 @@ class Command(BaseCommand):
                         "is_inspiration": False,
                         "is_advanced": False,
                     },
-                    "Alt_Sg_/_and_inclusive_form": {
+                    "Alt_Field": {
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Sg_/_and_inclusive_form": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": True,
                         "is_inspiration": False,
                         "is_advanced": False,
@@ -288,7 +288,8 @@ class Command(BaseCommand):
                     "Try not to use this word to describe people": RuleLabelEnum.NOT_FOR_PEOPLE,
                     "Don't use this word for people": RuleLabelEnum.NOT_FOR_PEOPLE,
                     "Name the disability or condition": RuleLabelEnum.NAME_DISABILITY,
-                    "Only if gender identity is relevant | --- Only if self-identifies as female": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
+                    "Only if gender identity is relevant": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
+                    "Only if self-identifies as female": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
                     "Don't use in a non-combat context": RuleLabelEnum.NOT_FOR_NON_COMBAT,
                     "if stated preference": RuleLabelEnum.ASK_FOR_PREFERENCE,
                     "Only use in reference to religious practice": RuleLabelEnum.ONLY_WHEN_REFERENCING_RELIGIOUS_PRACTICE,
@@ -302,6 +303,7 @@ class Command(BaseCommand):
                 rule.label_type = RuleLabelEnum.DEFAULT
                 rule.label = None
 
+                alternative_count = 0
                 for alternative_column in alternative_columns:
                     if alternative_column not in row:
                         self.stdout.write(
@@ -314,7 +316,6 @@ class Command(BaseCommand):
                     if len(alternatives) == 0:
                         continue
 
-                    alternative_count = 0
                     for alternative_lemma in alternatives:
                         if alternative_lemma.startswith("---"):
                             label = alternative_lemma.removeprefix("---").strip()
@@ -359,9 +360,6 @@ class Command(BaseCommand):
                                     alternative.parse_word_types(),
                                 )
 
-                        alternative.order = alternative_count
-                        alternative_count += 1
-
                         alternative.label = label
                         alternative.type = alternative_columns[alternative_column][
                             "type"
@@ -376,7 +374,9 @@ class Command(BaseCommand):
                             alternative_column
                         ]["is_advanced"]
 
+                        alternative.order = alternative_count
                         alternative.save()
+                        alternative_count += 1
 
                 # False_Positives
                 false_positives = row["False_Positives"].strip()
@@ -409,6 +409,9 @@ class Command(BaseCommand):
                                 f"Column missing {training_sentences_column}"
                             )
                         )
+                        continue
+
+                    if row[training_sentences_column] is None:
                         continue
 
                     training_sentences = row[training_sentences_column].strip()
