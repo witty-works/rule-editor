@@ -624,8 +624,8 @@ class EnglishAdjectiveAdmin(ImportExportModelAdmin):
 
     resource_class = EnglishAdjectiveResource
     search_fields = ("base_form",)
-    fields = ("base_form", "comparative", "superlative", "comment")
-    list_display = ("base_form", "comparative", "superlative")
+    fields = ("base_form", "comparative", "superlative", "is_absolute", "comment")
+    list_display = ("base_form", "comparative", "superlative", "is_absolute")
 
 
 class EnglishNounResource(resources.ModelResource):
