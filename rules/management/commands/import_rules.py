@@ -332,6 +332,7 @@ class Command(BaseCommand):
 
                 alternative_count = 0
                 for alternative_column in alternative_columns:
+                    alternative_column_count = 0
                     if alternative_column not in row:
                         self.stdout.write(
                             self.style.NOTICE(f"Column missing {alternative_column}")
@@ -370,6 +371,10 @@ class Command(BaseCommand):
                         alternative = Alternative()
                         alternative.rule = rule
                         alternative.lemma = alternative_lemma
+                        alternative.comment = (
+                            f"{alternative_column} {alternative_column_count}"
+                        )
+                        alternative_column_count += 1
 
                         if alternative_lemma == "-":
                             alternative.is_remove = True
@@ -412,6 +417,23 @@ class Command(BaseCommand):
                         alternative.order = alternative_count
                         alternative.save()
                         alternative_count += 1
+
+                if alternative_count == 0:
+                    alternative = Alternative()
+                    alternative.rule = rule
+                    alternative.lemma = "-"
+                    alternative.word_types = ""
+                    alternative.order = 0
+                    alternative.is_remove = True
+                    alternative.comment = "Rule had no alternatives"
+                    alternative.save()
+                    self.stdout.write(
+                        self.style.NOTICE(f"Added implicit remove alternative")
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.NOTICE(f"Added {alternative_count} alternatives")
+                    )
 
                 # False_Positives
                 false_positives = row["False_Positives"].strip()
