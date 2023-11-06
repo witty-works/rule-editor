@@ -246,14 +246,14 @@ class Command(BaseCommand):
                     },
                     "Identity_first": {
                         "type": AlternativeTypeEnum.IDENTITY_FIRST,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": False,
                         "is_inspiration": False,
                         "is_advanced": False,
                     },
                     "Alt_Sg_people_first": {
                         "type": AlternativeTypeEnum.PERSON_FIRST,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": False,
                         "is_inspiration": False,
                         "is_advanced": False,
