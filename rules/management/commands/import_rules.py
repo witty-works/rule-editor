@@ -324,6 +324,25 @@ class Command(BaseCommand):
                     "Don't use to describe value or quality": RuleLabelEnum.DONT_USE_TO_DESCRIBE_QUALITY,
                     "Don't use in the context of substance use": RuleLabelEnum.DONT_USE_FOR_SUBSTANCE_USE,
                     "Ask about their traditions, if possible": RuleLabelEnum.ASK_ABOUT_TRADITIONS,
+                    "Nicht zum Beschreiben von Personen": RuleLabelEnum.NOT_FOR_PEOPLE,
+                    "nicht auf Menschen beziehen": RuleLabelEnum.NOT_FOR_PEOPLE,
+                    "nur erwähnen, wenn relevant": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
+                    "nur wenn die Person sich selbst so bezeichnet": RuleLabelEnum.ASK_FOR_PREFERENCE,
+                    "nur wenn die Person sich so bezeichnet": RuleLabelEnum.ASK_FOR_PREFERENCE,
+                    "Kultur nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "Region oder Land nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "Nationalität nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "Länder nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "Sprache nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "nicht für Einzelperson": RuleLabelEnum.DEFAULT,
+                    "nicht für Menschen mit Behinderungen": RuleLabelEnum.DEFAULT,
+                    "nicht für den Alltag von Menschen mit Behinderungen": RuleLabelEnum.DEFAULT,
+                    "lieber relevante Fähigkeiten nennen": RuleLabelEnum.DEFAULT,
+                    "nur im rechtlichen oder religiösen Kontext": RuleLabelEnum.DEFAULT,
+                    "nicht für Menschen oder ihr Handeln": RuleLabelEnum.DEFAULT,
+                    "nicht für Mitmenschen verwenden": RuleLabelEnum.DEFAULT,
+                    "nur für Menschenschmuggel aus Profitstreben": RuleLabelEnum.DEFAULT,
+                    "indigene Gruppe nennen": RuleLabelEnum.DEFAULT,
                 }
 
                 rule_tokens, rule_lemmas = rule.tokenize()
@@ -346,14 +365,12 @@ class Command(BaseCommand):
 
                     for alternative_lemma in alternatives:
                         if alternative_lemma.startswith("---"):
-                            label = alternative_lemma.removeprefix("---").strip()
-
-                            if label in label_types:
-                                rule.label_type = label_types[label]
-                                rule.label = None
-                            else:
-                                rule.label_type = RuleLabelEnum.DEFAULT
-                                rule.label = label
+                            rule.label = alternative_lemma.removeprefix("---").strip()
+                            rule.label_type = (
+                                label_types[rule.label]
+                                if label in label_types
+                                else RuleLabelEnum.DEFAULT
+                            )
 
                             continue
 
