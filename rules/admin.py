@@ -13,7 +13,6 @@ import json
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from ordered_model.admin import OrderedModelAdmin
 from rangefilter.filter import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
 from dal import autocomplete
@@ -471,7 +470,7 @@ class RuleAdmin(CreatedByAdmin):
 
 
 @admin.register(DiversityDimension)
-class DiversityDimensionAdmin(OrderedModelAdmin):
+class DiversityDimensionAdmin(admin.ModelAdmin):
     class Meta:
         model = DiversityDimension
 
@@ -491,7 +490,7 @@ class DiversityDimensionAdmin(OrderedModelAdmin):
     def has_add_permission(self, request, obj=None):  # Here
         return False
 
-    list_display = ("name", "category", "proficiency_level", "move_up_down_links")
+    list_display = ("name", "category", "proficiency_level")
     search_fields = ("name",)
     list_filter = (
         "category",

@@ -258,15 +258,11 @@ class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
 
 
 class DiversityDimension(
-    OrderedModel,
     ComputedFieldsModel,
     BaseTimestampedModel,
     BaseCreatedByModel,
     BaseCommentableModel,
 ):
-    class Meta(OrderedModel.Meta):
-        unique_together = (("parent_name", "is_advanced"),)
-
     def __str__(self):
         return self.name
 
