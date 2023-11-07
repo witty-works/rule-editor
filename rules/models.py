@@ -30,12 +30,15 @@ def fetch_json(path, data=None):
     else:
         r = requests.post(url, json=data, auth=auth)
 
-    if r.status_code != 200:
-        body = r.json()
-        error = body["detail"] if "detail" in body else r.text
-        raise ValidationError(path + ": " + error)
+    try:
+        if r.status_code != 200:
+            body = r.json()
+            error = body["detail"] if "detail" in body else r.text
+            raise ValidationError(path + ": " + error)
 
-    return r.json()
+        return r.json()
+    except Exception as e:
+        raise ValidationError(path + ": " + str(e))
 
 
 class LanguageEnum(models.TextChoices):
