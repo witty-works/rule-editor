@@ -89,7 +89,8 @@ class Command(BaseCommand):
                             self.style.SUCCESS(f"Adjective added {tokens[i]}")
                         )
 
-            if "s" in word_types[i]["word_type"]:
+            # BC code "s"
+            if "s" in word_types[i]["word_type"] and "n" in word_types[i]["word_type"]:
                 if language == "de":
                     try:
                         GermanNoun.objects.get(base_form=tokens[i])
