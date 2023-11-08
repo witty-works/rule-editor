@@ -31,7 +31,7 @@ class Command(BaseCommand):
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
 
-    def handle_lemmas(self, language, tokens: [], word_types: []):
+    def handle_lemmas(self, language, lemma, tokens: [], word_types: []):
         if word_types is None:
             return
 
@@ -39,76 +39,75 @@ class Command(BaseCommand):
             if not word_types[i]["lemmatize"]:
                 continue
 
-            if "v" in word_types[i]["word_type"]:
+            model = None
+            word_type = word_types[i]["word_type"]
+            if "v" == word_type:
                 if language == "de":
                     try:
-                        GermanVerb.objects.get(base_form=tokens[i])
+                        model = GermanVerb.objects.get(base_form=tokens[i])
                     except GermanVerb.DoesNotExist:
-                        verb = GermanVerb()
-                        verb.base_form = tokens[i]
-                        verb.save()
+                        model = GermanVerb()
+                        model.base_form = tokens[i]
                 else:
-                    inflex = Verb(tokens[i])
                     try:
-                        EnglishVerb.objects.get(base_form=tokens[i])
+                        model = EnglishVerb.objects.get(base_form=tokens[i])
                     except EnglishVerb.DoesNotExist:
+                        inflex = Verb(tokens[i])
                         verb = EnglishVerb()
                         verb.base_form = tokens[i]
                         verb.past_tense = inflex.past()
                         verb.past_participle = inflex.past_part()
                         verb.present_participle = inflex.pres_part()
                         verb.third_person_singular = inflex.singular()
-                        verb.save()
-
-                        self.stdout.write(self.style.SUCCESS(f"Verb added {tokens[i]}"))
-
-            if "a" in word_types[i]["word_type"]:
+            elif "a" == word_type:
                 if language == "de":
                     try:
-                        GermanAdjective.objects.get(base_form=tokens[i])
+                        model = GermanAdjective.objects.get(base_form=tokens[i])
                     except GermanAdjective.DoesNotExist:
-                        verb = GermanAdjective()
-                        verb.base_form = tokens[i]
-                        verb.save()
+                        model = GermanAdjective()
+                        model.base_form = tokens[i]
                 else:
-                    inflex = Adjective(tokens[i])
                     try:
-                        EnglishAdjective.objects.get(base_form=tokens[i])
+                        model = EnglishAdjective.objects.get(base_form=tokens[i])
                     except EnglishAdjective.DoesNotExist:
-                        adjective = EnglishAdjective()
-                        adjective.base_form = tokens[i]
+                        inflex = Adjective(tokens[i])
+                        model = EnglishAdjective()
+                        model.base_form = tokens[i]
                         if tokens[i].isupper():
-                            adjective.comparative = tokens[i]
-                            adjective.superlative = tokens[i]
+                            model.comparative = tokens[i]
+                            model.superlative = tokens[i]
                         else:
-                            adjective.comparative = inflex.comparative()
-                            adjective.superlative = inflex.superlative()
-                        adjective.save()
-
-                        self.stdout.write(
-                            self.style.SUCCESS(f"Adjective added {tokens[i]}")
-                        )
-
-            # BC code "s"
-            if "s" in word_types[i]["word_type"] and "n" in word_types[i]["word_type"]:
+                            model.comparative = inflex.comparative()
+                            model.superlative = inflex.superlative()
+            elif "n" == word_type:
                 if language == "de":
                     try:
-                        GermanNoun.objects.get(base_form=tokens[i])
+                        model = GermanNoun.objects.get(base_form=tokens[i])
                     except GermanNoun.DoesNotExist:
-                        verb = GermanNoun()
-                        verb.base_form = tokens[i]
-                        verb.save()
+                        model = GermanNoun()
+                        model.base_form = tokens[i]
                 else:
-                    inflex = Noun(tokens[i])
                     try:
-                        EnglishNoun.objects.get(base_form=tokens[i])
+                        model = EnglishNoun.objects.get(base_form=tokens[i])
                     except EnglishNoun.DoesNotExist:
-                        noun = EnglishNoun()
-                        noun.base_form = tokens[i]
-                        noun.plural = inflex.plural()
-                        noun.save()
+                        inflex = Noun(tokens[i])
+                        model = EnglishNoun()
+                        model.base_form = tokens[i]
+                        model.plural = inflex.plural()
 
-                        self.stdout.write(self.style.SUCCESS(f"Noun added {tokens[i]}"))
+            if model is not None:
+                message = "Added" if model.pk is None else "Updated"
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"{message} {word_type} ({language}) for {tokens[i]}"
+                    )
+                )
+
+                if model.comment is None:
+                    model.comment = ""
+                if lemma + "\n" not in model.comment:
+                    model.comment += lemma + "\n"
+                model.save()
 
     def handle(self, *args, **options):
         language = options["language"]
@@ -196,7 +195,9 @@ class Command(BaseCommand):
 
                 rule.save()
 
-                self.handle_lemmas(language, rule.tokenized, rule.parse_word_types())
+                self.handle_lemmas(
+                    language, rule.lemma, rule.tokenized, rule.parse_word_types()
+                )
 
                 priorties = [s.strip() for s in row["Priority"].split("|")]
                 if "HR" in priorties:
@@ -407,6 +408,7 @@ class Command(BaseCommand):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
                                     language,
+                                    alternative.lemma,
                                     alternative_rule_tokens,
                                     alternative.parse_word_types(),
                                 )
