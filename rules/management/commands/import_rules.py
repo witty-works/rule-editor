@@ -79,6 +79,8 @@ class Command(BaseCommand):
                         else:
                             model.comparative = inflex.comparative()
                             model.superlative = inflex.superlative()
+                        model.is_absolute = False
+
             elif "n" == word_type:
                 if language == "de":
                     try:
