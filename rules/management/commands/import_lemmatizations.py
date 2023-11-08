@@ -731,6 +731,7 @@ class Command(BaseCommand):
 
                 lemmatization.lemma = lemma_lookup[lang][text]
                 lemmatization.is_plural = text in lemma_plural_lookup[lang]
+                lemmatization.language = lang
                 lemmatization.save()
 
                 self.stdout.write(self.style.SUCCESS(message))
