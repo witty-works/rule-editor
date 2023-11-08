@@ -422,6 +422,7 @@ class Command(BaseCommand):
                             and ")" in alternative.lemma
                             and "((" not in alternative.lemma
                             and "))" not in alternative.lemma
+                            and "abbreviation" not in row["Primary_subcategory"]
                         ):
                             alternative.is_inspiration = True
                         else:
