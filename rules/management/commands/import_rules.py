@@ -436,7 +436,7 @@ class Command(BaseCommand):
                         alternative.save()
                         alternative_count += 1
 
-                if alternative_count == 0:
+                if alternative_count == 0 and row["Category"] == "inclusive":
                     alternative = Alternative()
                     alternative.rule = rule
                     alternative.lemma = "-"
