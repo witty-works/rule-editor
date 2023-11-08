@@ -120,7 +120,8 @@ class Command(BaseCommand):
                 if len(lemma) == 0:
                     continue
 
-                word_types = row["Word_Type"].strip()
+                # BC code "s" -> "n"
+                word_types = row["Word_Type"].strip().replace("s", "n")
 
                 self.stdout.write(
                     self.style.NOTICE(f"Processing lemma '{lemma}' / '{word_types}'")

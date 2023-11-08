@@ -85,8 +85,6 @@ def update_lemma_help_text(obj, field):
     word_type_map = {
         "v": "Verb",
         "a": "Adjective",
-        # BC code "s"
-        "s": "Noun",
         "n": "Noun",
     }
 
