@@ -392,6 +392,7 @@ class Command(BaseCommand):
 
                         alternative = Alternative()
                         alternative.rule = rule
+                        alternative.language = rule.language
                         alternative.lemma = alternative_lemma
                         alternative.comment = (
                             f"{alternative_column} {alternative_column_count}"
@@ -406,6 +407,7 @@ class Command(BaseCommand):
                                 alternative_rule_tokens,
                                 alternative_rule_lemmas,
                             ) = alternative.tokenize()
+
                             if len(rule_tokens) == len(alternative_rule_tokens):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
