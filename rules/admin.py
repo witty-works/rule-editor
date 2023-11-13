@@ -7,6 +7,7 @@ from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from django.db.models import Q
 from django.conf import settings
+from django.core.exceptions import ValidationError
 
 import requests
 import json
@@ -75,12 +76,19 @@ def generate_help_text(name, language, filters, token):
 
 
 def update_lemma_help_text(obj, field):
-    tokens, lemmas = obj.tokenize()
-    word_types = obj.parse_word_types()
-    if word_types is None:
-        return
-
     help_texts = [field.help_text]
+
+    try:
+        tokens, lemmas = obj.tokenize()
+        word_types = obj.parse_word_types()
+        if word_types is None:
+            return
+    except ValidationError as exception:
+        help_texts.append(
+            "Tokenization/Word_types validation failed: " + exception.message
+        )
+
+        tokens = lemmas = word_types = []
 
     word_type_map = {
         "v": "Verb",
