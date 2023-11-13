@@ -31,7 +31,7 @@ class Command(BaseCommand):
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
 
-    def handle_lemmas(self, language, tokens: [], word_types: []):
+    def handle_lemmas(self, language, lemma, tokens: [], word_types: []):
         if word_types is None:
             return
 
@@ -39,75 +39,77 @@ class Command(BaseCommand):
             if not word_types[i]["lemmatize"]:
                 continue
 
-            if "v" in word_types[i]["word_type"]:
+            model = None
+            word_type = word_types[i]["word_type"]
+            if "v" == word_type:
                 if language == "de":
                     try:
-                        GermanVerb.objects.get(base_form=tokens[i])
+                        model = GermanVerb.objects.get(base_form=tokens[i])
                     except GermanVerb.DoesNotExist:
-                        verb = GermanVerb()
-                        verb.base_form = tokens[i]
-                        verb.save()
+                        model = GermanVerb()
+                        model.base_form = tokens[i]
                 else:
-                    inflex = Verb(tokens[i])
                     try:
-                        EnglishVerb.objects.get(base_form=tokens[i])
+                        model = EnglishVerb.objects.get(base_form=tokens[i])
                     except EnglishVerb.DoesNotExist:
+                        inflex = Verb(tokens[i])
                         verb = EnglishVerb()
                         verb.base_form = tokens[i]
                         verb.past_tense = inflex.past()
                         verb.past_participle = inflex.past_part()
                         verb.present_participle = inflex.pres_part()
                         verb.third_person_singular = inflex.singular()
-                        verb.save()
-
-                        self.stdout.write(self.style.SUCCESS(f"Verb added {tokens[i]}"))
-
-            if "a" in word_types[i]["word_type"]:
+            elif "a" == word_type:
                 if language == "de":
                     try:
-                        GermanAdjective.objects.get(base_form=tokens[i])
+                        model = GermanAdjective.objects.get(base_form=tokens[i])
                     except GermanAdjective.DoesNotExist:
-                        verb = GermanAdjective()
-                        verb.base_form = tokens[i]
-                        verb.save()
+                        model = GermanAdjective()
+                        model.base_form = tokens[i]
                 else:
-                    inflex = Adjective(tokens[i])
                     try:
-                        EnglishAdjective.objects.get(base_form=tokens[i])
+                        model = EnglishAdjective.objects.get(base_form=tokens[i])
                     except EnglishAdjective.DoesNotExist:
-                        adjective = EnglishAdjective()
-                        adjective.base_form = tokens[i]
+                        inflex = Adjective(tokens[i])
+                        model = EnglishAdjective()
+                        model.base_form = tokens[i]
                         if tokens[i].isupper():
-                            adjective.comparative = tokens[i]
-                            adjective.superlative = tokens[i]
+                            model.comparative = tokens[i]
+                            model.superlative = tokens[i]
                         else:
-                            adjective.comparative = inflex.comparative()
-                            adjective.superlative = inflex.superlative()
-                        adjective.save()
+                            model.comparative = inflex.comparative()
+                            model.superlative = inflex.superlative()
+                        model.is_absolute = False
 
-                        self.stdout.write(
-                            self.style.SUCCESS(f"Adjective added {tokens[i]}")
-                        )
-
-            if "s" in word_types[i]["word_type"]:
+            elif "n" == word_type:
                 if language == "de":
                     try:
-                        GermanNoun.objects.get(base_form=tokens[i])
+                        model = GermanNoun.objects.get(base_form=tokens[i])
                     except GermanNoun.DoesNotExist:
-                        verb = GermanNoun()
-                        verb.base_form = tokens[i]
-                        verb.save()
+                        model = GermanNoun()
+                        model.base_form = tokens[i]
                 else:
-                    inflex = Noun(tokens[i])
                     try:
-                        EnglishNoun.objects.get(base_form=tokens[i])
+                        model = EnglishNoun.objects.get(base_form=tokens[i])
                     except EnglishNoun.DoesNotExist:
-                        noun = EnglishNoun()
-                        noun.base_form = tokens[i]
-                        noun.plural = inflex.plural()
-                        noun.save()
+                        inflex = Noun(tokens[i])
+                        model = EnglishNoun()
+                        model.base_form = tokens[i]
+                        model.plural = inflex.plural()
 
-                        self.stdout.write(self.style.SUCCESS(f"Noun added {tokens[i]}"))
+            if model is not None:
+                message = "Added" if model.pk is None else "Updated"
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"{message} {word_type} ({language}) for {tokens[i]}"
+                    )
+                )
+
+                if model.comment is None:
+                    model.comment = ""
+                if lemma + "\n" not in model.comment:
+                    model.comment += lemma + "\n"
+                model.save()
 
     def handle(self, *args, **options):
         language = options["language"]
@@ -119,7 +121,8 @@ class Command(BaseCommand):
                 if len(lemma) == 0:
                     continue
 
-                word_types = row["Word_Type"].strip()
+                # BC code "s" -> "n"
+                word_types = row["Word_Type"].strip().replace("s", "n")
 
                 self.stdout.write(
                     self.style.NOTICE(f"Processing lemma '{lemma}' / '{word_types}'")
@@ -194,7 +197,9 @@ class Command(BaseCommand):
 
                 rule.save()
 
-                self.handle_lemmas(language, rule.tokenized, rule.parse_word_types())
+                self.handle_lemmas(
+                    language, rule.lemma, rule.tokenized, rule.parse_word_types()
+                )
 
                 priorties = [s.strip() for s in row["Priority"].split("|")]
                 if "HR" in priorties:
@@ -246,14 +251,14 @@ class Command(BaseCommand):
                     },
                     "Identity_first": {
                         "type": AlternativeTypeEnum.IDENTITY_FIRST,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": False,
                         "is_inspiration": False,
                         "is_advanced": False,
                     },
                     "Alt_Sg_people_first": {
                         "type": AlternativeTypeEnum.PERSON_FIRST,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": False,
                         "is_inspiration": False,
                         "is_advanced": False,
@@ -324,6 +329,25 @@ class Command(BaseCommand):
                     "Don't use to describe value or quality": RuleLabelEnum.DONT_USE_TO_DESCRIBE_QUALITY,
                     "Don't use in the context of substance use": RuleLabelEnum.DONT_USE_FOR_SUBSTANCE_USE,
                     "Ask about their traditions, if possible": RuleLabelEnum.ASK_ABOUT_TRADITIONS,
+                    "Nicht zum Beschreiben von Personen": RuleLabelEnum.NOT_FOR_PEOPLE,
+                    "nicht auf Menschen beziehen": RuleLabelEnum.NOT_FOR_PEOPLE,
+                    "nur erwähnen, wenn relevant": RuleLabelEnum.ONLY_IF_GENDER_IDENTITY_RELEVANT,
+                    "nur wenn die Person sich selbst so bezeichnet": RuleLabelEnum.ASK_FOR_PREFERENCE,
+                    "nur wenn die Person sich so bezeichnet": RuleLabelEnum.ASK_FOR_PREFERENCE,
+                    "Kultur nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "Region oder Land nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "Nationalität nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "Länder nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "Sprache nennen": RuleLabelEnum.BE_SPECIFIC,
+                    "nicht für Einzelperson": RuleLabelEnum.DEFAULT,
+                    "nicht für Menschen mit Behinderungen": RuleLabelEnum.DEFAULT,
+                    "nicht für den Alltag von Menschen mit Behinderungen": RuleLabelEnum.DEFAULT,
+                    "lieber relevante Fähigkeiten nennen": RuleLabelEnum.DEFAULT,
+                    "nur im rechtlichen oder religiösen Kontext": RuleLabelEnum.DEFAULT,
+                    "nicht für Menschen oder ihr Handeln": RuleLabelEnum.DEFAULT,
+                    "nicht für Mitmenschen verwenden": RuleLabelEnum.DEFAULT,
+                    "nur für Menschenschmuggel aus Profitstreben": RuleLabelEnum.DEFAULT,
+                    "indigene Gruppe nennen": RuleLabelEnum.DEFAULT,
                 }
 
                 rule_tokens, rule_lemmas = rule.tokenize()
@@ -332,6 +356,7 @@ class Command(BaseCommand):
 
                 alternative_count = 0
                 for alternative_column in alternative_columns:
+                    alternative_column_count = 0
                     if alternative_column not in row:
                         self.stdout.write(
                             self.style.NOTICE(f"Column missing {alternative_column}")
@@ -345,14 +370,12 @@ class Command(BaseCommand):
 
                     for alternative_lemma in alternatives:
                         if alternative_lemma.startswith("---"):
-                            label = alternative_lemma.removeprefix("---").strip()
-
-                            if label in label_types:
-                                rule.label_type = label_types[label]
-                                rule.label = None
-                            else:
-                                rule.label_type = RuleLabelEnum.DEFAULT
-                                rule.label = label
+                            rule.label = alternative_lemma.removeprefix("---").strip()
+                            rule.label_type = (
+                                label_types[rule.label]
+                                if label in label_types
+                                else RuleLabelEnum.DEFAULT
+                            )
 
                             continue
 
@@ -370,6 +393,10 @@ class Command(BaseCommand):
                         alternative = Alternative()
                         alternative.rule = rule
                         alternative.lemma = alternative_lemma
+                        alternative.comment = (
+                            f"{alternative_column} {alternative_column_count}"
+                        )
+                        alternative_column_count += 1
 
                         if alternative_lemma == "-":
                             alternative.is_remove = True
@@ -383,6 +410,7 @@ class Command(BaseCommand):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
                                     language,
+                                    alternative.lemma,
                                     alternative_rule_tokens,
                                     alternative.parse_word_types(),
                                 )
@@ -394,7 +422,13 @@ class Command(BaseCommand):
                         alternative.pluralization = alternative_columns[
                             alternative_column
                         ]["pluralization"]
-                        if "..." in alternative.lemma:
+                        if "..." in alternative.lemma or (
+                            "(" in alternative.lemma
+                            and ")" in alternative.lemma
+                            and "((" not in alternative.lemma
+                            and "))" not in alternative.lemma
+                            and "abbreviation" not in row["Primary_subcategory"]
+                        ):
                             alternative.is_inspiration = True
                         else:
                             alternative.is_inspiration = alternative_columns[
@@ -407,6 +441,23 @@ class Command(BaseCommand):
                         alternative.order = alternative_count
                         alternative.save()
                         alternative_count += 1
+
+                if alternative_count == 0 and row["Category"] != "inclusive":
+                    alternative = Alternative()
+                    alternative.rule = rule
+                    alternative.lemma = "-"
+                    alternative.word_types = ""
+                    alternative.order = 0
+                    alternative.is_remove = True
+                    alternative.comment = "Rule had no alternatives"
+                    alternative.save()
+                    self.stdout.write(
+                        self.style.NOTICE(f"Added implicit remove alternative")
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.NOTICE(f"Added {alternative_count} alternatives")
+                    )
 
                 # False_Positives
                 false_positives = row["False_Positives"].strip()

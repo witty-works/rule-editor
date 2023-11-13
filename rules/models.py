@@ -30,12 +30,15 @@ def fetch_json(path, data=None):
     else:
         r = requests.post(url, json=data, auth=auth)
 
-    if r.status_code != 200:
-        body = r.json()
-        error = body["detail"] if "detail" in body else r.text
-        raise ValidationError(path + ": " + error)
+    try:
+        if r.status_code != 200:
+            body = r.json()
+            error = body["detail"] if "detail" in body else r.text
+            raise ValidationError(path + ": " + error)
 
-    return r.json()
+        return r.json()
+    except Exception as e:
+        raise ValidationError(path + ": " + str(e))
 
 
 class LanguageEnum(models.TextChoices):
@@ -258,15 +261,11 @@ class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
 
 
 class DiversityDimension(
-    OrderedModel,
     ComputedFieldsModel,
     BaseTimestampedModel,
     BaseCreatedByModel,
     BaseCommentableModel,
 ):
-    class Meta(OrderedModel.Meta):
-        unique_together = (("parent_name", "is_advanced"),)
-
     def __str__(self):
         return self.name
 
@@ -577,9 +576,7 @@ class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     lemma = models.CharField(
         max_length=255, help_text="Lemma used for the given source text"
     )
-    is_plural = models.BooleanField(
-        help_text="If the text is plural"
-    )
+    is_plural = models.BooleanField(help_text="If the text is plural")
 
 
 class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -600,6 +597,7 @@ class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentable
     base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
     comparative = models.CharField(max_length=255, null=True, blank=True)
     superlative = models.CharField(max_length=255, null=True, blank=True)
+    is_absolute = models.BooleanField(help_text="If adjective is in an absolute")
 
 
 class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):

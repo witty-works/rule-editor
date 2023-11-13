@@ -21,3 +21,9 @@ To update migrations run:
 python manage.py makemigrations rules
 python manage.py migrate
 ```
+
+# Upload files
+
+```
+platform mount:upload --mount foo --source ./foo
+```
