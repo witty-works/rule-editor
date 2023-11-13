@@ -85,7 +85,7 @@ def update_lemma_help_text(obj, field):
             return
     except ValidationError as exception:
         help_texts.append(
-            "Tokenization/Word_types validation failed: " + exception.message
+            "<b>Tokenization/Word_types validation failed</b>: " + exception.message
         )
 
         tokens = lemmas = word_types = []
