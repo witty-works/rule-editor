@@ -415,7 +415,7 @@ class Rule(
         if (
             self.parsed_word_types is not None
             and len(self.parsed_word_types)
-            and self.parsed_word_types[0]["lemmatize"]
+            and self.parsed_word_types[0]["lower_case"]
         ):
             first_token = first_token.lower()
 
