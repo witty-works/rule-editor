@@ -230,7 +230,7 @@ class Command(BaseCommand):
                     },
                     "Alt_Sg_Replacement": {
                         "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": True,
                         "is_inspiration": False,
                         "is_advanced": False,
@@ -244,7 +244,7 @@ class Command(BaseCommand):
                     },
                     "Medical_term": {
                         "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": False,
                         "is_inspiration": False,
                         "is_advanced": False,
@@ -265,7 +265,7 @@ class Command(BaseCommand):
                     },
                     "Alt_Sg_reframed": {
                         "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": False,
                         "is_inspiration": True,
                         "is_advanced": False,
