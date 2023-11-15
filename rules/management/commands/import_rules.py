@@ -260,7 +260,7 @@ class Command(BaseCommand):
                         "type": AlternativeTypeEnum.PERSON_FIRST,
                         "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": False,
-                        "is_inspiration": False,
+                        "is_inspiration": True,
                         "is_advanced": False,
                     },
                     "Alt_Sg_reframed": {
@@ -302,7 +302,7 @@ class Command(BaseCommand):
                         "type": AlternativeTypeEnum.PERSON_FIRST,
                         "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
                         "word_types": False,
-                        "is_inspiration": False,
+                        "is_inspiration": True,
                         "is_advanced": False,
                     },
                     "Alt_Pl_reframed": {
