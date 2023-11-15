@@ -221,17 +221,17 @@ class Command(BaseCommand):
                     )
 
                 alternative_columns = {
-                    "Alt_Sg_Replacement": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
-                        "word_types": True,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
                     "Alt_Field": {
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.DEFAULT,
                         "word_types": False,
+                        "is_inspiration": False,
+                        "is_advanced": False,
+                    },
+                    "Alt_Sg_Replacement": {
+                        "type": AlternativeTypeEnum.DEFAULT,
+                        "pluralization": AlternativePluralizationEnum.DEFAULT,
+                        "word_types": True,
                         "is_inspiration": False,
                         "is_advanced": False,
                     },
