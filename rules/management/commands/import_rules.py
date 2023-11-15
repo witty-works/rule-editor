@@ -209,7 +209,7 @@ class Command(BaseCommand):
                     "basic" in priorties or row["Category"] == "openly_discriminating"
                 )
                 self.add_diversity_dimension(
-                    rule, row["Primary_subcategory"], 0, is_basic
+                    rule, row["Category"], row["Primary_subcategory"], 0, is_basic
                 )
 
                 if (
@@ -217,7 +217,7 @@ class Command(BaseCommand):
                     and row["Secondary_subcategory"] != "generic_plural"
                 ):
                     self.add_diversity_dimension(
-                        rule, row["Secondary_subcategory"], 1, is_basic
+                        rule, row["Category"], row["Secondary_subcategory"], 1, is_basic
                     )
 
                 alternative_columns = {
@@ -522,7 +522,7 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(message))
 
     def add_diversity_dimension(
-        self, rule: Rule, name: str, order: int, is_basic: bool = False
+        self, rule: Rule, category: str, name: str, order: int, is_basic: bool = False
     ):
         subcategory_name = (
             name if not name.startswith("advanced_") else name.removeprefix("advanced_")
@@ -530,7 +530,11 @@ class Command(BaseCommand):
 
         if name.endswith("_base"):
             subcategory_name = subcategory_name.removesuffix("_base")
-            rule.type = RuleTypeEnum.SUFFIX
+            rule.type = (
+                RuleTypeEnum.SUBSTRING
+                if category == "openly_discriminating"
+                else RuleTypeEnum.SUFFIX
+            )
 
         subcategory_name = (
             subcategory_name if is_basic else subcategory_name + "_advanced"
