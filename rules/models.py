@@ -222,7 +222,12 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         help_text="Lemma is one or multiple words (tokens) either in lemmatized form or not (depending on the word_types)",
     )
 
-    @computed(models.JSONField(default=dict))
+    @computed(
+        models.JSONField(default=dict),
+        depends=[
+            ("self", ["lemma"]),
+        ],
+    )
     def lemma_json(self):
         return self.tokenized
 
@@ -233,7 +238,12 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         help_text="'|' separated list of word types (s, a, adv, v, conj, emoji) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
     )
 
-    @computed(models.JSONField(default=dict))
+    @computed(
+        models.JSONField(default=dict),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
     def word_types_json(self):
         return [] if self.parsed_word_types is None else self.parsed_word_types
 
@@ -286,7 +296,12 @@ class DiversityDimension(
         help_text="Proficiency level of the diversity dimension ('inclusive', 'unconscious_bias', 'openly_discriminating', ..)",
     )
 
-    @computed(models.BooleanField(null=True, blank=True))
+    @computed(
+        models.BooleanField(null=True, blank=True),
+        depends=[
+            ("self", ["name"]),
+        ],
+    )
     def is_advanced(self):
         self.is_advanced = self.name.endswith("_advanced")
 
@@ -406,7 +421,13 @@ class Rule(
         help_text="Override the diversity dimension URL with a custom URL",
     )
 
-    @computed(models.CharField(max_length=255, null=True, blank=True))
+    @computed(
+        models.CharField(max_length=255, null=True, blank=True),
+        depends=[
+            ("self", ["lemma_json"]),
+            ("self", ["word_types"]),
+        ],
+    )
     def first_token(self):
         if self.lemma_json is None or len(self.lemma_json) == 0:
             return None
@@ -421,35 +442,62 @@ class Rule(
 
         return first_token
 
-    @computed(models.CharField(max_length=255, null=True, blank=True))
+    @computed(
+        models.CharField(max_length=255, null=True, blank=True),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
     def first_word_type(self):
         if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
             return None
 
         return self.parsed_word_types[0]["word_type"]
 
-    @computed(models.BooleanField(null=True, blank=True))
+    @computed(
+        models.BooleanField(null=True, blank=True),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
     def first_is_word_type_lemmatize(self):
         if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
             return None
 
         return self.parsed_word_types[0]["lemmatize"]
 
-    @computed(models.BooleanField(null=True, blank=True))
+    @computed(
+        models.BooleanField(null=True, blank=True),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
     def first_is_word_type_lower_case(self):
         if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
             return None
 
         return self.parsed_word_types[0]["lower_case"]
 
-    @computed(models.BooleanField(null=True, blank=True))
+    @computed(
+        models.BooleanField(null=True, blank=True),
+        depends=[
+            ("training_sentences", ["text"]),
+        ],
+    )
     def has_training_sentences(self):
         return bool(len(self.training_sentences.all())) if self.id else False
 
-    @computed(models.JSONField(default=dict))
+    @computed(
+        models.JSONField(default=dict),
+        depends=[
+            ("diversity_dimensions", ["name"]),
+            ("rulediversitydimension", ["diversity_dimension"]),
+        ],
+        prefetch_related=["diversity_dimensions"],
+    )
     def diversity_dimension_json(self):
         diversity_dimensions = []
-        if self.id:
+        if self.pk:
             for diversity_dimension in self.diversity_dimensions.all():
                 diversity_dimensions.append(diversity_dimension.name)
 
@@ -521,11 +569,21 @@ class Alternative(
         help_text="Only show if user has diversity dimension enabled at advanced level.",
     )
 
-    @computed(models.BooleanField(default=False))
+    @computed(
+        models.BooleanField(default=False),
+        depends=[
+            ("self", ["lemma"]),
+        ],
+    )
     def is_placeholder(self):
         return "((" in self.lemma and "))" in self.lemma
 
-    @computed(EnumField(LanguageEnum, default=LanguageEnum.EN))
+    @computed(
+        EnumField(LanguageEnum, default=LanguageEnum.EN),
+        depends=[
+            ("rule", ["language"]),
+        ],
+    )
     def language(self):
         return self.rule.language
 
