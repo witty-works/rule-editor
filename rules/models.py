@@ -616,8 +616,16 @@ class TrainingSentence(
 
     text = models.TextField(null=True, blank=True)
 
-    is_false_positive = models.BooleanField(default=False)
-    is_training_data = models.BooleanField(default=False)
+    is_false_positive = models.BooleanField(
+        default=False, help_text="If sentences should not trigger the rule"
+    )
+    is_training_data = models.BooleanField(
+        default=False,
+        help_text="If sentences should be used for the custom machine learning model",
+    )
+    is_on_website = models.BooleanField(
+        default=False, help_text="If sentences is an example on the website"
+    )
 
     tags = TaggableManager(blank=True)
 

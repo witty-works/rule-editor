@@ -232,7 +232,7 @@ def generate_help_text(name, language, filters, token, text=None):
             text = "" if text is None else " " + text
             word = f"'{word}'" if word == token else f"'{token}' ({word})"
             help_texts.append(
-                f"{name} <a href=\"{link}\">data available</a> for {word}'{text}"
+                f'{name} <a href="{link}">data available</a> for {word}\'{text}'
             )
 
         return "<br>".join(help_texts)
@@ -490,6 +490,7 @@ class TrainingSentenceInline(admin.StackedInline):
         "text",
         "is_false_positive",
         "is_training_data",
+        "is_on_website",
         "comment",
         "spacy",
         "response",
