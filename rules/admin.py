@@ -39,19 +39,180 @@ from .models import (
     fetch_json,
 )
 
+stopwords = {
+    "de": [
+        "aber",
+        "als",
+        "am",
+        "an",
+        "auch",
+        "auf",
+        "aus",
+        "bei",
+        "bin",
+        "bis",
+        "bist",
+        "da",
+        "dadurch",
+        "daher",
+        "darum",
+        "das",
+        "daß",
+        "dass",
+        "dein",
+        "deine",
+        "dem",
+        "den",
+        "der",
+        "des",
+        "dessen",
+        "deshalb",
+        "die",
+        "dies",
+        "dieser",
+        "dieses",
+        "doch",
+        "dort",
+        "du",
+        "durch",
+        "ein",
+        "eine",
+        "einem",
+        "einen",
+        "einer",
+        "eines",
+        "er",
+        "es",
+        "euer",
+        "eure",
+        "für",
+        "hatte",
+        "hatten",
+        "hattest",
+        "hattet",
+        "hier",
+        "hinter",
+        "ich",
+        "ihr",
+        "ihre",
+        "im",
+        "in",
+        "ist",
+        "ja",
+        "jede",
+        "jedem",
+        "jeden",
+        "jeder",
+        "jedes",
+        "jener",
+        "jenes",
+        "jetzt",
+        "kann",
+        "kannst",
+        "können",
+        "könnt",
+        "machen",
+        "mein",
+        "meine",
+        "mit",
+        "muß",
+        "mußt",
+        "musst",
+        "müssen",
+        "müßt",
+        "nach",
+        "nachdem",
+        "nein",
+        "nicht",
+        "nun",
+        "oder",
+        "seid",
+        "sein",
+        "seine",
+        "sich",
+        "sie",
+        "sind",
+        "soll",
+        "sollen",
+        "sollst",
+        "sollt",
+        "sonst",
+        "soweit",
+        "sowie",
+        "und",
+        "unser",
+        "unsere",
+        "unter",
+        "vom",
+        "von",
+        "vor",
+        "wann",
+        "warum",
+        "was",
+        "weiter",
+        "weitere",
+        "wenn",
+        "wer",
+        "werde",
+        "werden",
+        "werdet",
+        "weshalb",
+        "wie",
+        "wieder",
+        "wieso",
+        "wir",
+        "wird",
+        "wirst",
+        "wo",
+        "woher",
+        "wohin",
+        "zu",
+        "zum",
+        "zur",
+        "über",
+    ],
+    "en": [
+        "a",
+        "about",
+        "an",
+        "are",
+        "as",
+        "at",
+        "be",
+        "by",
+        "for",
+        "from",
+        "how",
+        "in",
+        "is",
+        "it",
+        "of",
+        "on",
+        "or",
+        "that",
+        "the",
+        "this",
+        "to",
+        "was",
+        "what",
+        "when",
+        "where",
+        "who",
+        "will",
+        "with",
+        "the",
+    ],
+}
+
 
 def get_class(class_name):
     return getattr(sys.modules[__name__], class_name)
 
 
-def generate_help_text(name, language, filters, token):
-    match language:
-        case "de":
-            class_name = "German" + name
-        case "en":
-            class_name = "English" + name
-        case _:
-            class_name = name
+def generate_help_text(name, language, filters, token, text=None):
+    class_name = name
+    if class_name in ["Verb", "Adjective", "Noun"]:
+        class_name = ("German" if language == "de" else "English") + class_name
 
     cls = get_class(class_name)
     instances = cls.objects.filter(**filters)
@@ -60,29 +221,32 @@ def generate_help_text(name, language, filters, token):
         for instance in instances:
             if isinstance(instance, Alternative):
                 link = reverse(f"admin:rules_rule_change", args=[instance.rule.id])
+            elif isinstance(instance, Rule):
+                link = reverse(f"admin:rules_rule_change", args=[instance.id])
             else:
                 link = reverse(
                     f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
                 )
 
             word = instance.lemma if isinstance(instance, Rule) else token
+            text = "" if text is None else " " + text
+            word = f"'{word}'" if word == token else f"'{token}' ({word})"
             help_texts.append(
-                f"{name} <a href=\"{link}\">data available</a> for '{word}'"
+                f"{name} <a href=\"{link}\">data available</a> for {word}'{text}"
             )
 
         return "<br>".join(help_texts)
 
-    return f"No {name} data available for '{token}'"
+    text = text if text else "data available"
+    return f"No {name} {text} for '{token}'"
 
 
-def update_lemma_help_text(obj, field):
+def update_lemma_help_text(obj, field, check_rule_lemma=False):
     help_texts = [field.help_text]
 
     try:
         tokens, lemmas = obj.tokenize()
         word_types = obj.parse_word_types()
-        if word_types is None:
-            return
     except ValidationError as exception:
         help_texts.append(
             "<b>Tokenization/Word_types validation failed</b>: " + exception.message
@@ -96,8 +260,8 @@ def update_lemma_help_text(obj, field):
         "n": "Noun",
     }
 
-    for i in range(len(word_types)):
-        if word_types[i]["lemmatize"]:
+    for i in range(len(tokens)):
+        if word_types is not None and word_types[i]["lemmatize"]:
             if tokens[i] != lemmas[i]:
                 help_texts.append(
                     f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
@@ -115,7 +279,36 @@ def update_lemma_help_text(obj, field):
 
             filters = {"lemma": tokens[i], "language": obj.language}
             help_texts.append(
-                generate_help_text("Lemmatization", None, filters, tokens[i])
+                generate_help_text("Lemmatization", obj.language, filters, tokens[i])
+            )
+
+        if (
+            check_rule_lemma
+            and len(lemmas[i]) > 1
+            and tokens[i] not in stopwords[obj.language]
+            and lemmas[i] not in stopwords[obj.language]
+        ):
+            first_tokens = [
+                tokens[i],
+                tokens[i].lower(),
+            ]
+            if tokens[i] != lemmas[i]:
+                first_tokens.append(lemmas[i])
+                first_tokens.append(lemmas[i].lower())
+
+            filters = {
+                "first_token__in": first_tokens,
+                "language": obj.language,
+            }
+
+            help_texts.append(
+                generate_help_text(
+                    "Rule",
+                    obj.language,
+                    filters,
+                    tokens[i],
+                    "potential circular alternative",
+                )
             )
 
     field.help_text = mark_safe("<br>".join(help_texts))
@@ -160,7 +353,7 @@ class AlternativeForm(forms.ModelForm):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
         if instance and isinstance(instance, Alternative):
-            update_lemma_help_text(instance, self.fields["lemma"])
+            update_lemma_help_text(instance, self.fields["lemma"], True)
 
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
