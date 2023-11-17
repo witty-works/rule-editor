@@ -493,6 +493,18 @@ class Rule(
 
         return diversity_dimensions
 
+    @computed(
+        models.PositiveIntegerField(null=True, blank=True),
+        depends=[
+            ("self", ["lemma"]),
+        ],
+    )
+    def lemma_length(self):
+        if self.lemma is None:
+            return 0
+
+        return len(self.lemma)
+
 
 class RuleDiversityDimension(BaseTimestampedModel):
     class Meta:
