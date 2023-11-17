@@ -318,10 +318,12 @@ class Rule(
         indexes = [
             models.Index(
                 fields=[
+                    "is_active",
+                    "language",
+                    "type",
                     "first_token",
                     "first_is_word_type_lemmatize",
                     "first_is_word_type_lower_case",
-                    "first_word_type",
                 ]
             ),
         ]
@@ -443,18 +445,6 @@ class Rule(
         return first_token
 
     @computed(
-        models.CharField(max_length=255, null=True, blank=True),
-        depends=[
-            ("self", ["word_types"]),
-        ],
-    )
-    def first_word_type(self):
-        if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
-            return None
-
-        return self.parsed_word_types[0]["word_type"]
-
-    @computed(
         models.BooleanField(null=True, blank=True),
         depends=[
             ("self", ["word_types"]),
@@ -529,6 +519,18 @@ class Alternative(
 ):
     class Meta:
         ordering = ("order",)
+        indexes = [
+            models.Index(
+                fields=[
+                    "is_active",
+                    "rule_id",
+                    "is_placeholder",
+                    "is_inspiration",
+                    "pluralization",
+                    "order",
+                ]
+            ),
+        ]
 
     def __str__(self):
         return "[REMOVE]" if self.is_remove else self.lemma[0:50]
