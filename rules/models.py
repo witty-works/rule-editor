@@ -371,6 +371,13 @@ class Rule(
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
     tags = TaggableManager(blank=True)
 
+    pattern = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Optional pattern to define word types before and after the lemma. Syntax 'l' for the lemma. '*' means zero or many, '+' means once or many.",
+    )
+
     text_id = models.CharField(
         max_length=255,
         help_text="String used to identify the rule, f.e. in the top words of the analytics",

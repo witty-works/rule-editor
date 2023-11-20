@@ -596,6 +596,7 @@ class RuleAdmin(CreatedByAdmin):
             {
                 "fields": (
                     "lemma",
+                    "pattern",
                     "language",
                     "text_id",
                     "word_types",
