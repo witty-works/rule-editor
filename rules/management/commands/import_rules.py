@@ -20,7 +20,6 @@ from rules.models import (
 )
 import csv
 import re
-from inflex import Noun, Verb, Adjective
 
 
 class Command(BaseCommand):
@@ -47,55 +46,33 @@ class Command(BaseCommand):
                         model = GermanVerb.objects.get(base_form=tokens[i])
                     except GermanVerb.DoesNotExist:
                         model = GermanVerb()
-                        model.base_form = tokens[i]
                 else:
                     try:
                         model = EnglishVerb.objects.get(base_form=tokens[i])
                     except EnglishVerb.DoesNotExist:
-                        inflex = Verb(tokens[i])
                         model = EnglishVerb()
-                        model.base_form = tokens[i]
-                        model.past_tense = inflex.past()
-                        model.past_participle = inflex.past_part()
-                        model.present_participle = inflex.pres_part()
-                        model.third_person_singular = inflex.singular()
             elif "a" == word_type:
                 if language == "de":
                     try:
                         model = GermanAdjective.objects.get(base_form=tokens[i])
                     except GermanAdjective.DoesNotExist:
                         model = GermanAdjective()
-                        model.base_form = tokens[i]
                 else:
                     try:
                         model = EnglishAdjective.objects.get(base_form=tokens[i])
                     except EnglishAdjective.DoesNotExist:
-                        inflex = Adjective(tokens[i])
                         model = EnglishAdjective()
-                        model.base_form = tokens[i]
-                        if tokens[i].isupper():
-                            model.comparative = tokens[i]
-                            model.superlative = tokens[i]
-                        else:
-                            model.comparative = inflex.comparative()
-                            model.superlative = inflex.superlative()
-                        model.is_absolute = False
-
             elif "n" == word_type:
                 if language == "de":
                     try:
                         model = GermanNoun.objects.get(base_form=tokens[i])
                     except GermanNoun.DoesNotExist:
                         model = GermanNoun()
-                        model.base_form = tokens[i]
                 else:
                     try:
                         model = EnglishNoun.objects.get(base_form=tokens[i])
                     except EnglishNoun.DoesNotExist:
-                        inflex = Noun(tokens[i])
                         model = EnglishNoun()
-                        model.base_form = tokens[i]
-                        model.plural = inflex.plural()
 
             if model is not None:
                 message = "Added" if model.pk is None else "Updated"
@@ -105,10 +82,13 @@ class Command(BaseCommand):
                     )
                 )
 
+                model.base_form = tokens[i]
+
                 if model.comment is None:
                     model.comment = ""
                 if lemma + "\n" not in model.comment:
                     model.comment += lemma + "\n"
+
                 model.save()
 
     def handle(self, *args, **options):
