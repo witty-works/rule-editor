@@ -663,7 +663,7 @@ class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     lemma = models.CharField(
         max_length=255, help_text="Lemma used for the given source text"
     )
-    is_plural = models.BooleanField(help_text="If the text is plural")
+    is_plural = models.BooleanField(default=False, help_text="If the text is plural")
 
 
 class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -684,7 +684,9 @@ class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentable
     base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
     comparative = models.CharField(max_length=255, null=True, blank=True)
     superlative = models.CharField(max_length=255, null=True, blank=True)
-    is_absolute = models.BooleanField(help_text="If adjective is in an absolute")
+    is_absolute = models.BooleanField(
+        default=False, help_text="If adjective is in an absolute"
+    )
 
 
 class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -704,12 +706,16 @@ class GermanVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     present_du = models.CharField(max_length=255, null=True, blank=True)
     present_pronoun = models.CharField(max_length=255, null=True, blank=True)
     past_tense_ich = models.CharField(max_length=255, null=True, blank=True)
-    past_participle = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    past_participle = models.CharField(
+        max_length=255, null=True, blank=True, db_index=True
+    )
     conjunctive_ich = models.CharField(max_length=255, null=True, blank=True)
     imperativ_singular = models.CharField(max_length=255, null=True, blank=True)
     imperativ_plural = models.CharField(max_length=255, null=True, blank=True)
     helping_verb = models.CharField(max_length=255, null=True, blank=True)
-    infinitiv_zu = models.CharField(max_length=255, null=True, blank=True, db_index=True)
+    infinitiv_zu = models.CharField(
+        max_length=255, null=True, blank=True, db_index=True
+    )
 
 
 class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
