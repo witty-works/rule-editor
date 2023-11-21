@@ -714,9 +714,6 @@ lemma_lookup = {
 class Command(BaseCommand):
     help = "Imports the lemmatization"
 
-    def add_arguments(self, parser):
-        parser.add_argument("--file", type=str)
-
     def handle(self, *args, **options):
         for lang in lemma_lookup:
             for text in lemma_lookup[lang]:
