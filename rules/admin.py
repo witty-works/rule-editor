@@ -878,8 +878,21 @@ class GermanVerbAdmin(ImportExportModelAdmin):
 
     resource_class = GermanVerbResource
     search_fields = ("base_form",)
-    fields = ("base_form", "comment")
-    list_display = ("base_form",)
+    fields = (
+        "base_form",
+        "present_ich",
+        "present_du",
+        "present_pronoun",
+        "past_tense_ich",
+        "past_participle",
+        "conjunctive_ich",
+        "imperativ_singular",
+        "imperativ_plural",
+        "helping_verb",
+        "infinitiv_zu",
+        "comment",
+    )
+    list_display = ("base_form", "past_participle", "helping_verb", "infinitiv_zu")
 
 
 class GermanAdjectiveResource(resources.ModelResource):
