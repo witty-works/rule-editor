@@ -53,12 +53,12 @@ class Command(BaseCommand):
                         model = EnglishVerb.objects.get(base_form=tokens[i])
                     except EnglishVerb.DoesNotExist:
                         inflex = Verb(tokens[i])
-                        verb = EnglishVerb()
-                        verb.base_form = tokens[i]
-                        verb.past_tense = inflex.past()
-                        verb.past_participle = inflex.past_part()
-                        verb.present_participle = inflex.pres_part()
-                        verb.third_person_singular = inflex.singular()
+                        model = EnglishVerb()
+                        model.base_form = tokens[i]
+                        model.past_tense = inflex.past()
+                        model.past_participle = inflex.past_part()
+                        model.present_participle = inflex.pres_part()
+                        model.third_person_singular = inflex.singular()
             elif "a" == word_type:
                 if language == "de":
                     try:
