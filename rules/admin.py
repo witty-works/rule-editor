@@ -759,12 +759,13 @@ class LemmatizationAdmin(ImportExportModelAdmin):
 
     resource_class = LemmatizationResource
 
-    fields = ("text", "lemma", "language", "comment")
+    fields = ("text", "lemma", "language", "is_plural", "comment")
     search_fields = ("text", "lemma")
     list_filter = ("language",)
     list_display = (
         "text",
         "lemma",
+        "is_plural",
         "language",
     )
 
