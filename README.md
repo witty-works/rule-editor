@@ -4,6 +4,8 @@
 
 ```
 cp .env.example .env
+pipenv shell
+pipenv install --save
 python manage.py collectstatic
 python manage.py migrate
 python manage.py createsuperuser
