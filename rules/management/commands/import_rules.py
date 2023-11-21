@@ -408,7 +408,9 @@ class Command(BaseCommand):
                                 alternative_rule_lemmas,
                             ) = alternative.tokenize()
 
-                            if len(rule_tokens) == len(alternative_rule_tokens):
+                            if len(rule_tokens) == 1 and len(rule_tokens) == len(
+                                alternative_rule_tokens
+                            ):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
                                     language,
