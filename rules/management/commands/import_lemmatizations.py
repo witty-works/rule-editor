@@ -1,6 +1,5 @@
 from django.core.management.base import BaseCommand
 from rules.models import Lemmatization
-import json
 
 lemma_plural_lookup = {
     "de": ["Manntage", "Höchstleistungen" "Schädigungen" "Führungskräfte" "Kanus"],
