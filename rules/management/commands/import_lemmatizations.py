@@ -2,8 +2,15 @@ from django.core.management.base import BaseCommand
 from rules.models import Lemmatization
 
 lemma_plural_lookup = {
-    "de": ["Manntage", "Höchstleistungen" "Schädigungen" "Führungskräfte" "Kanus"],
-    "en": [],
+    "de": ["Manntage", "Höchstleistungen", "Schädigungen", "Führungskräfte", "Kanus"],
+    "en": [
+        "uterushavers",
+        "uterus-havers",
+        "bonkers",
+        "Euro-weenies",
+        "Euroweenies",
+        "ages",
+    ],
 }
 
 lemma_lookup = {
@@ -520,8 +527,8 @@ lemma_lookup = {
         "Cervix-haver": "Cervix-haver",
         "Cervixhaver": "Cervixhaver",
         "Congressman": "Congressman",
-        "Euro-weenies": "Euro-weenies",
-        "Euroweenies": "Euroweenies",
+        "Euro-weenies": "Euro-weenie",
+        "Euroweenies": "Euroweenie",
         "Jewbacca": "Jewbacca",
         "Jewgene": "Jewgene",
         "Sincerely": "Sincerely",
@@ -532,7 +539,7 @@ lemma_lookup = {
         "able-bodied": "able-bodied",
         "ablebodied": "ablebodied",
         "afro-saxon": "afro-saxon",
-        "ages": "ages",
+        "ages": "age",
         "attention-seeking": "attention-seeking",
         "attentionseeking": "attentionseeking",
         "battle-axe": "battle-axe",
@@ -669,7 +676,7 @@ lemma_lookup = {
         "trans-man": "trans-man",
         "trans-woman": "trans-woman",
         "under-represented": "under-represented",
-        "uterus-havers": "uterus-havers",
+        "uterus-havers": "uterus-haver",
         "well-established": "well-established",
         "wellestablished": "wellestablished",
         "wheelchair-bound": "wheelchair-bound",
@@ -677,19 +684,18 @@ lemma_lookup = {
         "greed": "greed",
         "surpass": "surpass",
         "best": "best",  # well
-        "bonkers": "bonkers",  # bonker
         "challenging": "challenging",  # challenge
         "compelling": "compelling",  # compel
         "dim-witted": "dim-witted",  # dim-witte
         "dimwitted": "dimwitted",  # dimwitte
         "feeble-minded": "feeble-minded",  # feeble-minde
-        "gals": "gals",  # gal
+        "gals": "gal",
         "gramps": "gramps",  # gramp
         "grandfathering": "grandfathering",  # grandfathere
         "manwards": "manwards",  # manward
         "market-leading": "market-leading",  # market-leade
         "marketleading": "marketleading",  # marketleade
-        "nuts": "nuts",  # nut
+        "nuts": "nut",
         "performance-based": "performance-based",  # performance-base
         "performancebased": "performancebased",  # performancebase
         "redlining": "redlining",  # redline
@@ -706,7 +712,7 @@ lemma_lookup = {
         "tonguetied": "tonguetied",  # tonguetie
         "top-performing": "top-performing",  # top-performe
         "topperforming": "topperforming",  # topperforme
-        "uterushavers": "uterushavers",  # uterushaver
+        "uterushavers": "uterushaver",
     },
 }
 
