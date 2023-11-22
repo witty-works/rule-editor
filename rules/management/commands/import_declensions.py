@@ -27,7 +27,7 @@ class Command(BaseCommand):
                         )
                         continue
 
-                    if row["past_participle"] is not None:
+                    if model.past_participle is not None:
                         self.stdout.write(
                             self.style.ERROR(
                                 f"German verb '{text}' already has 'past_participle' filled, skipping"
