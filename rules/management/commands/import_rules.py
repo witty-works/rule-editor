@@ -247,7 +247,13 @@ class Command(BaseCommand):
                         "type": AlternativeTypeEnum.DEFAULT,
                         "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
                         "word_types": False,
-                        "is_inspiration": False if (language == 'en' and row["Primary_subcategory"] in ["titles", "function", "leadership"]) else True,
+                        "is_inspiration": False
+                        if (
+                            language == "en"
+                            and row["Primary_subcategory"]
+                            in ["titles", "function", "leadership"]
+                        )
+                        else True,
                         "is_advanced": False,
                     },
                     "Alt_Pl_pair_and_inclusive_form": {
