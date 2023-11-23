@@ -6,7 +6,6 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 
 from django_enum import EnumField
-from ordered_model.models import OrderedModel
 from taggit.managers import TaggableManager
 from computedfields.models import ComputedFieldsModel, computed
 
