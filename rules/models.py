@@ -33,7 +33,7 @@ def fetch_json(path, data=None):
         if r.status_code != 200:
             body = r.json()
             error = body["detail"] if "detail" in body else r.text
-            raise ValidationError(path + ": " + error)
+            raise ValidationError(path + ": " + str(error))
 
         return r.json()
     except Exception as e:
