@@ -17,9 +17,11 @@ from rules.models import (
     GermanVerb,
     GermanAdjective,
     GermanNoun,
+    fetch_json,
 )
 import csv
 import re
+import requests
 
 
 class Command(BaseCommand):
@@ -30,6 +32,69 @@ class Command(BaseCommand):
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
 
+    def add_declension(self, language, lemma, token, word_type):
+        model = None
+        if "v" == word_type:
+            if language == "de":
+                try:
+                    model = GermanVerb.objects.get(base_form=token)
+                except GermanVerb.DoesNotExist:
+                    model = GermanVerb()
+            else:
+                try:
+                    model = EnglishVerb.objects.get(base_form=token)
+                except EnglishVerb.DoesNotExist:
+                    model = EnglishVerb()
+        elif "a" == word_type:
+            if language == "de":
+                try:
+                    model = GermanAdjective.objects.get(base_form=token)
+                except GermanAdjective.DoesNotExist:
+                    model = GermanAdjective()
+            else:
+                try:
+                    model = EnglishAdjective.objects.get(base_form=token)
+                except EnglishAdjective.DoesNotExist:
+                    model = EnglishAdjective()
+        elif "n" == word_type:
+            if language == "de":
+                if "~" in token:
+                    path = f"/debug/german_gender_ending?alternative={requests.utils.quote(token)}&german_gender_ending=binary"
+                    result = fetch_json(path)
+                    [female_form, token] = result[0].replace(" und ", "/").split("/")
+                else:
+                    female_form = None
+
+                try:
+                    model = GermanNoun.objects.get(base_form=token)
+                except GermanNoun.DoesNotExist:
+                    model = GermanNoun()
+
+                if female_form is not None:
+                    model.female_form = female_form
+            else:
+                try:
+                    model = EnglishNoun.objects.get(base_form=token)
+                except EnglishNoun.DoesNotExist:
+                    model = EnglishNoun()
+
+        if model is None:
+            return
+
+        message = "Added" if model.pk is None else "Updated"
+        self.stdout.write(
+            self.style.SUCCESS(f"{message} {word_type} ({language}) for {token}")
+        )
+
+        model.base_form = token
+
+        if model.comment is None:
+            model.comment = ""
+        if lemma + "\n" not in model.comment:
+            model.comment += lemma + "\n"
+
+        model.save()
+
     def handle_lemmas(self, language, lemma, tokens: [], word_types: []):
         if word_types is None:
             return
@@ -38,58 +103,16 @@ class Command(BaseCommand):
             if not word_types[i]["lemmatize"]:
                 continue
 
-            model = None
-            word_type = word_types[i]["word_type"]
-            if "v" == word_type:
-                if language == "de":
-                    try:
-                        model = GermanVerb.objects.get(base_form=tokens[i])
-                    except GermanVerb.DoesNotExist:
-                        model = GermanVerb()
-                else:
-                    try:
-                        model = EnglishVerb.objects.get(base_form=tokens[i])
-                    except EnglishVerb.DoesNotExist:
-                        model = EnglishVerb()
-            elif "a" == word_type:
-                if language == "de":
-                    try:
-                        model = GermanAdjective.objects.get(base_form=tokens[i])
-                    except GermanAdjective.DoesNotExist:
-                        model = GermanAdjective()
-                else:
-                    try:
-                        model = EnglishAdjective.objects.get(base_form=tokens[i])
-                    except EnglishAdjective.DoesNotExist:
-                        model = EnglishAdjective()
-            elif "n" == word_type:
-                if language == "de":
-                    try:
-                        model = GermanNoun.objects.get(base_form=tokens[i])
-                    except GermanNoun.DoesNotExist:
-                        model = GermanNoun()
-                else:
-                    try:
-                        model = EnglishNoun.objects.get(base_form=tokens[i])
-                    except EnglishNoun.DoesNotExist:
-                        model = EnglishNoun()
+            if tokens[i][0] == "~":
+                tokens[i] = tokens[i][1:]
 
-            if model is not None:
-                message = "Added" if model.pk is None else "Updated"
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"{message} {word_type} ({language}) for {tokens[i]}"
-                    )
-                )
+            if "~" in tokens[i] and " und " in tokens[i] and "/" in tokens[i]:
+                words = tokens[i].split(" und ")
+            else:
+                words = [tokens[i]]
 
-                model.base_form = tokens[i]
-
-                if model.comment is None:
-                    model.comment = ""
-                if lemma + "\n" not in model.comment:
-                    model.comment += lemma + "\n"
-
-                model.save()
+            for word in words:
+                self.add_declension(language, lemma, word, word_types[i]["word_type"])
 
     def handle(self, *args, **options):
         language = options["language"]

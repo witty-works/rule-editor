@@ -938,6 +938,6 @@ class NounAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = GermanNounResource
-    search_fields = ("base_form",)
-    fields = ("base_form", "comment")
-    list_display = ("base_form",)
+    search_fields = ("base_form", "female_form")
+    fields = ("base_form", "female_form", "comment")
+    list_display = ("base_form", "female_form")

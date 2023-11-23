@@ -692,7 +692,7 @@ class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
     def __str__(self):
         return self.base_form
 
-    base_form = models.CharField(max_length=255, unique=True, help_text="ie. singular")
+    base_form = models.CharField(max_length=255, unique=True)
     plural = models.CharField(max_length=255, null=True, blank=True)
 
 
@@ -721,11 +721,12 @@ class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableM
     def __str__(self):
         return self.base_form
 
-    base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
+    base_form = models.CharField(max_length=255, unique=True)
 
 
 class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
 
-    base_form = models.CharField(max_length=255, unique=True, help_text="ie. singular")
+    base_form = models.CharField(max_length=255, unique=True)
+    female_form = models.CharField(max_length=255, null=True, blank=True)
