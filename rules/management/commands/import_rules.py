@@ -62,16 +62,17 @@ class Command(BaseCommand):
                     path = f"/debug/german_gender_ending?alternative={requests.utils.quote(token)}&german_gender_ending=binary"
                     result = fetch_json(path)
                     [female_form, token] = result[0].replace(" und ", "/").split("/")
+                elif token.endswith("mann"):
+                    female_form = token.removesuffix("mann") + "frau"
                 else:
-                    female_form = None
+                    female_form = token.removesuffix("i") + "in"
 
                 try:
                     model = GermanNoun.objects.get(base_form=token)
                 except GermanNoun.DoesNotExist:
                     model = GermanNoun()
 
-                if female_form is not None:
-                    model.female_form = female_form
+                model.female_form = female_form
             else:
                 try:
                     model = EnglishNoun.objects.get(base_form=token)
