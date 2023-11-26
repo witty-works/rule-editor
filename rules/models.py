@@ -680,6 +680,13 @@ class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentable
     def __str__(self):
         return self.base_form
 
+    def clean(self):
+        super().clean()
+
+        if self.is_absolute:
+            self.comparative = self.base_form
+            self.superlative = self.base_form
+
     base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
     comparative = models.CharField(max_length=255, null=True, blank=True)
     superlative = models.CharField(max_length=255, null=True, blank=True)
