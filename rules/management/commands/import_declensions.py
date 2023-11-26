@@ -10,6 +10,8 @@ from rules.models import (
 from german_nouns.lookup import Nouns
 from inflex import Noun, Verb, Adjective
 import csv
+import requests
+from bs4 import BeautifulSoup
 
 
 class Command(BaseCommand):
@@ -138,7 +140,7 @@ class Command(BaseCommand):
                 if len(result) == 0:
                     self.stdout.write(
                         self.style.ERROR(
-                            f"German noun '{model.base_form}' could determine flexion for {word}"
+                            f"German noun '{model.base_form}' could not determine flexion for {word}"
                         )
                     )
                     continue
@@ -208,6 +210,47 @@ class Command(BaseCommand):
             model.gender_2 = (
                 genus_map[result["genus 2"]] if "genus 2" in result else None
             )
+
+            if model.female_form is None:
+                try:
+                    url = "https://de.wiktionary.org/wiki/" + model.base_form
+                    response = requests.get(url)
+                    soup = BeautifulSoup(response.text, "html.parser")
+                    elements = soup.find_all(
+                        "p", {"title": "Weibliche Varianten des Wortes"}
+                    )
+                    if len(elements):
+                        try:
+                            model.female_form = (
+                                elements[0].find_next("dl").find("dd").find("a", attrs={"title": True})["title"]
+                            )
+                        except AttributeError:
+                            self.stdout.write(
+                                self.style.ERROR(
+                                    f"Fetching female unable to find child tag '{model.base_form}'"
+                                )
+                            )
+                            pass
+                        except KeyError:
+                            self.stdout.write(
+                                self.style.NOTICE(
+                                    f"Fetching female could not find title '{model.base_form}'"
+                                )
+                            )
+                            pass
+                        except Exception:
+                            self.stdout.write(
+                                self.style.NOTICE(
+                                    f"Fetching female failed to parse '{model.base_form}'"
+                                )
+                            )
+                except requests.exceptions.ConnectionError:
+                    self.stdout.write(
+                        self.style.NOTICE(
+                            f"Fetching female failed to download '{model.base_form}'"
+                        )
+                    )
+
 
             model.save()
             self.stdout.write(

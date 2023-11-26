@@ -25,6 +25,7 @@ django-taggit-bulk = "*"
 django-forms-dynamic = "*"
 inflex = "*"
 german-nouns = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 
