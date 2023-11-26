@@ -24,6 +24,7 @@ django-computedfields = "*"
 django-taggit-bulk = "*"
 django-forms-dynamic = "*"
 inflex = "*"
+german-nouns = "*"
 
 [dev-packages]
 
