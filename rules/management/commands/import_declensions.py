@@ -62,7 +62,7 @@ class Command(BaseCommand):
             model.third_person_singular = inflex.singular()
             model.save()
             self.stdout.write(
-                self.style.ERROR(
+                self.style.SUCCESS(
                     f"Successfully updated English verb '{model.base_form}'"
                 )
             )
@@ -132,7 +132,7 @@ class Command(BaseCommand):
             model.is_absolute = model.base_form in absolute
             model.save()
             self.stdout.write(
-                self.style.ERROR(
+                self.style.SUCCESS(
                     f"Successfully updated English adjective '{model.base_form}'"
                 )
             )
@@ -143,7 +143,7 @@ class Command(BaseCommand):
             model.plural = inflex.plural()
             model.save()
             self.stdout.write(
-                self.style.ERROR(
+                self.style.SUCCESS(
                     f"Successfully updated English noun '{model.base_form}'"
                 )
             )
