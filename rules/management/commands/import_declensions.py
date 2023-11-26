@@ -67,6 +67,59 @@ class Command(BaseCommand):
                 )
             )
 
+        absolute = [
+            "unique",
+            "dead",
+            "perfect",
+            "alive",
+            "universal",
+            "complete",
+            "unanimous",
+            "final",
+            "supreme",
+            "unlimited",
+            "absolute",
+            "infinite",
+            "total",
+            "unmatched",
+            "impossible",
+            "immortal",
+            "full",
+            "irrevocable",
+            "transcendent",
+            "unknown",
+            "unconditional",
+            "ultimate",
+            "empty",
+            "unchanged",
+            "married",
+            "unquestionable",
+            "transparent",
+            "unrivaled",
+            "single",
+            "unbeatable",
+            "invalid",
+            "unbroken",
+            "undeniable",
+            "equal",
+            "pregnant",
+            "unsurpassed",
+            "unequaled",
+            "exhaustive",
+            "superlative",
+            "unrivaled",
+            "essential",
+            "eternal",
+            "unbeatable",
+            "permanent",
+            "immutable",
+            "indestructible",
+            "unalterable",
+            "immeasurable",
+            "incomparable",
+            "dummy",
+        ]
+
         models = EnglishAdjective.objects.filter(comparative=None)
         for model in models:
             inflex = Adjective(model.base_form)
@@ -76,7 +129,7 @@ class Command(BaseCommand):
             else:
                 model.comparative = inflex.comparative()
                 model.superlative = inflex.superlative()
-            model.is_absolute = False
+            model.is_absolute = model.base_form in absolute
             model.save()
             self.stdout.write(
                 self.style.ERROR(
