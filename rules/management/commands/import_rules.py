@@ -58,6 +58,8 @@ class Command(BaseCommand):
                     model = EnglishAdjective()
         elif "n" == word_type:
             if language == "de":
+                if not token.isupper():
+                    female_form = None
                 if "~" in token:
                     path = f"/debug/german_gender_ending?alternative={requests.utils.quote(token)}&german_gender_ending=binary"
                     result = fetch_json(path)
