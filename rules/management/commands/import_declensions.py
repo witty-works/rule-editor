@@ -122,7 +122,7 @@ class Command(BaseCommand):
                     lower = False
                 else:
                     words = nouns.parse_compound(model.base_form)
-                    if len(words) < 2:
+                    if len(words) < 1:
                         self.stdout.write(
                             self.style.ERROR(
                                 f"German noun could not split '{model.base_form}'"
@@ -156,22 +156,7 @@ class Command(BaseCommand):
                         result[i]["flexion"][flexion] = words + flexion_expanded
 
             result = result[0]
-            if "genus" not in result and "genus 1" not in result:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"German noun '{model.base_form}' genus could not be determined"
-                    )
-                )
-            else:
-                model.gender_1 = (
-                    genus_map[result["genus"]]
-                    if "genus" in result
-                    else genus_map[result["genus 1"]]
-                )
 
-            model.gender_2 = (
-                genus_map[result["genus 2"]] if "genus 2" in result else None
-            )
             singular = None
             singular_map = {
                 "nominativ singular": "sg_nom_acc",
@@ -196,16 +181,40 @@ class Command(BaseCommand):
                     setattr(model, plural_map[key], result["flexion"][flexion])
                     plural = True
 
+            if singular is None and plural is None:
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"Unable to find flexion data for German noun '{model.base_form}'"
+                    )
+                )
+                continue
+
             model.singular_only = bool(singular and plural is None)
             model.plural_only = bool(plural and singular is None)
+
+            if "genus" not in result and "genus 1" not in result:
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"German noun '{model.base_form}' genus could not be determined"
+                    )
+                )
+            else:
+                model.gender_1 = (
+                    genus_map[result["genus"]]
+                    if "genus" in result
+                    else genus_map[result["genus 1"]]
+                )
+
+            model.gender_2 = (
+                genus_map[result["genus 2"]] if "genus 2" in result else None
+            )
+
             model.save()
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Successfully updated German noun '{model.base_form}'"
                 )
             )
-
-        return
 
         models = EnglishVerb.objects.filter(past_tense=None)
         for model in models:
