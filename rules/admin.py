@@ -944,5 +944,27 @@ class NounAdmin(ImportExportModelAdmin):
 
     resource_class = GermanNounResource
     search_fields = ("base_form", "female_form")
-    fields = ("base_form", "female_form", "comment")
-    list_display = ("base_form", "female_form")
+    fields = (
+        "base_form",
+        "female_form",
+        "gender_1",
+        "gender_2",
+        "singular_only",
+        "plural_only",
+        "sg_nom_acc",
+        "sg_dat",
+        "sg_gen",
+        "pl_nom_acc",
+        "pl_gen",
+        "pl_dat",
+        "comment",
+    )
+    list_filter = (
+        ("sg_nom_acc", admin.EmptyFieldListFilter),
+        ("pl_nom_acc", admin.EmptyFieldListFilter),
+        "gender_1",
+        "gender_2",
+        "singular_only",
+        "plural_only",
+    )
+    list_display = ("base_form", "female_form", "gender_1")

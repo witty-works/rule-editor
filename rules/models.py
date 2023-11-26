@@ -45,6 +45,12 @@ class LanguageEnum(models.TextChoices):
     DE = "de", "German"
 
 
+class GenderTypeEnum(models.TextChoices):
+    NEUTER = "neuter"
+    FEMININE = "feminine"
+    MASCULINE = "masculine"
+
+
 class AlternativePluralizationEnum(models.TextChoices):
     DEFAULT = "default"
     SINGULAR_ONLY = "singular_only"
@@ -737,3 +743,13 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
 
     base_form = models.CharField(max_length=255, unique=True)
     female_form = models.CharField(max_length=255, null=True, blank=True)
+    gender_1 = EnumField(GenderTypeEnum, null=True, blank=True)
+    gender_2 = EnumField(GenderTypeEnum, null=True, blank=True)
+    singular_only = models.BooleanField(default=False)
+    plural_only = models.BooleanField(default=False)
+    sg_nom_acc = models.CharField(max_length=255, null=True, blank=True)
+    sg_dat = models.CharField(max_length=255, null=True, blank=True)
+    sg_gen = models.CharField(max_length=255, null=True, blank=True)
+    pl_nom_acc = models.CharField(max_length=255, null=True, blank=True)
+    pl_gen = models.CharField(max_length=255, null=True, blank=True)
+    pl_dat = models.CharField(max_length=255, null=True, blank=True)
