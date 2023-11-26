@@ -828,6 +828,9 @@ class EnglishAdjectiveAdmin(ImportExportModelAdmin):
     resource_class = EnglishAdjectiveResource
     search_fields = ("base_form",)
     fields = ("base_form", "comparative", "superlative", "is_absolute", "comment")
+    list_filter = (
+        "is_absolute",
+    )
     list_display = ("base_form", "comparative", "superlative", "is_absolute")
 
 
@@ -872,7 +875,7 @@ class GermanVerbAdmin(ImportExportModelAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
 
         return form
 
@@ -892,6 +895,9 @@ class GermanVerbAdmin(ImportExportModelAdmin):
         "infinitiv_zu",
         "comment",
     )
+    list_filter = (
+        "helping_verb",
+    )
     list_display = ("base_form", "past_participle", "helping_verb", "infinitiv_zu")
 
 
@@ -909,7 +915,7 @@ class GermanAdjectiveAdmin(ImportExportModelAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
 
         return form
 
@@ -923,7 +929,6 @@ class GermanNounResource(resources.ModelResource):
     class Meta:
         model = GermanNoun
 
-
 @admin.register(GermanNoun)
 class NounAdmin(ImportExportModelAdmin):
     class Meta:
@@ -933,7 +938,7 @@ class NounAdmin(ImportExportModelAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
 
         return form
 
