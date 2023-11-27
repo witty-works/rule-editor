@@ -829,6 +829,7 @@ class EnglishAdjectiveAdmin(ImportExportModelAdmin):
     search_fields = ("base_form",)
     fields = ("base_form", "comparative", "superlative", "is_absolute", "comment")
     list_filter = (
+        ("comparative", admin.EmptyFieldListFilter),
         "is_absolute",
     )
     list_display = ("base_form", "comparative", "superlative", "is_absolute")
@@ -921,8 +922,12 @@ class GermanAdjectiveAdmin(ImportExportModelAdmin):
 
     resource_class = GermanAdjectiveResource
     search_fields = ("base_form",)
-    fields = ("base_form", "comment")
-    list_display = ("base_form",)
+    fields = ("base_form", "comparative", "superlative", "is_absolute", "comment")
+    list_filter = (
+        ("comparative", admin.EmptyFieldListFilter),
+        "is_absolute",
+    )
+    list_display = ("base_form", "comparative", "superlative", "is_absolute")
 
 
 class GermanNounResource(resources.ModelResource):

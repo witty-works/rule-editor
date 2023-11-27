@@ -693,7 +693,7 @@ class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentable
             self.comparative = self.base_form
             self.superlative = self.base_form
 
-    base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
+    base_form = models.CharField(max_length=255, unique=True)
     comparative = models.CharField(max_length=255, null=True, blank=True)
     superlative = models.CharField(max_length=255, null=True, blank=True)
     is_absolute = models.BooleanField(
@@ -734,7 +734,19 @@ class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableM
     def __str__(self):
         return self.base_form
 
+    def clean(self):
+        super().clean()
+
+        if self.is_absolute:
+            self.comparative = self.base_form
+            self.superlative = self.base_form
+
     base_form = models.CharField(max_length=255, unique=True)
+    comparative = models.CharField(max_length=255, null=True, blank=True)
+    superlative = models.CharField(max_length=255, null=True, blank=True)
+    is_absolute = models.BooleanField(
+        default=False, help_text="If adjective is in an absolute"
+    )
 
 
 class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
