@@ -1,6 +1,7 @@
 from django.core.management.base import BaseCommand
 from rules.models import (
     GermanVerb,
+    GermanAdjective,
     GermanNoun,
     GenderTypeEnum,
     EnglishVerb,
@@ -105,6 +106,90 @@ class Command(BaseCommand):
                             f"Successfully updated German verb '{model.base_form}'"
                         )
                     )
+
+        adjective_map = [
+            "comparative",
+            "superlative",
+        ]
+
+        models = GermanAdjective.objects.filter(base_form=None)
+        for model in models:
+            try:
+                url = "https://de.wiktionary.org/wiki/" + model.base_form
+                response = requests.get(url)
+                soup = BeautifulSoup(response.text, "html.parser")
+                elements = soup.find_all("span", {"id": "Adjektiv"})
+                if len(elements) == 0:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Unable to fetch adjective data '{model.base_form}'"
+                        )
+                    )
+                    continue
+                else:
+                    try:
+                        rows = elements[0].parent.find_next_sibling("table")
+                        if rows is None:
+                            model.is_absolute = True
+                        else:
+                            for row in rows.find("tbody").find_all("tr"):
+                                columns = row.find_all("td")
+                                if (
+                                    len(columns)
+                                    and len(columns[0].contents)
+                                    and columns[0].contents[0].strip()
+                                    == model.base_form
+                                ):
+                                    model.is_absolute = False
+                                    for i in range(len(columns[1:])):
+                                        element = columns[i + 1].find("a")
+                                        if element is None:
+                                            model.is_absolute = True
+                                        else:
+                                            setattr(
+                                                model,
+                                                adjective_map[i],
+                                                columns[i + 1].find("a")["title"],
+                                            )
+
+                    except AttributeError:
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"Fetching adjective unable to find tags '{model.base_form}'"
+                            )
+                        )
+                        pass
+                    except KeyError:
+                        self.stdout.write(
+                            self.style.NOTICE(
+                                f"Fetching adjective could not find title '{model.base_form}'"
+                            )
+                        )
+                        pass
+                    except Exception as e:
+                        print(e)
+                        self.stdout.write(
+                            self.style.NOTICE(
+                                f"Fetching adjective failed to parse '{model.base_form}'"
+                            )
+                        )
+            except requests.exceptions.ConnectionError:
+                self.stdout.write(
+                    self.style.NOTICE(
+                        f"Fetching adjective failed to download '{model.base_form}'"
+                    )
+                )
+
+            if model.is_absolute:
+                model.comparative = model.base_form
+                model.superlative = model.base_form
+
+            model.save()
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Successfully updated German adjective '{model.base_form}'"
+                )
+            )
 
         nouns = Nouns()
         genus_map = {
@@ -222,7 +307,10 @@ class Command(BaseCommand):
                     if len(elements):
                         try:
                             model.female_form = (
-                                elements[0].find_next("dl").find("dd").find("a", attrs={"title": True})["title"]
+                                elements[0]
+                                .find_next("dl")
+                                .find("dd")
+                                .find("a", attrs={"title": True})["title"]
                             )
                         except AttributeError:
                             self.stdout.write(
@@ -251,7 +339,6 @@ class Command(BaseCommand):
                         )
                     )
 
-
             model.save()
             self.stdout.write(
                 self.style.SUCCESS(
@@ -273,69 +360,60 @@ class Command(BaseCommand):
                 )
             )
 
-        absolute = [
-            "unique",
-            "dead",
-            "perfect",
-            "alive",
-            "universal",
-            "complete",
-            "unanimous",
-            "final",
-            "supreme",
-            "unlimited",
-            "absolute",
-            "infinite",
-            "total",
-            "unmatched",
-            "impossible",
-            "immortal",
-            "full",
-            "irrevocable",
-            "transcendent",
-            "unknown",
-            "unconditional",
-            "ultimate",
-            "empty",
-            "unchanged",
-            "married",
-            "unquestionable",
-            "transparent",
-            "unrivaled",
-            "single",
-            "unbeatable",
-            "invalid",
-            "unbroken",
-            "undeniable",
-            "equal",
-            "pregnant",
-            "unsurpassed",
-            "unequaled",
-            "exhaustive",
-            "superlative",
-            "unrivaled",
-            "essential",
-            "eternal",
-            "unbeatable",
-            "permanent",
-            "immutable",
-            "indestructible",
-            "unalterable",
-            "immeasurable",
-            "incomparable",
-            "dummy",
-        ]
-
         models = EnglishAdjective.objects.filter(comparative=None)
         for model in models:
-            inflex = Adjective(model.base_form)
-            if model.base_form.isupper():
+            model.is_absolute = model.base_form.isupper()
+            if model.is_absolute == False:
+                try:
+                    url = "https://en.wiktionary.org/wiki/" + model.base_form
+                    response = requests.get(url)
+                    soup = BeautifulSoup(response.text, "html.parser")
+                    element = soup.find("span", {"id": "Adjective"})
+                    if element is None:
+                        self.stdout.write(
+                            self.style.NOTICE(
+                                f"English adjective data missing '{model.base_form}'"
+                            )
+                        )
+
+                        continue
+
+                    element = element.find_next("p")
+
+                    uncomparable = element.find(
+                        "a", {"href": "/wiki/Appendix:Glossary#uncomparable"}
+                    )
+                    if uncomparable:
+                        model.is_absolute = True
+                    else:
+                        not_generally = element.select_one(
+                            'i:-soup-contains("not generally")'
+                        )
+                        if not_generally:
+                            model.is_absolute = True
+                        else:
+                            element.find(
+                                "a", {"href": "/wiki/Appendix:Glossary#comparative"}
+                            )
+                            comparative = element.find(
+                                "a", {"href": "/wiki/Appendix:Glossary#comparative"}
+                            )
+                            model.is_absolute = not bool(comparative)
+                except requests.exceptions.ConnectionError:
+                    self.stdout.write(
+                        self.style.NOTICE(
+                            f"Fetching english adjective failed to download '{model.base_form}'"
+                        )
+                    )
+
+            if model.is_absolute:
                 model.comparative = model.base_form
                 model.superlative = model.base_form
             else:
+                inflex = Adjective(model.base_form)
                 model.comparative = inflex.comparative()
                 model.superlative = inflex.superlative()
-            model.is_absolute = model.base_form in absolute
+
             model.save()
             self.stdout.write(
                 self.style.SUCCESS(
