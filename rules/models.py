@@ -70,6 +70,16 @@ class RuleTypeEnum(models.TextChoices):
     SUBSTRING = "substring"
 
 
+class EntityTypeEnum(models.TextChoices):
+    DEFAULT = "default"
+    NAME = "name"
+    NON_NAME = "non_name"
+    PERSON = "person"
+    NON_PERSON = "non_person"
+    NUMBER = "number"
+    DATETIME = "datetime"
+
+
 class RuleLabelEnum(models.TextChoices):
     DEFAULT = "default"
     NOT_FOR_PEOPLE = "not_for_people"
@@ -392,6 +402,12 @@ class Rule(
         RuleTypeEnum,
         default=RuleTypeEnum.DEFAULT,
         help_text="Should the rule check on part of the lemma (only 'default' allows multiple token lemma).",
+    )
+
+    entity_type = EnumField(
+        EntityTypeEnum,
+        default=RuleTypeEnum.DEFAULT,
+        help_text="If the rule should only match on a specific entity type (name, non_name, person, non_person, number, datetime).",
     )
 
     label_type = EnumField(

@@ -603,6 +603,7 @@ class RuleAdmin(CreatedByAdmin):
                     "is_marked_for_review",
                     "is_context_aware",
                     "type",
+                    "entity_type",
                     "is_active",
                     "tags",
                 ),
@@ -634,7 +635,7 @@ class RuleAdmin(CreatedByAdmin):
         ),
     )
 
-    radio_fields = {"type": admin.HORIZONTAL, "label_type": admin.HORIZONTAL}
+    radio_fields = {"type": admin.HORIZONTAL, "entity_type": admin.HORIZONTAL, "label_type": admin.HORIZONTAL}
     search_fields = (
         "lemma",
         "comment",

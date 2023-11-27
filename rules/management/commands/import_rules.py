@@ -8,6 +8,7 @@ from rules.models import (
     RuleDiversityDimension,
     Source,
     RuleTypeEnum,
+    EntityTypeEnum,
     RuleLabelEnum,
     AlternativeTypeEnum,
     AlternativePluralizationEnum,
@@ -200,6 +201,20 @@ class Command(BaseCommand):
                         source.save()
 
                     rule.source = source
+
+                if rule.lemma == "international":
+                    rule.entity_type = EntityTypeEnum.NON_NAME
+                elif language == "de" and row["Primary_subcategory"].removeprefix(
+                    "advanced_"
+                ) in [
+                    "titles",
+                    "function",
+                    "hidden_image",
+                    "leadership",
+                    "male_stereotype",
+                    "female_stereotype",
+                ]:
+                    rule.entity_type = EntityTypeEnum.NON_PERSON
 
                 rule.save()
 
