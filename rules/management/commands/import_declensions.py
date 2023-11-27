@@ -200,6 +200,14 @@ class Command(BaseCommand):
         }
         models = GermanNoun.objects.filter(gender_1=None)
         for model in models:
+            if not model.base_form.istitle():
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"German noun not capitalized, skipping '{model.base_form}'"
+                    )
+                )
+                continue
+
             result = nouns[model.base_form]
             if len(result) == 0 or len(result[0]["flexion"]) == 0:
                 if "-" in model.base_form:
@@ -362,7 +370,7 @@ class Command(BaseCommand):
 
         models = EnglishAdjective.objects.filter(comparative=None)
         for model in models:
-            model.is_absolute = model.base_form.isupper()
+            model.is_absolute = model.base_form.istitle()
             if model.is_absolute == False:
                 try:
                     url = "https://en.wiktionary.org/wiki/" + model.base_form
