@@ -33,6 +33,21 @@ class Command(BaseCommand):
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
 
+    def save_model(self, language, lemma, token, word_type, model):
+        message = "Added" if model.pk is None else "Updated"
+        self.stdout.write(
+            self.style.SUCCESS(f"{message} {word_type} ({language}) for {token}")
+        )
+
+        model.base_form = token
+
+        if model.comment is None:
+            model.comment = ""
+        if lemma + "\n" not in model.comment:
+            model.comment += lemma + "\n"
+
+        model.save()
+
     def add_declension(self, language, lemma, token, word_type):
         model = None
         if "v" == word_type:
@@ -59,16 +74,39 @@ class Command(BaseCommand):
                     model = EnglishAdjective()
         elif "n" == word_type:
             if language == "de":
-                if not token.isupper():
-                    female_form = None
+                # ignore plurals
+                if " und " in token:
+                    return
+
+                plural_only = False
                 if "~" in token:
                     path = f"/debug/german_gender_ending?alternative={requests.utils.quote(token)}&german_gender_ending=binary"
                     result = fetch_json(path)
-                    [female_form, token] = result[0].replace(" und ", "/").split("/")
+                    result = result[0].split("/")
+                    if len(result) == 1 and token.endswith("innenschaft"):
+                        female_form = result[0]
+                        token = result[0].replace("innenschaft", "enschaft")
+                        plural_only = True
+                    if len(result) == 2:
+                        female_form = result[0]
+                        token = result[1]
+                    else:
+                        female_form = None
                 elif token.endswith("mann"):
                     female_form = token.removesuffix("mann") + "frau"
                 else:
-                    female_form = token.removesuffix("i") + "in"
+                    female_form = None
+
+                if female_form:
+                    try:
+                        model = GermanNoun.objects.get(base_form=female_form)
+                    except GermanNoun.DoesNotExist:
+                        model = GermanNoun()
+
+                    model.male_form = token
+                    model.plural_only = plural_only
+
+                    self.save_model(language, lemma, female_form, word_type, model)
 
                 try:
                     model = GermanNoun.objects.get(base_form=token)
@@ -76,6 +114,7 @@ class Command(BaseCommand):
                     model = GermanNoun()
 
                 model.female_form = female_form
+                model.plural_only = plural_only
             else:
                 try:
                     model = EnglishNoun.objects.get(base_form=token)
@@ -85,19 +124,7 @@ class Command(BaseCommand):
         if model is None:
             return
 
-        message = "Added" if model.pk is None else "Updated"
-        self.stdout.write(
-            self.style.SUCCESS(f"{message} {word_type} ({language}) for {token}")
-        )
-
-        model.base_form = token
-
-        if model.comment is None:
-            model.comment = ""
-        if lemma + "\n" not in model.comment:
-            model.comment += lemma + "\n"
-
-        model.save()
+        self.save_model(language, lemma, token, word_type, model)
 
     def handle_lemmas(self, language, lemma, tokens: [], word_types: []):
         if word_types is None:

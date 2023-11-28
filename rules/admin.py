@@ -949,10 +949,11 @@ class NounAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = GermanNounResource
-    search_fields = ("base_form", "female_form")
+    search_fields = ("base_form", "female_form","male_form")
     fields = (
         "base_form",
         "female_form",
+        "male_form",
         "gender_1",
         "gender_2",
         "singular_only",
@@ -973,4 +974,4 @@ class NounAdmin(ImportExportModelAdmin):
         "singular_only",
         "plural_only",
     )
-    list_display = ("base_form", "female_form", "gender_1")
+    list_display = ("base_form", "female_form", "male_form", "gender_1")

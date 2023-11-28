@@ -250,7 +250,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         max_length=255,
         null=True,
         blank=True,
-        help_text="'|' separated list of word types (s, a, adv, v, conj, emoji) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
+        help_text="'|' separated list of word types (n, a, adv, v, conj, emoji) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
     )
 
     @computed(
@@ -771,6 +771,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
 
     base_form = models.CharField(max_length=255, unique=True)
     female_form = models.CharField(max_length=255, null=True, blank=True)
+    male_form = models.CharField(max_length=255, null=True, blank=True)
     gender_1 = EnumField(GenderTypeEnum, null=True, blank=True)
     gender_2 = EnumField(GenderTypeEnum, null=True, blank=True)
     singular_only = models.BooleanField(default=False)

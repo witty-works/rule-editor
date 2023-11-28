@@ -22,6 +22,51 @@ class Command(BaseCommand):
         parser.add_argument("--germanverbs", type=str)
         parser.add_argument("--germannouns", type=str)
 
+    def get_form(self, base_form, female_form=True):
+        try:
+            url = "https://de.wiktionary.org/wiki/" + base_form
+            response = requests.get(url)
+            soup = BeautifulSoup(response.text, "html.parser")
+
+            title = (
+                "Weibliche Varianten des Wortes"
+                if female_form
+                else "Männliche Wortformen Varianten des Wortes"
+            )
+            elements = soup.find_all("p", {"title": title})
+            if len(elements):
+                try:
+                    return (
+                        elements[0]
+                        .find_next("dl")
+                        .find("dd")
+                        .find("a", attrs={"title": True})["title"]
+                    ).removesuffix(" (Seite nicht vorhanden)")
+                except AttributeError:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            f"Fetching female unable to find child tag '{base_form}'"
+                        )
+                    )
+                    pass
+                except KeyError:
+                    self.stdout.write(
+                        self.style.NOTICE(
+                            f"Fetching female could not find title '{base_form}'"
+                        )
+                    )
+                    pass
+                except Exception:
+                    self.stdout.write(
+                        self.style.NOTICE(
+                            f"Fetching female failed to parse '{base_form}'"
+                        )
+                    )
+        except requests.exceptions.ConnectionError:
+            self.stdout.write(
+                self.style.NOTICE(f"Fetching female failed to download '{base_form}'")
+            )
+
     def handle(self, *args, **options):
         if options["germanverbs"]:
             with open(options["germanverbs"]) as f:
@@ -112,7 +157,7 @@ class Command(BaseCommand):
             "superlative",
         ]
 
-        models = GermanAdjective.objects.filter(base_form=None)
+        models = GermanAdjective.objects.filter(comparative=None)
         for model in models:
             try:
                 url = "https://de.wiktionary.org/wiki/" + model.base_form
@@ -167,7 +212,6 @@ class Command(BaseCommand):
                         )
                         pass
                     except Exception as e:
-                        print(e)
                         self.stdout.write(
                             self.style.NOTICE(
                                 f"Fetching adjective failed to parse '{model.base_form}'"
@@ -200,7 +244,7 @@ class Command(BaseCommand):
         }
         models = GermanNoun.objects.filter(gender_1=None)
         for model in models:
-            if not model.base_form.istitle():
+            if not model.base_form[0].isupper():
                 self.stdout.write(
                     self.style.ERROR(
                         f"German noun not capitalized, skipping '{model.base_form}'"
@@ -217,7 +261,7 @@ class Command(BaseCommand):
                     lower = False
                 else:
                     words = nouns.parse_compound(model.base_form)
-                    if len(words) < 1:
+                    if len(words) < 1 or not model.base_form.endswith(words[-1]):
                         self.stdout.write(
                             self.style.ERROR(
                                 f"German noun could not split '{model.base_form}'"
@@ -238,6 +282,9 @@ class Command(BaseCommand):
                     )
                     continue
 
+                if len(words) == 0:
+                    lower = False
+
                 for i in range(len(result)):
                     lemma = result[i]["lemma"].lower() if lower else result[i]["lemma"]
                     result[i]["lemma"] = words + lemma
@@ -247,7 +294,6 @@ class Command(BaseCommand):
                             if lower
                             else result[i]["flexion"][flexion]
                         )
-
                         result[i]["flexion"][flexion] = words + flexion_expanded
 
             result = result[0]
@@ -305,47 +351,10 @@ class Command(BaseCommand):
             )
 
             if model.female_form is None:
-                try:
-                    url = "https://de.wiktionary.org/wiki/" + model.base_form
-                    response = requests.get(url)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    elements = soup.find_all(
-                        "p", {"title": "Weibliche Varianten des Wortes"}
-                    )
-                    if len(elements):
-                        try:
-                            model.female_form = (
-                                elements[0]
-                                .find_next("dl")
-                                .find("dd")
-                                .find("a", attrs={"title": True})["title"]
-                            )
-                        except AttributeError:
-                            self.stdout.write(
-                                self.style.ERROR(
-                                    f"Fetching female unable to find child tag '{model.base_form}'"
-                                )
-                            )
-                            pass
-                        except KeyError:
-                            self.stdout.write(
-                                self.style.NOTICE(
-                                    f"Fetching female could not find title '{model.base_form}'"
-                                )
-                            )
-                            pass
-                        except Exception:
-                            self.stdout.write(
-                                self.style.NOTICE(
-                                    f"Fetching female failed to parse '{model.base_form}'"
-                                )
-                            )
-                except requests.exceptions.ConnectionError:
-                    self.stdout.write(
-                        self.style.NOTICE(
-                            f"Fetching female failed to download '{model.base_form}'"
-                        )
-                    )
+                model.female_form = self.get_form(model.base_form)
+
+            if model.female_form is None and model.male_form is None:
+                model.male_form = self.get_form(model.base_form, False)
 
             model.save()
             self.stdout.write(
@@ -370,7 +379,7 @@ class Command(BaseCommand):
 
         models = EnglishAdjective.objects.filter(comparative=None)
         for model in models:
-            model.is_absolute = model.base_form.istitle()
+            model.is_absolute = model.base_form[0].isupper()
             if model.is_absolute == False:
                 try:
                     url = "https://en.wiktionary.org/wiki/" + model.base_form
