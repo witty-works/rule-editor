@@ -218,16 +218,17 @@ class Command(BaseCommand):
                     rule.comment += "\ToClarify:\n" + row["ToClarify"].strip()
 
                 # 3rd_party_source
-                source_name = row["3rd_party_source"].strip()
-                if len(source_name):
-                    try:
-                        source = Source.objects.get(name=source_name)
-                    except Source.DoesNotExist:
-                        source = Source()
-                        source.name = source_name
-                        source.save()
+                if row["3rd_party_source"] is not None:
+                    source_name = row["3rd_party_source"].strip()
+                    if len(source_name):
+                        try:
+                            source = Source.objects.get(name=source_name)
+                        except Source.DoesNotExist:
+                            source = Source()
+                            source.name = source_name
+                            source.save()
 
-                    rule.source = source
+                        rule.source = source
 
                 if rule.lemma == "international":
                     rule.entity_type = EntityTypeEnum.NON_NAME
@@ -518,23 +519,24 @@ class Command(BaseCommand):
                     )
 
                 # False_Positives
-                false_positives = row["False_Positives"].strip()
-                false_positives = false_positives.split("|")
-                false_positive_texts = []
-                for false_positive_text in false_positives:
-                    false_positive_text = false_positive_text.strip()
-                    if (
-                        len(false_positive_text) == 0
-                        or false_positive_text in false_positive_texts
-                    ):
-                        continue
+                if row["False_Positives"] is not None:
+                    false_positives = row["False_Positives"].strip()
+                    false_positives = false_positives.split("|")
+                    false_positive_texts = []
+                    for false_positive_text in false_positives:
+                        false_positive_text = false_positive_text.strip()
+                        if (
+                            len(false_positive_text) == 0
+                            or false_positive_text in false_positive_texts
+                        ):
+                            continue
 
-                    false_positive_texts.append(false_positive_text)
+                        false_positive_texts.append(false_positive_text)
 
-                    false_positive = FalsePositive()
-                    false_positive.rule = rule
-                    false_positive.false_positive = false_positive_text
-                    false_positive.save()
+                        false_positive = FalsePositive()
+                        false_positive.rule = rule
+                        false_positive.false_positive = false_positive_text
+                        false_positive.save()
 
                 # Sample_Sentences,Generated Examples
                 training_sentences_columns = [
