@@ -604,6 +604,7 @@ class RuleAdmin(CreatedByAdmin):
                     "is_context_aware",
                     "type",
                     "entity_type",
+                    "pluralization",
                     "is_active",
                     "tags",
                 ),
@@ -635,7 +636,12 @@ class RuleAdmin(CreatedByAdmin):
         ),
     )
 
-    radio_fields = {"type": admin.HORIZONTAL, "entity_type": admin.HORIZONTAL, "label_type": admin.HORIZONTAL}
+    radio_fields = {
+        "type": admin.HORIZONTAL,
+        "entity_type": admin.HORIZONTAL,
+        "label_type": admin.HORIZONTAL,
+        "pluralization": admin.HORIZONTAL,
+    }
     search_fields = (
         "lemma",
         "comment",
@@ -897,9 +903,7 @@ class GermanVerbAdmin(ImportExportModelAdmin):
         "infinitiv_zu",
         "comment",
     )
-    list_filter = (
-        "helping_verb",
-    )
+    list_filter = ("helping_verb",)
     list_display = ("base_form", "past_participle", "helping_verb", "infinitiv_zu")
 
 
@@ -935,6 +939,7 @@ class GermanNounResource(resources.ModelResource):
     class Meta:
         model = GermanNoun
 
+
 @admin.register(GermanNoun)
 class NounAdmin(ImportExportModelAdmin):
     class Meta:
@@ -949,7 +954,7 @@ class NounAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = GermanNounResource
-    search_fields = ("base_form", "female_form","male_form")
+    search_fields = ("base_form", "female_form", "male_form")
     fields = (
         "base_form",
         "female_form",

@@ -51,7 +51,7 @@ class GenderTypeEnum(models.TextChoices):
     MASCULINE = "masculine"
 
 
-class AlternativePluralizationEnum(models.TextChoices):
+class PluralizationEnum(models.TextChoices):
     DEFAULT = "default"
     SINGULAR_ONLY = "singular_only"
     PLURAL_ONLY = "plural_only"
@@ -416,6 +416,12 @@ class Rule(
         help_text="Quick selections for custom labels (only change from 'default' if label is empty).",
     )
 
+    pluralization = EnumField(
+        PluralizationEnum,
+        default=PluralizationEnum.DEFAULT,
+        help_text="Show alternative in case rule triggered on singular/plural/both",
+    )
+
     is_context_aware = models.BooleanField(
         default=False,
         help_text="Uses custom machine learning model to determine if to highlight in the given context.",
@@ -594,9 +600,9 @@ class Alternative(
 
     type = EnumField(AlternativeTypeEnum, default=AlternativeTypeEnum.DEFAULT)
     pluralization = EnumField(
-        AlternativePluralizationEnum,
-        default=AlternativePluralizationEnum.DEFAULT,
-        help_text="Show alternative in case rule triggered on",
+        PluralizationEnum,
+        default=PluralizationEnum.DEFAULT,
+        help_text="Show alternative in case rule triggered on singular/plural/both",
     )
     is_remove = models.BooleanField(
         default=False,
