@@ -607,7 +607,7 @@ class Alternative(
         help_text="Alternative will be marked as inspiration, hidden if user has inspiration disabled. Also never adjusted for grammatical correctness",
     )
     is_advanced = models.BooleanField(
-        default=True,
+        default=False,
         help_text="Only show if user has diversity dimension enabled at advanced level.",
     )
 
