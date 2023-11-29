@@ -167,7 +167,7 @@ class Command(BaseCommand):
                 if len(elements) == 0:
                     self.stdout.write(
                         self.style.ERROR(
-                            f"Unable to fetch adjective data '{model.base_form}'"
+                            f"Unable to fetch German adjective data '{model.base_form}'"
                         )
                     )
                     continue
@@ -200,27 +200,27 @@ class Command(BaseCommand):
                     except AttributeError:
                         self.stdout.write(
                             self.style.ERROR(
-                                f"Fetching adjective unable to find tags '{model.base_form}'"
+                                f"Fetching German adjective unable to find tags '{model.base_form}'"
                             )
                         )
                         pass
                     except KeyError:
                         self.stdout.write(
                             self.style.NOTICE(
-                                f"Fetching adjective could not find title '{model.base_form}'"
+                                f"Fetching German adjective could not find title '{model.base_form}'"
                             )
                         )
                         pass
                     except Exception as e:
                         self.stdout.write(
                             self.style.NOTICE(
-                                f"Fetching adjective failed to parse '{model.base_form}'"
+                                f"Fetching German adjective failed to parse '{model.base_form}'"
                             )
                         )
             except requests.exceptions.ConnectionError:
                 self.stdout.write(
                     self.style.NOTICE(
-                        f"Fetching adjective failed to download '{model.base_form}'"
+                        f"Fetching German adjective failed to download '{model.base_form}'"
                     )
                 )
 
