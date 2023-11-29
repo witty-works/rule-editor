@@ -796,7 +796,13 @@ class EnglishVerbAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = EnglishVerbResource
-    search_fields = ("base_form",)
+    search_fields = (
+        "base_form",
+        "present_participle",
+        "third_person_singular",
+        "past_tense",
+        "past_participle",
+    )
     fields = (
         "base_form",
         "present_participle",
@@ -833,7 +839,7 @@ class EnglishAdjectiveAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = EnglishAdjectiveResource
-    search_fields = ("base_form",)
+    search_fields = ("base_form", "comparative", "superlative")
     fields = ("base_form", "comparative", "superlative", "is_absolute", "comment")
     list_filter = (
         ("comparative", admin.EmptyFieldListFilter),
@@ -861,7 +867,7 @@ class NounAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = EnglishNounResource
-    search_fields = ("base_form",)
+    search_fields = ("base_form", "plural")
     fields = ("base_form", "plural", "comment")
     list_display = (
         "base_form",
@@ -888,7 +894,19 @@ class GermanVerbAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = GermanVerbResource
-    search_fields = ("base_form",)
+    search_fields = (
+        "base_form",
+        "present_ich",
+        "present_du",
+        "present_pronoun",
+        "past_tense_ich",
+        "past_participle",
+        "conjunctive_ich",
+        "imperativ_singular",
+        "imperativ_plural",
+        "infinitiv_zu",
+        "comment",
+    )
     fields = (
         "base_form",
         "present_ich",
@@ -926,7 +944,7 @@ class GermanAdjectiveAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = GermanAdjectiveResource
-    search_fields = ("base_form",)
+    search_fields = ("base_form", "comparative", "superlative")
     fields = ("base_form", "comparative", "superlative", "is_absolute", "comment")
     list_filter = (
         ("comparative", admin.EmptyFieldListFilter),
@@ -954,7 +972,19 @@ class NounAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = GermanNounResource
-    search_fields = ("base_form", "female_form", "male_form")
+    search_fields = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "singular_only",
+        "plural_only",
+        "sg_nom_acc",
+        "sg_dat",
+        "sg_gen",
+        "pl_nom_acc",
+        "pl_gen",
+        "pl_dat",
+    )
     fields = (
         "base_form",
         "female_form",
