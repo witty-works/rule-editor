@@ -329,7 +329,7 @@ class Rule(
     BaseSourcedModel,
 ):
     class Meta:
-        unique_together = (("language", "lemma", "word_types"),)
+        unique_together = (("language", "lemma", "word_types", "type", "pluralization"),)
         indexes = [
             models.Index(
                 fields=[
