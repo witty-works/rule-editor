@@ -8,6 +8,8 @@ from django.conf import settings
 from django.db.models import Q
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db.models import Lookup
+from django.db.models import Field
 
 import requests
 import json
@@ -209,6 +211,17 @@ def get_class(class_name):
     return getattr(sys.modules[__name__], class_name)
 
 
+@Field.register_lookup
+class NotEqual(Lookup):
+    lookup_name = "ne"
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = lhs_params + rhs_params
+        return "%s <> %s" % (lhs, rhs), params
+
+
 def generate_help_text(name, language, filters, token, text=None):
     class_name = name
     if class_name in ["Verb", "Adjective", "Noun"]:
@@ -241,7 +254,7 @@ def generate_help_text(name, language, filters, token, text=None):
     return f"No {name} {text} for '{token}'"
 
 
-def update_lemma_help_text(obj, field, check_rule_lemma=False):
+def update_lemma_help_text(obj, field, type):
     help_texts = [field.help_text]
 
     try:
@@ -282,8 +295,23 @@ def update_lemma_help_text(obj, field, check_rule_lemma=False):
                 generate_help_text("Lemmatization", obj.language, filters, tokens[i])
             )
 
-        if (
-            check_rule_lemma
+        if type == "rule":
+            filters = {
+                "first_token": obj.first_token,
+                "id__ne": obj.id,
+            }
+
+            help_texts.append(
+                generate_help_text(
+                    "Rule",
+                    obj.language,
+                    filters,
+                    tokens[i],
+                    "overlapping rules with matching first token",
+                )
+            )
+        elif (
+            type == "alternative"
             and len(lemmas[i]) > 1
             and tokens[i] not in stopwords[obj.language]
             and lemmas[i] not in stopwords[obj.language]
@@ -353,7 +381,7 @@ class AlternativeForm(forms.ModelForm):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
         if instance and isinstance(instance, Alternative):
-            update_lemma_help_text(instance, self.fields["lemma"], True)
+            update_lemma_help_text(instance, self.fields["lemma"], "alternative")
 
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
@@ -590,7 +618,7 @@ class RuleAdmin(CreatedByAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_lemma_help_text(obj, form.base_fields["lemma"])
+            update_lemma_help_text(obj, form.base_fields["lemma"], "rule")
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
