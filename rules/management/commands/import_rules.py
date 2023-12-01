@@ -343,7 +343,7 @@ class Command(BaseCommand):
                     },
                     "Alt_Pl_collective_noun": {
                         "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": PluralizationEnum.PLURAL_ONLY,
+                        "pluralization": PluralizationEnum.DEFAULT,
                         "word_types": False,
                         "is_inspiration": False,
                         "is_advanced": False,
