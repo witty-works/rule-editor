@@ -457,6 +457,8 @@ class Rule(
         help_text="Override the diversity dimension URL with a custom URL",
     )
 
+    sanctions = models.ManyToManyField(Source, blank=True, related_name='rule_sanctions')
+
     @computed(
         models.CharField(max_length=255, null=True, blank=True),
         depends=[
@@ -616,6 +618,7 @@ class Alternative(
         default=False,
         help_text="Only show if user has diversity dimension enabled at advanced level.",
     )
+    sanctions = models.ManyToManyField(Source, blank=True, related_name='alternative_sanctions')
 
     @computed(
         models.BooleanField(default=False),

@@ -359,22 +359,39 @@ class AlternativeForm(forms.ModelForm):
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative
     form = AlternativeForm
-    fields = (
-        "lemma",
-        "word_types",
-        "is_remove",
-        "is_inspiration",
-        "is_advanced",
-        "pluralization",
-        "type",
-        "is_active",
-        "label",
-        "tags",
-        "source",
-        "comment",
-        "order",
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "lemma",
+                    "word_types",
+                    "is_remove",
+                    "is_inspiration",
+                    "is_advanced",
+                    "pluralization",
+                    "type",
+                    "is_active",
+                    "label",
+                    "order",
+                ),
+            },
+        ),
+        (
+            "Optional Fields",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": (
+                    "tags",
+                    "source",
+                    "sanctions",
+                    "comment",
+                ),
+            },
+        ),
     )
     radio_fields = {"type": admin.HORIZONTAL, "pluralization": admin.HORIZONTAL}
+    filter_horizontal = ("sanctions",)
     ordering = ("order",)
     extra = 0
     sortable_field_name = "order"
@@ -606,7 +623,6 @@ class RuleAdmin(CreatedByAdmin):
                     "entity_type",
                     "pluralization",
                     "is_active",
-                    "tags",
                 ),
             },
         ),
@@ -628,7 +644,9 @@ class RuleAdmin(CreatedByAdmin):
             {
                 "classes": ("grp-collapse grp-closed",),
                 "fields": (
+                    "tags",
                     "source",
+                    "sanctions",
                     "comment",
                     "ownedby",
                 ),
@@ -642,6 +660,7 @@ class RuleAdmin(CreatedByAdmin):
         "label_type": admin.HORIZONTAL,
         "pluralization": admin.HORIZONTAL,
     }
+    filter_horizontal = ("sanctions",)
     search_fields = (
         "lemma",
         "comment",
