@@ -262,13 +262,20 @@ class Command(BaseCommand):
                     rule, row["Category"], row["Primary_subcategory"], 0, is_basic
                 )
 
-                if row["Secondary_subcategory"] is not None and row["Secondary_subcategory"].strip != "":
+                if (
+                    row["Secondary_subcategory"] is not None
+                    and row["Secondary_subcategory"].strip != ""
+                ):
                     secondary_subcategories = row["Secondary_subcategory"].split("|")
                     for secondary_subcategory in secondary_subcategories:
                         secondary_subcategory = secondary_subcategory.strip()
                         if secondary_subcategory != "generic_plural":
                             self.add_diversity_dimension(
-                                rule, row["Category"], row["Secondary_subcategory"], 1, is_basic
+                                rule,
+                                row["Category"],
+                                row["Secondary_subcategory"],
+                                1,
+                                is_basic,
                             )
 
                 alternative_columns = {
