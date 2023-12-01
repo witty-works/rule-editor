@@ -126,10 +126,10 @@ class Command(BaseCommand):
                         )
                         continue
 
-                    if model.sg_nom_acc is not None:
+                    if model.sg_nom is not None:
                         self.stdout.write(
                             self.style.ERROR(
-                                f"German noun '{text}' already has 'sg_nom_acc' filled, skipping"
+                                f"German noun '{text}' already has 'sg_nom' filled, skipping"
                             )
                         )
                         continue
@@ -138,12 +138,14 @@ class Command(BaseCommand):
                     model.gender_2 = row["Gender 2"] if row["Gender 2"] != "" else None
                     model.singular_only = True if row["Singular only"] != "" else False
                     model.plural_only = True if row["Plural only"] != "" else False
-                    model.sg_nom_acc = row["sg-nom-acc"]
+                    model.sg_nom = row["sg-nom"]
                     model.sg_dat = row["sg-dat"]
                     model.sg_gen = row["sg-gen"]
-                    model.pl_nom_acc = row["pl-nom-acc"]
+                    model.sg_acc = row["sg-acc"]
+                    model.pl_nom = row["pl-nom"]
                     model.pl_gen = row["pl-gen"]
                     model.pl_dat = row["pl-dat"]
+                    model.pl_acc = row["pl-acc"]
                     model.save()
 
                     self.stdout.write(
@@ -300,19 +302,26 @@ class Command(BaseCommand):
 
             singular = None
             singular_map = {
-                "nominativ singular": "sg_nom_acc",
+                "nominativ singular": "sg_nom",
                 "dativ singular": "sg_dat",
+                "dativ singular*": "sg_dat_2",
                 "genitiv singular": "sg_gen",
+                "genitiv singular*": "sg_gen_2",
+                "akkusativ singular": "sg_acc",
             }
 
             plural = None
             plural_map = {
-                "nominativ plural": "pl_nom_acc",
+                "nominativ plural": "pl_nom",
                 "dativ plural": "pl_dat",
-                "genitiv plural": "pl_gen",
+                "dativ plural*": "pl_gen_2",
+                "dativ plural": "pl_dat",
+                "genitiv plural*": "pl_gen_2",
+                "akkusativ plural": "pl_acc",
             }
 
             for flexion in result["flexion"]:
+                # TODO handle variations (dativ/genetiv) and stark/schwach/gemischt
                 key = flexion.removesuffix(" 1")
                 key = flexion.removesuffix(" stark")
                 if key in singular_map:
