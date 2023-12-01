@@ -233,7 +233,7 @@ class Command(BaseCommand):
                 if rule.lemma == "international":
                     rule.entity_type = EntityTypeEnum.NON_NAME
                 elif language == "de" and row["Primary_subcategory"].removeprefix(
-                    "advanced_"
+                    "advanced_".removesuffix("_base")
                 ) in [
                     "titles",
                     "function",
@@ -241,6 +241,7 @@ class Command(BaseCommand):
                     "leadership",
                     "male_stereotype",
                     "female_stereotype",
+                    "gendered_denominations_ending",
                 ]:
                     rule.entity_type = EntityTypeEnum.NON_PERSON
 
