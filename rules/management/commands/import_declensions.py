@@ -7,6 +7,9 @@ from rules.models import (
     EnglishVerb,
     EnglishAdjective,
     EnglishNoun,
+    Rule,
+    PluralizationEnum,
+    LanguageEnum,
 )
 from german_nouns.lookup import Nouns
 from inflex import Noun, Verb, Adjective
@@ -19,6 +22,10 @@ class Command(BaseCommand):
     help = "Imports Declensions"
 
     def add_arguments(self, parser):
+        parser.add_argument("--language", type=LanguageEnum)
+        parser.add_argument("--verbs", type=bool)
+        parser.add_argument("--adjectives", type=bool)
+        parser.add_argument("--nouns", type=bool)
         parser.add_argument("--germanverbs", type=str)
         parser.add_argument("--germannouns", type=str)
 
@@ -67,7 +74,17 @@ class Command(BaseCommand):
                 self.style.NOTICE(f"Fetching female failed to download '{base_form}'")
             )
 
-    def handle(self, *args, **options):
+    def german(self, options):
+        if options["verbs"]:
+            self.german_verbs(options)
+
+        if options["adjectives"]:
+            self.german_adjectives()
+
+        if options["nouns"]:
+            self.german_nouns(options)
+
+    def german_verbs(self, options):
         if options["germanverbs"]:
             with open(options["germanverbs"]) as f:
                 reader = csv.DictReader(f)
@@ -110,50 +127,7 @@ class Command(BaseCommand):
                         )
                     )
 
-        if options["germannouns"]:
-            with open(options["germannouns"]) as f:
-                reader = csv.DictReader(f)
-                for row in reader:
-                    text = row["lemma"]
-
-                    try:
-                        model = GermanNoun.objects.get(base_form=text)
-                    except GermanNoun.DoesNotExist:
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f"German noun '{text}' does not exist, skipping"
-                            )
-                        )
-                        continue
-
-                    if model.sg_nom is not None:
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f"German noun '{text}' already has 'sg_nom' filled, skipping"
-                            )
-                        )
-                        continue
-
-                    model.gender_1 = row["Gender 1"]
-                    model.gender_2 = row["Gender 2"] if row["Gender 2"] != "" else None
-                    model.singular_only = True if row["Singular only"] != "" else False
-                    model.plural_only = True if row["Plural only"] != "" else False
-                    model.sg_nom = row["sg-nom"]
-                    model.sg_dat = row["sg-dat"]
-                    model.sg_gen = row["sg-gen"]
-                    model.sg_acc = row["sg-acc"]
-                    model.pl_nom = row["pl-nom"]
-                    model.pl_gen = row["pl-gen"]
-                    model.pl_dat = row["pl-dat"]
-                    model.pl_acc = row["pl-acc"]
-                    model.save()
-
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"Successfully updated German verb '{model.base_form}'"
-                        )
-                    )
-
+    def german_adjectives(self):
         adjective_map = [
             "comparative",
             "superlative",
@@ -237,6 +211,7 @@ class Command(BaseCommand):
                 )
             )
 
+    def german_nouns(self, options):
         nouns = Nouns()
         genus_map = {
             "": None,
@@ -300,7 +275,7 @@ class Command(BaseCommand):
 
             result = result[0]
 
-            singular = None
+            singular = False
             singular_map = {
                 "nominativ singular": "sg_nom",
                 "dativ singular": "sg_dat",
@@ -310,7 +285,7 @@ class Command(BaseCommand):
                 "akkusativ singular": "sg_acc",
             }
 
-            plural = None
+            plural = False
             plural_map = {
                 "nominativ plural": "pl_nom",
                 "dativ plural": "pl_dat",
@@ -331,7 +306,7 @@ class Command(BaseCommand):
                     setattr(model, plural_map[key], result["flexion"][flexion])
                     plural = True
 
-            if singular is None and plural is None:
+            if not singular and not plural:
                 self.stdout.write(
                     self.style.ERROR(
                         f"Unable to find flexion data for German noun '{model.base_form}'"
@@ -339,8 +314,8 @@ class Command(BaseCommand):
                 )
                 continue
 
-            model.singular_only = bool(singular and plural is None)
-            model.plural_only = bool(plural and singular is None)
+            model.singular_only = bool(singular and not plural)
+            model.plural_only = bool(plural and not singular)
 
             if "genus" not in result and "genus 1" not in result:
                 self.stdout.write(
@@ -372,6 +347,143 @@ class Command(BaseCommand):
                 )
             )
 
+        if options["germannouns"]:
+            with open(options["germannouns"]) as f:
+                reader = csv.DictReader(f)
+
+                for row in reader:
+                    text = row["lemma"]
+
+                    try:
+                        model = GermanNoun.objects.get(base_form=text)
+                    except GermanNoun.DoesNotExist:
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"German noun '{text}' does not exist, skipping"
+                            )
+                        )
+                        continue
+
+                    new_row = {}
+                    new_row["gender_1"] = row["Gender 1"]
+                    new_row["gender_2"] = (
+                        row["Gender 2"] if row["Gender 2"] != "" else None
+                    )
+
+                    new_row["sg_nom"] = row["sg-nom"]
+                    new_row["sg_dat"] = row["sg-dat"]
+                    new_row["sg_gen"] = row["sg-gen"]
+                    new_row["sg_acc"] = row["sg-acc"]
+                    new_row["pl_nom"] = row["pl-nom"]
+                    new_row["pl_gen"] = row["pl-gen"]
+                    new_row["pl_dat"] = row["pl-dat"]
+                    new_row["pl_acc"] = row["pl-acc"]
+
+                    new_row["singular_only"] = bool(
+                        not new_row["pl_nom"]
+                        and not new_row["pl_dat"]
+                        and not new_row["pl_gen"]
+                        and not new_row["pl_acc"]
+                    )
+                    new_row["plural_only"] = bool(
+                        not new_row["sg_nom"]
+                        and not new_row["sg_dat"]
+                        and not new_row["sg_gen"]
+                        and not new_row["sg_acc"]
+                    )
+
+                    if row["Singular only"] == "TRUE" or row["Plural only"] == "TRUE":
+                        try:
+                            rule = Rule.objects.filter(
+                                lemma=model.base_form, word_types="n"
+                            ).get()
+
+                            changed = False
+                            if (
+                                row["Singular only"] == "TRUE"
+                                and rule.pluralization
+                                != PluralizationEnum.SINGULAR_ONLY
+                            ):
+                                rule.pluralization = PluralizationEnum.SINGULAR_ONLY
+                                changed = True
+                            if (
+                                row["Plural only"] == "TRUE"
+                                and rule.pluralization != PluralizationEnum.PLURAL_ONLY
+                            ):
+                                rule.pluralization = PluralizationEnum.PLURAL_ONLY
+                                changed = True
+
+                            if changed:
+                                rule.save()
+
+                                self.style.SUCCESS(
+                                    f"German noun rule for '{model.base_form}' pluralization updated to {rule.pluralization}."
+                                )
+                        except Rule.DoesNotExist:
+                            self.style.ERROR(
+                                f"German noun rule for '{model.base_form}' not found for pluralization update."
+                            )
+
+                    data_mis_match = ""
+                    has_changes = False
+                    for field in new_row:
+                        current_value = getattr(model, field)
+                        if current_value != new_row[field]:
+                            has_changes = True
+                        if (
+                            current_value is not None
+                            and current_value != ""
+                            and current_value != new_row[field]
+                        ):
+                            new_value = (
+                                "NONE" if new_row[field] is None else new_row[field]
+                            )
+                            data_mis_match += (
+                                f"'{field}' is '{current_value}' -> '{new_value}', "
+                            )
+
+                    if model.sg_nom and data_mis_match != "":
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"German noun '{model.base_form}' has a data mismatch on fields {data_mis_match} skipping"
+                            )
+                        )
+                        continue
+
+                    if has_changes == False:
+                        continue
+
+                    model.gender_1 = new_row["gender_1"]
+                    model.gender_2 = new_row["gender_2"]
+                    model.singular_only = new_row["singular_only"]
+                    model.plural_only = new_row["plural_only"]
+                    model.sg_nom = new_row["sg_nom"]
+                    model.sg_dat = new_row["sg_dat"]
+                    model.sg_gen = new_row["sg_gen"]
+                    model.sg_acc = new_row["sg_acc"]
+                    model.pl_nom = new_row["pl_nom"]
+                    model.pl_gen = new_row["pl_gen"]
+                    model.pl_dat = new_row["pl_dat"]
+                    model.pl_acc = new_row["pl_acc"]
+                    model.save()
+
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Successfully updated German noun '{model.base_form}'"
+                        )
+                    )
+
+    def english(self, options):
+        if options["verbs"]:
+            self.english_verbs()
+
+        if options["adjectives"]:
+            self.english_adjectives()
+
+        if options["nouns"]:
+            self.english_nouns()
+
+    def english_verbs(self):
         models = EnglishVerb.objects.filter(past_tense=None)
         for model in models:
             inflex = Verb(model.base_form)
@@ -386,6 +498,7 @@ class Command(BaseCommand):
                 )
             )
 
+    def english_adjectives(self):
         models = EnglishAdjective.objects.filter(comparative=None)
         for model in models:
             model.is_absolute = model.base_form[0].isupper()
@@ -447,6 +560,7 @@ class Command(BaseCommand):
                 )
             )
 
+    def english_nouns(self):
         models = EnglishNoun.objects.filter(plural=None)
         for model in models:
             inflex = Noun(model.base_form)
@@ -457,3 +571,10 @@ class Command(BaseCommand):
                     f"Successfully updated English noun '{model.base_form}'"
                 )
             )
+
+    def handle(self, *args, **options):
+        if options["language"] == "de":
+            self.german(options)
+
+        elif options["language"] == "en":
+            self.english(options)
