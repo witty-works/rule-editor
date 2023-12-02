@@ -474,7 +474,7 @@ class Command(BaseCommand):
 
                             if len(rule_tokens) == 1 and len(rule_tokens) == len(
                                 alternative_rule_tokens
-                            ):
+                            ) and rule_tokens[0].isupper() == alternative_rule_tokens[0].isupper():
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
                                     language,
