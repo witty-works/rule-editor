@@ -25,19 +25,19 @@ def fetch_json(path, data=None):
     )
 
     if data is None:
-        r = requests.get(url, auth=auth)
+        r = requests.get(url, auth=auth, timeout=5)
     else:
-        r = requests.post(url, json=data, auth=auth)
+        r = requests.post(url, json=data, auth=auth, timeout=5)
 
     try:
         if r.status_code != 200:
             body = r.json()
             error = body["detail"] if "detail" in body else r.text
-            raise ValidationError(path + ": " + str(error))
+            raise ValidationError(url + ": " + str(error))
 
         return r.json()
     except Exception as e:
-        raise ValidationError(path + ": " + str(e))
+        raise ValidationError(url + ": " + str(e))
 
 
 class LanguageEnum(models.TextChoices):
