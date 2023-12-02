@@ -10,6 +10,7 @@ from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Lookup
 from django.db.models import Field
+from django.contrib import messages
 
 import requests
 import json
@@ -610,6 +611,19 @@ class LemmaFilter(InputFilter):
 class RuleAdmin(CreatedByAdmin):
     class Meta:
         model = Rule
+
+    def save_formset(self, request, form, formset, change):
+        super(RuleAdmin, self).save_formset(request, form, formset, change)
+
+        rule = formset.instance
+
+        if formset.prefix == "rulediversitydimension_set" and len(rule.diversity_dimensions.all()) == 0:
+            message = "Diversity dimensions missing"
+            messages.add_message(request, messages.INFO, message)
+
+        if formset.prefix == "alternatives" and len(rule.alternatives.all()) == 0:
+            message = "Alternatives missing"
+            messages.add_message(request, messages.INFO, message)
 
     def all_diversity_dimensions(self, obj):
         return ", ".join([d.name for d in obj.diversity_dimensions.all()])
