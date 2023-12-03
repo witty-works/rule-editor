@@ -414,7 +414,7 @@ class Command(BaseCommand):
                     "indigene Gruppe nennen": RuleLabelEnum.DEFAULT,
                 }
 
-                rule_tokens, rule_lemmas = rule.tokenize()
+                rule_tokens, rule_lemmas, rule_word_types = rule.tokenize()
                 rule.label_type = RuleLabelEnum.DEFAULT
                 rule.label = None
 
@@ -470,6 +470,7 @@ class Command(BaseCommand):
                             (
                                 alternative_rule_tokens,
                                 alternative_rule_lemmas,
+                                alterative_word_types,
                             ) = alternative.tokenize()
 
                             if len(rule_tokens) == 1 and len(rule_tokens) == len(

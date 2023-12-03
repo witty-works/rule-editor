@@ -186,18 +186,19 @@ class BaseSourcedModel(BaseModel):
 class BaseLemmaModel(ComputedFieldsModel, BaseModel):
     def tokenize(self):
         if self.lemma == "-":
-            return ["-"], ["-"]
+            return ["-"], ["-"], ""
 
         path = f"/debug/spacy?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}"
         result = fetch_json(path)
-        result.pop(0)
+        word_types = result.pop(0)
+        word_types = "" if "word_type" not in word_types else word_types["word_type"]
         tokens = []
         lemmas = []
         for token in result:
             tokens.append(token["text"])
             lemmas.append(token["lemma"])
 
-        return tokens, lemmas
+        return tokens, lemmas, word_types
 
     def parse_word_types(self):
         if self.word_types is None or len(self.word_types) == 0:
@@ -214,7 +215,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         errors = {}
 
         try:
-            self.tokenized, lemmas = self.tokenize()
+            self.tokenized, lemmas, word_types = self.tokenize()
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
@@ -329,7 +330,9 @@ class Rule(
     BaseSourcedModel,
 ):
     class Meta:
-        unique_together = (("language", "lemma", "word_types", "type", "pluralization"),)
+        unique_together = (
+            ("language", "lemma", "word_types", "type", "pluralization"),
+        )
         indexes = [
             models.Index(
                 fields=[
@@ -457,7 +460,9 @@ class Rule(
         help_text="Override the diversity dimension URL with a custom URL",
     )
 
-    sanctions = models.ManyToManyField(Source, blank=True, related_name='rule_sanctions')
+    sanctions = models.ManyToManyField(
+        Source, blank=True, related_name="rule_sanctions"
+    )
 
     @computed(
         models.CharField(max_length=255, null=True, blank=True),
@@ -618,7 +623,9 @@ class Alternative(
         default=False,
         help_text="Only show if user has diversity dimension enabled at advanced level.",
     )
-    sanctions = models.ManyToManyField(Source, blank=True, related_name='alternative_sanctions')
+    sanctions = models.ManyToManyField(
+        Source, blank=True, related_name="alternative_sanctions"
+    )
 
     @computed(
         models.BooleanField(default=False),

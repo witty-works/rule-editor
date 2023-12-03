@@ -259,7 +259,14 @@ def update_lemma_help_text(obj, field, type):
     help_texts = [field.help_text]
 
     try:
-        tokens, lemmas = obj.tokenize()
+        tokens, lemmas, generated_word_types = obj.tokenize()
+        message = (
+            f"Auto-detected word_types: {generated_word_types}"
+            if obj.word_types == generated_word_types
+            else f"<b>Auto-detected word_types mismatch: {generated_word_types}</b>"
+        )
+        help_texts.append(message)
+
         word_types = obj.parse_word_types()
     except ValidationError as exception:
         help_texts.append(
@@ -617,7 +624,10 @@ class RuleAdmin(CreatedByAdmin):
 
         rule = formset.instance
 
-        if formset.prefix == "rulediversitydimension_set" and len(rule.diversity_dimensions.all()) == 0:
+        if (
+            formset.prefix == "rulediversitydimension_set"
+            and len(rule.diversity_dimensions.all()) == 0
+        ):
             message = "Diversity dimensions missing"
             messages.add_message(request, messages.INFO, message)
 
@@ -654,11 +664,11 @@ class RuleAdmin(CreatedByAdmin):
             "",
             {
                 "fields": (
-                    "lemma",
-                    "pattern",
                     "language",
                     "text_id",
+                    "lemma",
                     "word_types",
+                    "pattern",
                     "is_marked_for_review",
                     "is_context_aware",
                     "type",
