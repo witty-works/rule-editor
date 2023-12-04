@@ -319,7 +319,7 @@ class DiversityDimension(
         ],
     )
     def is_advanced(self):
-        self.is_advanced = self.name.endswith("_advanced")
+        return self.name.endswith("_advanced")
 
 
 class Rule(
