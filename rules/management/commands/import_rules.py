@@ -122,8 +122,11 @@ class Command(BaseCommand):
         },
     }
 
-    def get_alternative_column_order(self, language, subcategory):
-        diversity_dimension = DiversityDimension.objects.get(name=subcategory)
+    def get_alternative_column_order(self, language, subcategory, diversity_dimensions: dict[str, DiversityDimension]):
+        if subcategory not in diversity_dimensions:
+            raise Exception(f"Diversity dimension not defined '{subcategory}'")
+
+        diversity_dimension = diversity_dimensions[subcategory]
 
         if language == "en":
             if subcategory == "titles" or subcategory == "function":
@@ -521,6 +524,11 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         language = options["language"]
 
+        data = DiversityDimension.objects.filter(is_advanced=False)
+        diversity_dimensions = {}
+        for diversity_dimension in data:
+            diversity_dimensions[diversity_dimension.name] = diversity_dimension
+
         with open(options["file"]) as f:
             reader = csv.DictReader(f)
             for row in reader:
@@ -632,7 +640,12 @@ class Command(BaseCommand):
                     "basic" in priorties or row["Category"] == "openly_discriminating"
                 )
                 self.add_diversity_dimension(
-                    rule, row["Category"], row["Primary_subcategory"], 0, is_basic
+                    diversity_dimensions,
+                    rule,
+                    row["Category"],
+                    row["Primary_subcategory"],
+                    0,
+                    is_basic,
                 )
 
                 if (
@@ -647,6 +660,7 @@ class Command(BaseCommand):
                             and secondary_subcategory != "generic_plural"
                         ):
                             self.add_diversity_dimension(
+                                diversity_dimensions,
                                 rule,
                                 row["Category"],
                                 secondary_subcategory,
@@ -702,7 +716,7 @@ class Command(BaseCommand):
                     .removesuffix("_base")
                 )
                 for alternative_column in self.get_alternative_column_order(
-                    language, subcategory
+                    language, subcategory, diversity_dimensions
                 ):
                     alternative_column_config = self.get_alternative_column_config(
                         language, subcategory, alternative_column, row
@@ -880,13 +894,17 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(message))
 
     def add_diversity_dimension(
-        self, rule: Rule, category: str, name: str, order: int, is_basic: bool = False
+        self,
+        diversity_dimensions: dict[str, DiversityDimension],
+        rule: Rule,
+        category: str,
+        name: str,
+        order: int,
+        is_basic: bool = False,
     ):
-        subcategory = (
-            name if not name.startswith("advanced_") else name.removeprefix("advanced_")
-        )
+        subcategory = name.removeprefix("advanced_")
 
-        if name.endswith("_base"):
+        if subcategory.endswith("_base"):
             subcategory = subcategory.removesuffix("_base")
             rule.type = (
                 RuleTypeEnum.SUBSTRING
@@ -896,24 +914,19 @@ class Command(BaseCommand):
 
         subcategory = subcategory if is_basic else subcategory + "_advanced"
 
-        try:
-            diversity_dimensions_driver = DiversityDimension.objects.get(
-                name=subcategory
-            )
+        if subcategory in diversity_dimensions:
+            diversity_dimension = diversity_dimensions[subcategory]
 
-            rule_diversity_dimensions_driver = RuleDiversityDimension()
-            rule_diversity_dimensions_driver.rule = rule
-            rule_diversity_dimensions_driver.order = order
-            rule_diversity_dimensions_driver.diversity_dimension = (
-                diversity_dimensions_driver
-            )
-            rule_diversity_dimensions_driver.save()
+            rule_diversity_dimension = RuleDiversityDimension()
+            rule_diversity_dimension.rule = rule
+            rule_diversity_dimension.order = order
+            rule_diversity_dimension.diversity_dimension = diversity_dimension
+            rule_diversity_dimension.save()
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Added diversity dimension '{subcategory}' from '{name}'."
                 )
             )
-
-        except DiversityDimension.DoesNotExist:
+        else:
             rule.tags.add(name)
             self.stdout.write(self.style.SUCCESS(f"Added tag '{name}'."))
