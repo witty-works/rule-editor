@@ -289,22 +289,35 @@ class Command(BaseCommand):
             plural_map = {
                 "nominativ plural": "pl_nom",
                 "dativ plural": "pl_dat",
-                "dativ plural*": "pl_gen_2",
-                "dativ plural": "pl_dat",
-                "genitiv plural*": "pl_gen_2",
+                "genitiv plural": "pl_gen",
                 "akkusativ plural": "pl_acc",
             }
 
             for flexion in result["flexion"]:
                 # TODO handle variations (dativ/genetiv) and stark/schwach/gemischt
-                key = flexion.removesuffix(" 1")
-                key = flexion.removesuffix(" stark")
+                key = flexion.removesuffix(" 1").removesuffix(" stark")
                 if key in singular_map:
                     setattr(model, singular_map[key], result["flexion"][flexion])
                     singular = True
                 elif key in plural_map:
                     setattr(model, plural_map[key], result["flexion"][flexion])
                     plural = True
+
+            if (
+                model.sg_gen is not None
+                and model.sg_gen.endswith("es")
+                and model.sg_gen_2 is not None
+                and not model.sg_gen_2.endswith("es")
+            ):
+                sg_gen = model.sg_gen
+                model.sg_gen = model.sg_gen_2
+                model.sg_gen_2 = sg_gen
+
+            if model.sg_dat == model.sg_dat_2:
+                model.sg_dat_2 = None
+
+            if model.sg_gen == model.sg_gen_2:
+                model.sg_gen_2 = None
 
             if not singular and not plural:
                 self.stdout.write(
@@ -430,6 +443,7 @@ class Command(BaseCommand):
                         current_value = getattr(model, field)
                         if current_value != new_row[field]:
                             has_changes = True
+
                         if (
                             current_value is not None
                             and current_value != ""

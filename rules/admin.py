@@ -1057,9 +1057,7 @@ class NounAdmin(ImportExportModelAdmin):
         "sg_acc",
         "pl_nom",
         "pl_dat",
-        "pl_dat_2",
         "pl_gen",
-        "pl_gen_2",
         "pl_acc",
     )
     fields = (
@@ -1078,9 +1076,7 @@ class NounAdmin(ImportExportModelAdmin):
         "sg_acc",
         "pl_nom",
         "pl_dat",
-        "pl_dat_2",
         "pl_gen",
-        "pl_gen_2",
         "pl_acc",
         "comment",
     )
