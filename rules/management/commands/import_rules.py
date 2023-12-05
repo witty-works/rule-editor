@@ -386,23 +386,28 @@ class Command(BaseCommand):
     def get_alternative_column_config(self, language, subcategory, name, row):
         config = self.alternative_columns[name].copy()
 
-        if language == "en":
-            if name == "Alt_Pl" or (
+        if row["Word_Type"].removeprefix("~").strip() in ["a", "v"]:
+            config["pluralization"] = PluralizationEnum.DEFAULT
+        elif (
+            language == "en"
+            and name == "Alt_Pl"
+            or (
                 name == "Alt_Sg_reframed"
                 and (
                     "Alt_Pl_reframed" not in row
                     or row["Alt_Pl_reframed"] is None
                     or row["Alt_Pl_reframed"].strip() == ""
                 )
-            ):
-                config["pluralization"] = PluralizationEnum.DEFAULT
+            )
+        ):
+            config["pluralization"] = PluralizationEnum.DEFAULT
 
-            if name == "Alt_Sg_reframed":
-                config["is_inspiration"] = subcategory not in [
-                    "titles",
-                    "function",
-                    "leadership",
-                ]
+        if name == "Alt_Sg_reframed":
+            config["is_inspiration"] = subcategory not in [
+                "titles",
+                "function",
+                "leadership",
+            ]
 
         return config
 
