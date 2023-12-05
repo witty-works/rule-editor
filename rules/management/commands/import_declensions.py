@@ -234,11 +234,13 @@ class Command(BaseCommand):
                 if "-" in model.base_form:
                     words = model.base_form.split("-")
                     word = words[-1]
-                    words = "-".join(words[0:-1]) + "-"
+                    prefix = "-".join(words[0:-1]) + "-"
                     lower = False
                 else:
                     words = nouns.parse_compound(model.base_form)
-                    if len(words) < 1 or not model.base_form.endswith(words[-1]):
+                    if len(words) < 1 or not model.base_form.endswith(
+                        words[-1].lower()
+                    ):
                         self.stdout.write(
                             self.style.ERROR(
                                 f"German noun could not split '{model.base_form}'"
@@ -247,7 +249,7 @@ class Command(BaseCommand):
                         continue
 
                     word = words[-1]
-                    words = "".join(words[0:-1])
+                    prefix = model.base_form.removesuffix(word.lower())
                     lower = True
 
                 result = nouns[word]
@@ -259,19 +261,16 @@ class Command(BaseCommand):
                     )
                     continue
 
-                if len(words) == 0:
-                    lower = False
-
                 for i in range(len(result)):
                     lemma = result[i]["lemma"].lower() if lower else result[i]["lemma"]
-                    result[i]["lemma"] = words + lemma
+                    result[i]["lemma"] = prefix + lemma
                     for flexion in result[i]["flexion"]:
                         flexion_expanded = (
                             result[i]["flexion"][flexion].lower()
                             if lower
                             else result[i]["flexion"][flexion]
                         )
-                        result[i]["flexion"][flexion] = words + flexion_expanded
+                        result[i]["flexion"][flexion] = prefix + flexion_expanded
 
             result = result[0]
 
