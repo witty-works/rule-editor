@@ -386,7 +386,9 @@ class Command(BaseCommand):
     def get_alternative_column_config(self, language, subcategory, name, row):
         config = self.alternative_columns[name].copy()
 
-        if row["Word_Type"].removeprefix("~").strip() in ["a", "v"]:
+        word_type = row["Word_Type"].removeprefix("~").strip().replace("s", "n")
+
+        if word_type in ["a", "v"]:
             config["pluralization"] = PluralizationEnum.DEFAULT
         elif (
             language == "en"
@@ -401,6 +403,24 @@ class Command(BaseCommand):
             )
         ):
             config["pluralization"] = PluralizationEnum.DEFAULT
+        elif word_type == "n":
+            fields = [
+                "Alt_Pl",
+                "Alt_Pl_pair_and_inclusive_form",
+                "Alt_Pl_collective_noun",
+                "Identity_first_pl",
+                "Alt_Pl_people_first",
+                "Medical_term",
+            ]
+
+            has_plural = False
+            for field in fields:
+                if field in row and row[field].strip() != "":
+                    has_plural = True
+
+            if not has_plural:
+                config["pluralization"] = PluralizationEnum.DEFAULT
+
 
         if name == "Alt_Sg_reframed":
             config["is_inspiration"] = subcategory not in [
