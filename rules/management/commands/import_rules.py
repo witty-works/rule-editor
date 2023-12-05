@@ -122,7 +122,9 @@ class Command(BaseCommand):
         },
     }
 
-    def get_alternative_column_order(self, language, subcategory, diversity_dimensions: dict[str, DiversityDimension]):
+    def get_alternative_column_order(
+        self, language, subcategory, diversity_dimensions: dict[str, DiversityDimension]
+    ):
         if subcategory not in diversity_dimensions:
             raise Exception(f"Diversity dimension not defined '{subcategory}'")
 
@@ -524,7 +526,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         language = options["language"]
 
-        data = DiversityDimension.objects.filter(is_advanced=False)
+        data = DiversityDimension.objects.filter()
         diversity_dimensions = {}
         for diversity_dimension in data:
             diversity_dimensions[diversity_dimension.name] = diversity_dimension
@@ -611,11 +613,18 @@ class Command(BaseCommand):
 
                         rule.source = source
 
+                subcategory = (
+                    row["Primary_subcategory"]
+                    .removeprefix("advanced_")
+                    .removesuffix("_base")
+                )
+
+                if rule.lemma in ["sie", "er"]:
+                    rule.pluralization = PluralizationEnum.SINGULAR_ONLY
+
                 if rule.lemma == "international":
                     rule.entity_type = EntityTypeEnum.NON_NAME
-                elif language == "de" and row["Primary_subcategory"].removeprefix(
-                    "advanced_".removesuffix("_base")
-                ) in [
+                elif language == "de" and subcategory in [
                     "titles",
                     "function",
                     "hidden_image",
@@ -710,11 +719,6 @@ class Command(BaseCommand):
 
                 alternative_count = 0
 
-                subcategory = (
-                    row["Primary_subcategory"]
-                    .removeprefix("advanced_")
-                    .removesuffix("_base")
-                )
                 for alternative_column in self.get_alternative_column_order(
                     language, subcategory, diversity_dimensions
                 ):
