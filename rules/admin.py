@@ -404,6 +404,7 @@ class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
                     "word_types",
                     "is_remove",
                     "is_inspiration",
+                    "is_collective_noun",
                     "is_advanced",
                     "pluralization",
                     "type",

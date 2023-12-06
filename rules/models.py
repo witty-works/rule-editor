@@ -623,6 +623,10 @@ class Alternative(
         default=False,
         help_text="Only show if user has diversity dimension enabled at advanced level.",
     )
+    is_collective_noun = models.BooleanField(
+        default=False,
+        help_text="If this is a collective noun, which means do not pluralize.",
+    )
     sanctions = models.ManyToManyField(
         Source, blank=True, related_name="alternative_sanctions"
     )

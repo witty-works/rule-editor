@@ -35,6 +35,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Pl": {
             "type": AlternativeTypeEnum.DEFAULT,
@@ -42,6 +43,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Sg_Replacement": {
             "type": AlternativeTypeEnum.DEFAULT,
@@ -49,6 +51,7 @@ class Command(BaseCommand):
             "word_types": True,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Sg_/_and_inclusive_form": {
             "type": AlternativeTypeEnum.DEFAULT,
@@ -56,6 +59,7 @@ class Command(BaseCommand):
             "word_types": True,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Pl_pair_and_inclusive_form": {
             "type": AlternativeTypeEnum.DEFAULT,
@@ -63,6 +67,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Medical_term": {
             "type": AlternativeTypeEnum.DEFAULT,
@@ -70,6 +75,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Identity_first": {
             "type": AlternativeTypeEnum.IDENTITY_FIRST,
@@ -77,6 +83,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Identity_first_pl": {
             "type": AlternativeTypeEnum.IDENTITY_FIRST,
@@ -84,6 +91,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Sg_people_first": {
             "type": AlternativeTypeEnum.PERSON_FIRST,
@@ -91,6 +99,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": True,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Pl_people_first": {
             "type": AlternativeTypeEnum.PERSON_FIRST,
@@ -98,6 +107,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": True,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Sg_reframed": {
             "type": AlternativeTypeEnum.DEFAULT,
@@ -105,6 +115,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Pl_reframed": {
             "type": AlternativeTypeEnum.DEFAULT,
@@ -112,6 +123,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": True,
             "is_advanced": False,
+            "is_collective_noun": False,
         },
         "Alt_Pl_collective_noun": {
             "type": AlternativeTypeEnum.DEFAULT,
@@ -119,6 +131,7 @@ class Command(BaseCommand):
             "word_types": False,
             "is_inspiration": False,
             "is_advanced": False,
+            "is_collective_noun": True,
         },
     }
 
@@ -838,6 +851,10 @@ class Command(BaseCommand):
 
                         alternative.is_advanced = alternative_column_config[
                             "is_advanced"
+                        ]
+
+                        alternative.is_collective_noun = alternative_column_config[
+                            "is_collective_noun"
                         ]
 
                         alternative.order = alternative_count
