@@ -453,7 +453,7 @@ def apply_rule(values):
     for alternative in rule.alternatives.all():
         alternative = {
             "lemma": alternative.lemma,
-            "word_types": alternative.word_types,
+            "word_types": alternative.word_types_json,
             "type": str(alternative.type),
             "pluralization": str(alternative.pluralization),
             "is_inspiration": alternative.is_inspiration,
@@ -469,7 +469,7 @@ def apply_rule(values):
         "text": values["text"],
         "lang": str(rule.language),
         "lemma": rule.lemma,
-        "word_types": rule.word_types,
+        "word_types": rule.word_types_json,
         "subcategories": rule.diversity_dimension_json,
         "lower_case": True,
         "alternatives": alternatives,
