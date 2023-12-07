@@ -369,12 +369,8 @@ class Command(BaseCommand):
                     try:
                         model = GermanNoun.objects.get(base_form=text)
                     except GermanNoun.DoesNotExist:
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f"German noun '{text}' does not exist, skipping"
-                            )
-                        )
-                        continue
+                        model = GermanNoun()
+                        model.base_form = text
 
                     new_row = {}
                     new_row["gender_1"] = row["Gender 1"]
