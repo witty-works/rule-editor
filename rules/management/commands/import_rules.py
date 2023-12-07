@@ -8,28 +8,539 @@ from rules.models import (
     RuleDiversityDimension,
     Source,
     RuleTypeEnum,
+    EntityTypeEnum,
     RuleLabelEnum,
     AlternativeTypeEnum,
-    AlternativePluralizationEnum,
+    PluralizationEnum,
     EnglishVerb,
     EnglishAdjective,
     EnglishNoun,
     GermanVerb,
     GermanAdjective,
     GermanNoun,
+    fetch_json,
 )
 import csv
 import re
-from inflex import Noun, Verb, Adjective
+import requests
 
 
 class Command(BaseCommand):
     help = "Imports or updates rules"
 
+    alternative_columns = {
+        "Alt_Field": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.DEFAULT,
+            "word_types": False,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Pl": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.PLURAL_ONLY,
+            "word_types": False,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Sg_Replacement": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.SINGULAR_ONLY,
+            "word_types": True,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Sg_/_and_inclusive_form": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.SINGULAR_ONLY,
+            "word_types": True,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Pl_pair_and_inclusive_form": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.PLURAL_ONLY,
+            "word_types": False,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Medical_term": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.DEFAULT,
+            "word_types": False,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Identity_first": {
+            "type": AlternativeTypeEnum.IDENTITY_FIRST,
+            "pluralization": PluralizationEnum.SINGULAR_ONLY,
+            "word_types": False,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Identity_first_pl": {
+            "type": AlternativeTypeEnum.IDENTITY_FIRST,
+            "pluralization": PluralizationEnum.PLURAL_ONLY,
+            "word_types": False,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Sg_people_first": {
+            "type": AlternativeTypeEnum.PERSON_FIRST,
+            "pluralization": PluralizationEnum.SINGULAR_ONLY,
+            "word_types": False,
+            "is_inspiration": True,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Pl_people_first": {
+            "type": AlternativeTypeEnum.PERSON_FIRST,
+            "pluralization": PluralizationEnum.PLURAL_ONLY,
+            "word_types": False,
+            "is_inspiration": True,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Sg_reframed": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.SINGULAR_ONLY,
+            "word_types": False,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Pl_reframed": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.PLURAL_ONLY,
+            "word_types": False,
+            "is_inspiration": True,
+            "is_advanced": False,
+            "is_collective_noun": False,
+        },
+        "Alt_Pl_collective_noun": {
+            "type": AlternativeTypeEnum.DEFAULT,
+            "pluralization": PluralizationEnum.DEFAULT,
+            "word_types": False,
+            "is_inspiration": False,
+            "is_advanced": False,
+            "is_collective_noun": True,
+        },
+    }
+
+    def get_alternative_column_order(
+        self, language, subcategory, diversity_dimensions: dict[str, DiversityDimension]
+    ):
+        if subcategory not in diversity_dimensions:
+            raise Exception(f"Diversity dimension not defined '{subcategory}'")
+
+        diversity_dimension = diversity_dimensions[subcategory]
+
+        if language == "en":
+            if subcategory == "titles" or subcategory == "function":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl_collective_noun",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Pl",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_reframed",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Medical_term",
+                ]
+
+            if subcategory == "leadership":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl_collective_noun",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_reframed",
+                    "Alt_Pl",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "cultural-diversity":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_reframed",
+                    "Alt_Pl_collective_noun",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "gender-orientation":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl_collective_noun",
+                    "Alt_Pl",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_reframed",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "ability-physicality":
+                return [
+                    "Alt_Field",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_reframed",
+                    "Medical_term",
+                    "Alt_Pl_collective_noun",
+                ]
+
+            if diversity_dimension.category.name == "religion":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_reframed",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Pl_collective_noun",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "acquired-diversity":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl_collective_noun",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Pl",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_reframed",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "social-motive":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Pl_collective_noun",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_reframed",
+                    "Alt_Pl",
+                    "Medical_term",
+                    "Identity_first",
+                    "Identity_first_pl",
+                ]
+        elif language == "de":
+            if subcategory == "titles" or subcategory == "function":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_/_and_inclusive_form",
+                    "Alt_Pl_pair_and_inclusive_form",
+                    "Alt_Pl_collective_noun",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Medical_term",
+                ]
+
+            if subcategory == "leadership":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_/_and_inclusive_form",
+                    "Alt_Pl_pair_and_inclusive_form",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_collective_noun",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "cultural-diversity":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_/_and_inclusive_form",
+                    "Alt_Pl_pair_and_inclusive_form",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_collective_noun",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "gender-orientation":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_/_and_inclusive_form",
+                    "Alt_Pl_pair_and_inclusive_form",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Alt_Pl_collective_noun",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "ability-physicality":
+                return [
+                    "Alt_Field",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_reframed",
+                    "Medical_term",
+                    "Alt_Sg_/_and_inclusive_form",
+                    "Alt_Pl_pair_and_inclusive_form",
+                    "Alt_Pl_collective_noun",
+                ]
+
+            if diversity_dimension.category.name == "religion":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_/_and_inclusive_form",
+                    "Alt_Pl_pair_and_inclusive_form",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Medical_term",
+                    "Alt_Pl_collective_noun",
+                ]
+
+            if diversity_dimension.category.name == "acquired-diversity":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_/_and_inclusive_form",
+                    "Alt_Pl_pair_and_inclusive_form",
+                    "Alt_Pl_collective_noun",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Sg_reframed",
+                    "Medical_term",
+                ]
+
+            if diversity_dimension.category.name == "social-motive":
+                return [
+                    "Alt_Field",
+                    "Alt_Sg_/_and_inclusive_form",
+                    "Alt_Pl_pair_and_inclusive_form",
+                    "Alt_Sg_Replacement",
+                    "Alt_Pl",
+                    "Alt_Sg_people_first",
+                    "Alt_Pl_people_first",
+                    "Alt_Pl_collective_noun",
+                    "Alt_Sg_reframed",
+                    "Identity_first",
+                    "Identity_first_pl",
+                    "Medical_term",
+                ]
+
+        raise Exception(
+            f"Alternative column config for '{subcategory}' in '{language}' not found"
+        )
+
+    def get_alternative_column_config(self, language, subcategory, name, row):
+        config = self.alternative_columns[name].copy()
+
+        word_type = row["Word_Type"].removeprefix("~").strip().replace("s", "n")
+
+        if word_type in ["a", "v"]:
+            config["pluralization"] = PluralizationEnum.DEFAULT
+        elif (
+            language == "en"
+            and name == "Alt_Pl"
+            or (
+                name == "Alt_Sg_reframed"
+                and (
+                    "Alt_Pl_reframed" not in row
+                    or row["Alt_Pl_reframed"] is None
+                    or row["Alt_Pl_reframed"].strip() == ""
+                )
+            )
+        ):
+            config["pluralization"] = PluralizationEnum.DEFAULT
+        elif word_type == "n":
+            fields = [
+                "Alt_Pl",
+                "Alt_Pl_pair_and_inclusive_form",
+                "Alt_Pl_collective_noun",
+                "Identity_first_pl",
+                "Alt_Pl_people_first",
+                "Medical_term",
+            ]
+
+            has_plural = False
+            for field in fields:
+                if field in row and row[field].strip() != "":
+                    has_plural = True
+
+            if not has_plural:
+                config["pluralization"] = PluralizationEnum.DEFAULT
+
+
+        if name == "Alt_Sg_reframed":
+            config["is_inspiration"] = subcategory not in [
+                "titles",
+                "function",
+                "leadership",
+            ]
+
+        return config
+
     def add_arguments(self, parser):
         parser.add_argument("--file", type=str)
         parser.add_argument("--language", type=str)
         parser.add_argument("--skip", type=bool, default=False)
+
+    def save_model(self, language, lemma, token, word_type, model):
+        message = "Added" if model.pk is None else "Updated"
+        self.stdout.write(
+            self.style.SUCCESS(f"{message} {word_type} ({language}) for {token}")
+        )
+
+        model.base_form = token
+
+        if model.comment is None:
+            model.comment = ""
+        if lemma + "\n" not in model.comment:
+            model.comment += lemma + "\n"
+
+        model.save()
+
+    def add_declension(self, language, lemma, token, word_type):
+        model = None
+        if "v" == word_type:
+            if language == "de":
+                try:
+                    model = GermanVerb.objects.get(base_form=token)
+                except GermanVerb.DoesNotExist:
+                    model = GermanVerb()
+            else:
+                try:
+                    model = EnglishVerb.objects.get(base_form=token)
+                except EnglishVerb.DoesNotExist:
+                    model = EnglishVerb()
+        elif "a" == word_type:
+            if language == "de":
+                try:
+                    model = GermanAdjective.objects.get(base_form=token)
+                except GermanAdjective.DoesNotExist:
+                    model = GermanAdjective()
+            else:
+                try:
+                    model = EnglishAdjective.objects.get(base_form=token)
+                except EnglishAdjective.DoesNotExist:
+                    model = EnglishAdjective()
+        elif "n" == word_type:
+            if language == "de":
+                # ignore plurals
+                if " und " in token:
+                    return
+
+                plural_only = False
+                if "~" in token:
+                    path = f"/debug/german_gender_ending?alternative={requests.utils.quote(token)}&german_gender_ending=binary"
+                    result = fetch_json(path)
+                    result = result[0].split("/")
+                    if len(result) == 1 and token.endswith("innenschaft"):
+                        female_form = result[0]
+                        token = result[0].replace("innenschaft", "enschaft")
+                        plural_only = True
+                    if len(result) == 2:
+                        female_form = result[0]
+                        token = result[1]
+                    else:
+                        female_form = None
+                elif token.endswith("mann"):
+                    female_form = token.removesuffix("mann") + "frau"
+                else:
+                    female_form = None
+
+                if female_form:
+                    try:
+                        model = GermanNoun.objects.get(base_form=female_form)
+                    except GermanNoun.DoesNotExist:
+                        model = GermanNoun()
+
+                    model.male_form = token
+                    model.plural_only = plural_only
+
+                    self.save_model(language, lemma, female_form, word_type, model)
+
+                try:
+                    model = GermanNoun.objects.get(base_form=token)
+                except GermanNoun.DoesNotExist:
+                    model = GermanNoun()
+
+                model.female_form = female_form
+                model.plural_only = plural_only
+            else:
+                try:
+                    model = EnglishNoun.objects.get(base_form=token)
+                except EnglishNoun.DoesNotExist:
+                    model = EnglishNoun()
+
+        if model is None:
+            return
+
+        self.save_model(language, lemma, token, word_type, model)
 
     def handle_lemmas(self, language, lemma, tokens: [], word_types: []):
         if word_types is None:
@@ -39,80 +550,24 @@ class Command(BaseCommand):
             if not word_types[i]["lemmatize"]:
                 continue
 
-            model = None
-            word_type = word_types[i]["word_type"]
-            if "v" == word_type:
-                if language == "de":
-                    try:
-                        model = GermanVerb.objects.get(base_form=tokens[i])
-                    except GermanVerb.DoesNotExist:
-                        model = GermanVerb()
-                        model.base_form = tokens[i]
-                else:
-                    try:
-                        model = EnglishVerb.objects.get(base_form=tokens[i])
-                    except EnglishVerb.DoesNotExist:
-                        inflex = Verb(tokens[i])
-                        verb = EnglishVerb()
-                        verb.base_form = tokens[i]
-                        verb.past_tense = inflex.past()
-                        verb.past_participle = inflex.past_part()
-                        verb.present_participle = inflex.pres_part()
-                        verb.third_person_singular = inflex.singular()
-            elif "a" == word_type:
-                if language == "de":
-                    try:
-                        model = GermanAdjective.objects.get(base_form=tokens[i])
-                    except GermanAdjective.DoesNotExist:
-                        model = GermanAdjective()
-                        model.base_form = tokens[i]
-                else:
-                    try:
-                        model = EnglishAdjective.objects.get(base_form=tokens[i])
-                    except EnglishAdjective.DoesNotExist:
-                        inflex = Adjective(tokens[i])
-                        model = EnglishAdjective()
-                        model.base_form = tokens[i]
-                        if tokens[i].isupper():
-                            model.comparative = tokens[i]
-                            model.superlative = tokens[i]
-                        else:
-                            model.comparative = inflex.comparative()
-                            model.superlative = inflex.superlative()
-                        model.is_absolute = False
+            if tokens[i][0] == "~":
+                tokens[i] = tokens[i][1:]
 
-            elif "n" == word_type:
-                if language == "de":
-                    try:
-                        model = GermanNoun.objects.get(base_form=tokens[i])
-                    except GermanNoun.DoesNotExist:
-                        model = GermanNoun()
-                        model.base_form = tokens[i]
-                else:
-                    try:
-                        model = EnglishNoun.objects.get(base_form=tokens[i])
-                    except EnglishNoun.DoesNotExist:
-                        inflex = Noun(tokens[i])
-                        model = EnglishNoun()
-                        model.base_form = tokens[i]
-                        model.plural = inflex.plural()
+            if "~" in tokens[i] and " und " in tokens[i] and "/" in tokens[i]:
+                words = tokens[i].split(" und ")
+            else:
+                words = [tokens[i]]
 
-            if model is not None:
-                message = "Added" if model.pk is None else "Updated"
-                self.stdout.write(
-                    self.style.SUCCESS(
-                        f"{message} {word_type} ({language}) for {tokens[i]}"
-                    )
-                )
-
-                if model.comment is None:
-                    model.comment = ""
-                if lemma + "\n" not in model.comment:
-                    model.comment += lemma + "\n"
-                model.save()
+            for word in words:
+                self.add_declension(language, lemma, word, word_types[i]["word_type"])
 
     def handle(self, *args, **options):
         language = options["language"]
+
+        data = DiversityDimension.objects.filter()
+        diversity_dimensions = {}
+        for diversity_dimension in data:
+            diversity_dimensions[diversity_dimension.name] = diversity_dimension
 
         with open(options["file"]) as f:
             reader = csv.DictReader(f)
@@ -184,16 +639,39 @@ class Command(BaseCommand):
                     rule.comment += "\ToClarify:\n" + row["ToClarify"].strip()
 
                 # 3rd_party_source
-                source_name = row["3rd_party_source"].strip()
-                if len(source_name):
-                    try:
-                        source = Source.objects.get(name=source_name)
-                    except Source.DoesNotExist:
-                        source = Source()
-                        source.name = source_name
-                        source.save()
+                if row["3rd_party_source"] is not None:
+                    source_name = row["3rd_party_source"].strip()
+                    if len(source_name):
+                        try:
+                            source = Source.objects.get(name=source_name)
+                        except Source.DoesNotExist:
+                            source = Source()
+                            source.name = source_name
+                            source.save()
 
-                    rule.source = source
+                        rule.source = source
+
+                subcategory = (
+                    row["Primary_subcategory"]
+                    .removeprefix("advanced_")
+                    .removesuffix("_base")
+                )
+
+                if rule.lemma in ["sie", "er"]:
+                    rule.pluralization = PluralizationEnum.SINGULAR_ONLY
+
+                if rule.lemma == "international":
+                    rule.entity_type = EntityTypeEnum.NON_NAME
+                elif language == "de" and subcategory in [
+                    "titles",
+                    "function",
+                    "hidden_image",
+                    "leadership",
+                    "male_stereotype",
+                    "female_stereotype",
+                    "gendered_denominations_ending",
+                ]:
+                    rule.entity_type = EntityTypeEnum.NON_PERSON
 
                 rule.save()
 
@@ -209,110 +687,33 @@ class Command(BaseCommand):
                     "basic" in priorties or row["Category"] == "openly_discriminating"
                 )
                 self.add_diversity_dimension(
-                    rule, row["Primary_subcategory"], 0, is_basic
+                    diversity_dimensions,
+                    rule,
+                    row["Category"],
+                    row["Primary_subcategory"],
+                    0,
+                    is_basic,
                 )
 
                 if (
-                    row["Secondary_subcategory"]
-                    and row["Secondary_subcategory"] != "generic_plural"
+                    row["Secondary_subcategory"] is not None
+                    and row["Secondary_subcategory"].strip != ""
                 ):
-                    self.add_diversity_dimension(
-                        rule, row["Secondary_subcategory"], 1, is_basic
-                    )
-
-                alternative_columns = {
-                    "Alt_Sg_Replacement": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
-                        "word_types": True,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Field": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Sg_/_and_inclusive_form": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
-                        "word_types": True,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Medical_term": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Identity_first": {
-                        "type": AlternativeTypeEnum.IDENTITY_FIRST,
-                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Sg_people_first": {
-                        "type": AlternativeTypeEnum.PERSON_FIRST,
-                        "pluralization": AlternativePluralizationEnum.SINGULAR_ONLY,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Sg_reframed": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.DEFAULT,
-                        "word_types": False,
-                        "is_inspiration": True,
-                        "is_advanced": False,
-                    },
-                    "Alt_Pl_pair_and_inclusive_form": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Pl_collective_noun": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Pl": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Identity_first_pl": {
-                        "type": AlternativeTypeEnum.IDENTITY_FIRST,
-                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Pl_people_first": {
-                        "type": AlternativeTypeEnum.PERSON_FIRST,
-                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
-                        "word_types": False,
-                        "is_inspiration": False,
-                        "is_advanced": False,
-                    },
-                    "Alt_Pl_reframed": {
-                        "type": AlternativeTypeEnum.DEFAULT,
-                        "pluralization": AlternativePluralizationEnum.PLURAL_ONLY,
-                        "word_types": False,
-                        "is_inspiration": True,
-                        "is_advanced": False,
-                    },
-                }
+                    secondary_subcategories = row["Secondary_subcategory"].split("|")
+                    for secondary_subcategory in secondary_subcategories:
+                        secondary_subcategory = secondary_subcategory.strip()
+                        if (
+                            secondary_subcategory != ""
+                            and secondary_subcategory != "generic_plural"
+                        ):
+                            self.add_diversity_dimension(
+                                diversity_dimensions,
+                                rule,
+                                row["Category"],
+                                secondary_subcategory,
+                                1,
+                                is_basic,
+                            )
 
                 label_types = {
                     "be specific to build trust": RuleLabelEnum.BE_SPECIFIC,
@@ -350,12 +751,19 @@ class Command(BaseCommand):
                     "indigene Gruppe nennen": RuleLabelEnum.DEFAULT,
                 }
 
-                rule_tokens, rule_lemmas = rule.tokenize()
+                rule_tokens, rule_lemmas, rule_word_types = rule.tokenize()
                 rule.label_type = RuleLabelEnum.DEFAULT
                 rule.label = None
 
                 alternative_count = 0
-                for alternative_column in alternative_columns:
+
+                for alternative_column in self.get_alternative_column_order(
+                    language, subcategory, diversity_dimensions
+                ):
+                    alternative_column_config = self.get_alternative_column_config(
+                        language, subcategory, alternative_column, row
+                    )
+
                     alternative_column_count = 0
                     if alternative_column not in row:
                         self.stdout.write(
@@ -392,6 +800,7 @@ class Command(BaseCommand):
 
                         alternative = Alternative()
                         alternative.rule = rule
+                        alternative.language = rule.language
                         alternative.lemma = alternative_lemma
                         alternative.comment = (
                             f"{alternative_column} {alternative_column_count}"
@@ -401,12 +810,19 @@ class Command(BaseCommand):
                         if alternative_lemma == "-":
                             alternative.is_remove = True
 
-                        if alternative_columns[alternative_column]["word_types"]:
+                        if alternative_column_config["word_types"]:
                             (
                                 alternative_rule_tokens,
                                 alternative_rule_lemmas,
+                                alterative_word_types,
                             ) = alternative.tokenize()
-                            if len(rule_tokens) == len(alternative_rule_tokens):
+
+                            if (
+                                len(rule_tokens) == 1
+                                and len(rule_tokens) == len(alternative_rule_tokens)
+                                and rule_tokens[0].isupper()
+                                == alternative_rule_tokens[0].isupper()
+                            ):
                                 alternative.word_types = rule.word_types
                                 self.handle_lemmas(
                                     language,
@@ -416,12 +832,10 @@ class Command(BaseCommand):
                                 )
 
                         alternative.label = label
-                        alternative.type = alternative_columns[alternative_column][
-                            "type"
+                        alternative.type = alternative_column_config["type"]
+                        alternative.pluralization = alternative_column_config[
+                            "pluralization"
                         ]
-                        alternative.pluralization = alternative_columns[
-                            alternative_column
-                        ]["pluralization"]
                         if "..." in alternative.lemma or (
                             "(" in alternative.lemma
                             and ")" in alternative.lemma
@@ -431,12 +845,17 @@ class Command(BaseCommand):
                         ):
                             alternative.is_inspiration = True
                         else:
-                            alternative.is_inspiration = alternative_columns[
-                                alternative_column
-                            ]["is_inspiration"]
-                        alternative.is_advanced = alternative_columns[
-                            alternative_column
-                        ]["is_advanced"]
+                            alternative.is_inspiration = alternative_column_config[
+                                "is_inspiration"
+                            ]
+
+                        alternative.is_advanced = alternative_column_config[
+                            "is_advanced"
+                        ]
+
+                        alternative.is_collective_noun = alternative_column_config[
+                            "is_collective_noun"
+                        ]
 
                         alternative.order = alternative_count
                         alternative.save()
@@ -460,23 +879,24 @@ class Command(BaseCommand):
                     )
 
                 # False_Positives
-                false_positives = row["False_Positives"].strip()
-                false_positives = false_positives.split("|")
-                false_positive_texts = []
-                for false_positive_text in false_positives:
-                    false_positive_text = false_positive_text.strip()
-                    if (
-                        len(false_positive_text) == 0
-                        or false_positive_text in false_positive_texts
-                    ):
-                        continue
+                if row["False_Positives"] is not None:
+                    false_positives = row["False_Positives"].strip()
+                    false_positives = false_positives.split("|")
+                    false_positive_texts = []
+                    for false_positive_text in false_positives:
+                        false_positive_text = false_positive_text.strip()
+                        if (
+                            len(false_positive_text) == 0
+                            or false_positive_text in false_positive_texts
+                        ):
+                            continue
 
-                    false_positive_texts.append(false_positive_text)
+                        false_positive_texts.append(false_positive_text)
 
-                    false_positive = FalsePositive()
-                    false_positive.rule = rule
-                    false_positive.false_positive = false_positive_text
-                    false_positive.save()
+                        false_positive = FalsePositive()
+                        false_positive.rule = rule
+                        false_positive.false_positive = false_positive_text
+                        false_positive.save()
 
                 # Sample_Sentences,Generated Examples
                 training_sentences_columns = [
@@ -520,38 +940,39 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(message))
 
     def add_diversity_dimension(
-        self, rule: Rule, name: str, order: int, is_basic: bool = False
+        self,
+        diversity_dimensions: dict[str, DiversityDimension],
+        rule: Rule,
+        category: str,
+        name: str,
+        order: int,
+        is_basic: bool = False,
     ):
-        subcategory_name = (
-            name if not name.startswith("advanced_") else name.removeprefix("advanced_")
-        )
+        subcategory = name.removeprefix("advanced_")
 
-        if name.endswith("_base"):
-            subcategory_name = subcategory_name.removesuffix("_base")
-            rule.type = RuleTypeEnum.SUFFIX
-
-        subcategory_name = (
-            subcategory_name if is_basic else subcategory_name + "_advanced"
-        )
-
-        try:
-            diversity_dimensions_driver = DiversityDimension.objects.get(
-                name=subcategory_name
+        if subcategory.endswith("_base"):
+            subcategory = subcategory.removesuffix("_base")
+            rule.type = (
+                RuleTypeEnum.SUBSTRING
+                if category == "openly_discriminating"
+                else RuleTypeEnum.SUFFIX
             )
 
-            rule_diversity_dimensions_driver = RuleDiversityDimension()
-            rule_diversity_dimensions_driver.rule = rule
-            rule_diversity_dimensions_driver.order = order
-            rule_diversity_dimensions_driver.diversity_dimension = (
-                diversity_dimensions_driver
-            )
-            rule_diversity_dimensions_driver.save()
+        subcategory = subcategory if is_basic else subcategory + "_advanced"
+
+        if subcategory in diversity_dimensions:
+            diversity_dimension = diversity_dimensions[subcategory]
+
+            rule_diversity_dimension = RuleDiversityDimension()
+            rule_diversity_dimension.rule = rule
+            rule_diversity_dimension.order = order
+            rule_diversity_dimension.diversity_dimension = diversity_dimension
+            rule_diversity_dimension.save()
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"Added diversity dimension '{subcategory_name}' from '{name}'."
+                    f"Added diversity dimension '{subcategory}' from '{name}'."
                 )
             )
-
-        except DiversityDimension.DoesNotExist:
+        else:
             rule.tags.add(name)
             self.stdout.write(self.style.SUCCESS(f"Added tag '{name}'."))

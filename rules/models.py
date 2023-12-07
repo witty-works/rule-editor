@@ -6,7 +6,6 @@ from django.core.exceptions import ValidationError
 from django.conf import settings
 
 from django_enum import EnumField
-from ordered_model.models import OrderedModel
 from taggit.managers import TaggableManager
 from computedfields.models import ComputedFieldsModel, computed
 
@@ -26,19 +25,19 @@ def fetch_json(path, data=None):
     )
 
     if data is None:
-        r = requests.get(url, auth=auth)
+        r = requests.get(url, auth=auth, timeout=5)
     else:
-        r = requests.post(url, json=data, auth=auth)
+        r = requests.post(url, json=data, auth=auth, timeout=5)
 
     try:
         if r.status_code != 200:
             body = r.json()
             error = body["detail"] if "detail" in body else r.text
-            raise ValidationError(path + ": " + error)
+            raise ValidationError(url + ": " + str(error))
 
         return r.json()
     except Exception as e:
-        raise ValidationError(path + ": " + str(e))
+        raise ValidationError(url + ": " + str(e))
 
 
 class LanguageEnum(models.TextChoices):
@@ -46,7 +45,13 @@ class LanguageEnum(models.TextChoices):
     DE = "de", "German"
 
 
-class AlternativePluralizationEnum(models.TextChoices):
+class GenderTypeEnum(models.TextChoices):
+    NEUTER = "neuter"
+    FEMININE = "feminine"
+    MASCULINE = "masculine"
+
+
+class PluralizationEnum(models.TextChoices):
     DEFAULT = "default"
     SINGULAR_ONLY = "singular_only"
     PLURAL_ONLY = "plural_only"
@@ -63,6 +68,16 @@ class RuleTypeEnum(models.TextChoices):
     PREFIX = "prefix"
     SUFFIX = "suffix"
     SUBSTRING = "substring"
+
+
+class EntityTypeEnum(models.TextChoices):
+    DEFAULT = "default"
+    NAME = "name"
+    NON_NAME = "non_name"
+    PERSON = "person"
+    NON_PERSON = "non_person"
+    NUMBER = "number"
+    DATETIME = "datetime"
 
 
 class RuleLabelEnum(models.TextChoices):
@@ -171,18 +186,19 @@ class BaseSourcedModel(BaseModel):
 class BaseLemmaModel(ComputedFieldsModel, BaseModel):
     def tokenize(self):
         if self.lemma == "-":
-            return ["-"], ["-"]
+            return ["-"], ["-"], ""
 
         path = f"/debug/spacy?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}"
         result = fetch_json(path)
-        result.pop(0)
+        word_types = result.pop(0)
+        word_types = "" if "word_type" not in word_types else word_types["word_type"]
         tokens = []
         lemmas = []
         for token in result:
             tokens.append(token["text"])
             lemmas.append(token["lemma"])
 
-        return tokens, lemmas
+        return tokens, lemmas, word_types
 
     def parse_word_types(self):
         if self.word_types is None or len(self.word_types) == 0:
@@ -199,7 +215,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         errors = {}
 
         try:
-            self.tokenized, lemmas = self.tokenize()
+            self.tokenized, lemmas, word_types = self.tokenize()
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
@@ -222,7 +238,12 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         help_text="Lemma is one or multiple words (tokens) either in lemmatized form or not (depending on the word_types)",
     )
 
-    @computed(models.JSONField(default=dict))
+    @computed(
+        models.JSONField(default=dict),
+        depends=[
+            ("self", ["lemma"]),
+        ],
+    )
     def lemma_json(self):
         return self.tokenized
 
@@ -230,10 +251,15 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         max_length=255,
         null=True,
         blank=True,
-        help_text="'|' separated list of word types (s, a, adv, v, conj, emoji) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
+        help_text="'|' separated list of word types (n, a, adv, v, conj, emoji) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
     )
 
-    @computed(models.JSONField(default=dict))
+    @computed(
+        models.JSONField(default=dict),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
     def word_types_json(self):
         return [] if self.parsed_word_types is None else self.parsed_word_types
 
@@ -286,9 +312,14 @@ class DiversityDimension(
         help_text="Proficiency level of the diversity dimension ('inclusive', 'unconscious_bias', 'openly_discriminating', ..)",
     )
 
-    @computed(models.BooleanField(null=True, blank=True))
+    @computed(
+        models.BooleanField(null=True, blank=True),
+        depends=[
+            ("self", ["name"]),
+        ],
+    )
     def is_advanced(self):
-        self.is_advanced = self.name.endswith("_advanced")
+        return self.name.endswith("_advanced")
 
 
 class Rule(
@@ -299,14 +330,18 @@ class Rule(
     BaseSourcedModel,
 ):
     class Meta:
-        unique_together = (("language", "lemma", "word_types"),)
+        unique_together = (
+            ("language", "lemma", "word_types", "type", "pluralization"),
+        )
         indexes = [
             models.Index(
                 fields=[
+                    "is_active",
+                    "language",
+                    "type",
                     "first_token",
                     "first_is_word_type_lemmatize",
                     "first_is_word_type_lower_case",
-                    "first_word_type",
                 ]
             ),
         ]
@@ -354,6 +389,13 @@ class Rule(
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
     tags = TaggableManager(blank=True)
 
+    pattern = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Optional pattern to define word types before and after the lemma. Syntax 'l' for the lemma. '*' means zero or many, '+' means once or many.",
+    )
+
     text_id = models.CharField(
         max_length=255,
         help_text="String used to identify the rule, f.e. in the top words of the analytics",
@@ -365,10 +407,22 @@ class Rule(
         help_text="Should the rule check on part of the lemma (only 'default' allows multiple token lemma).",
     )
 
+    entity_type = EnumField(
+        EntityTypeEnum,
+        default=RuleTypeEnum.DEFAULT,
+        help_text="If the rule should only match on a specific entity type (name, non_name, person, non_person, number, datetime).",
+    )
+
     label_type = EnumField(
         RuleLabelEnum,
         default=RuleLabelEnum.DEFAULT,
         help_text="Quick selections for custom labels (only change from 'default' if label is empty).",
+    )
+
+    pluralization = EnumField(
+        PluralizationEnum,
+        default=PluralizationEnum.DEFAULT,
+        help_text="Show alternative in case rule triggered on singular/plural/both",
     )
 
     is_context_aware = models.BooleanField(
@@ -406,7 +460,17 @@ class Rule(
         help_text="Override the diversity dimension URL with a custom URL",
     )
 
-    @computed(models.CharField(max_length=255, null=True, blank=True))
+    sanctions = models.ManyToManyField(
+        Source, blank=True, related_name="rule_sanctions"
+    )
+
+    @computed(
+        models.CharField(max_length=255, null=True, blank=True),
+        depends=[
+            ("self", ["lemma_json"]),
+            ("self", ["word_types"]),
+        ],
+    )
     def first_token(self):
         if self.lemma_json is None or len(self.lemma_json) == 0:
             return None
@@ -415,45 +479,72 @@ class Rule(
         if (
             self.parsed_word_types is not None
             and len(self.parsed_word_types)
-            and self.parsed_word_types[0]["lemmatize"]
+            and self.parsed_word_types[0]["lower_case"]
         ):
             first_token = first_token.lower()
 
         return first_token
 
-    @computed(models.CharField(max_length=255, null=True, blank=True))
-    def first_word_type(self):
-        if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
-            return None
-
-        return self.parsed_word_types[0]["word_type"]
-
-    @computed(models.BooleanField(null=True, blank=True))
+    @computed(
+        models.BooleanField(null=True, blank=True),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
     def first_is_word_type_lemmatize(self):
         if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
             return None
 
         return self.parsed_word_types[0]["lemmatize"]
 
-    @computed(models.BooleanField(null=True, blank=True))
+    @computed(
+        models.BooleanField(null=True, blank=True),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
     def first_is_word_type_lower_case(self):
         if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
             return None
 
         return self.parsed_word_types[0]["lower_case"]
 
-    @computed(models.BooleanField(null=True, blank=True))
+    @computed(
+        models.BooleanField(null=True, blank=True),
+        depends=[
+            ("training_sentences", ["text"]),
+        ],
+    )
     def has_training_sentences(self):
         return bool(len(self.training_sentences.all())) if self.id else False
 
-    @computed(models.JSONField(default=dict))
+    @computed(
+        models.JSONField(default=dict),
+        depends=[
+            ("diversity_dimensions", ["name"]),
+            ("rulediversitydimension", ["diversity_dimension"]),
+        ],
+        prefetch_related=["diversity_dimensions"],
+    )
     def diversity_dimension_json(self):
         diversity_dimensions = []
-        if self.id:
+        if self.pk:
             for diversity_dimension in self.diversity_dimensions.all():
                 diversity_dimensions.append(diversity_dimension.name)
 
         return diversity_dimensions
+
+    @computed(
+        models.PositiveIntegerField(null=True, blank=True),
+        depends=[
+            ("self", ["lemma"]),
+        ],
+    )
+    def lemma_length(self):
+        if self.lemma is None:
+            return 0
+
+        return len(self.lemma)
 
 
 class RuleDiversityDimension(BaseTimestampedModel):
@@ -481,6 +572,18 @@ class Alternative(
 ):
     class Meta:
         ordering = ("order",)
+        indexes = [
+            models.Index(
+                fields=[
+                    "is_active",
+                    "rule_id",
+                    "is_placeholder",
+                    "is_inspiration",
+                    "pluralization",
+                    "order",
+                ]
+            ),
+        ]
 
     def __str__(self):
         return "[REMOVE]" if self.is_remove else self.lemma[0:50]
@@ -504,9 +607,9 @@ class Alternative(
 
     type = EnumField(AlternativeTypeEnum, default=AlternativeTypeEnum.DEFAULT)
     pluralization = EnumField(
-        AlternativePluralizationEnum,
-        default=AlternativePluralizationEnum.DEFAULT,
-        help_text="Show alternative in case rule triggered on",
+        PluralizationEnum,
+        default=PluralizationEnum.DEFAULT,
+        help_text="Show alternative in case rule triggered on singular/plural/both",
     )
     is_remove = models.BooleanField(
         default=False,
@@ -517,15 +620,32 @@ class Alternative(
         help_text="Alternative will be marked as inspiration, hidden if user has inspiration disabled. Also never adjusted for grammatical correctness",
     )
     is_advanced = models.BooleanField(
-        default=True,
+        default=False,
         help_text="Only show if user has diversity dimension enabled at advanced level.",
     )
+    is_collective_noun = models.BooleanField(
+        default=False,
+        help_text="If this is a collective noun, which means do not pluralize.",
+    )
+    sanctions = models.ManyToManyField(
+        Source, blank=True, related_name="alternative_sanctions"
+    )
 
-    @computed(models.BooleanField(default=False))
+    @computed(
+        models.BooleanField(default=False),
+        depends=[
+            ("self", ["lemma"]),
+        ],
+    )
     def is_placeholder(self):
         return "((" in self.lemma and "))" in self.lemma
 
-    @computed(EnumField(LanguageEnum, default=LanguageEnum.EN))
+    @computed(
+        EnumField(LanguageEnum, default=LanguageEnum.EN),
+        depends=[
+            ("rule", ["language"]),
+        ],
+    )
     def language(self):
         return self.rule.language
 
@@ -544,8 +664,16 @@ class TrainingSentence(
 
     text = models.TextField(null=True, blank=True)
 
-    is_false_positive = models.BooleanField(default=False)
-    is_training_data = models.BooleanField(default=False)
+    is_false_positive = models.BooleanField(
+        default=False, help_text="If sentences should not trigger the rule"
+    )
+    is_training_data = models.BooleanField(
+        default=False,
+        help_text="If sentences should be used for the custom machine learning model",
+    )
+    is_on_website = models.BooleanField(
+        default=False, help_text="If sentences is an example on the website"
+    )
 
     tags = TaggableManager(blank=True)
 
@@ -576,7 +704,7 @@ class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
     lemma = models.CharField(
         max_length=255, help_text="Lemma used for the given source text"
     )
-    is_plural = models.BooleanField(help_text="If the text is plural")
+    is_plural = models.BooleanField(default=False, help_text="If the text is plural")
 
 
 class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -594,17 +722,26 @@ class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentable
     def __str__(self):
         return self.base_form
 
-    base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
+    def clean(self):
+        super().clean()
+
+        if self.is_absolute:
+            self.comparative = self.base_form
+            self.superlative = self.base_form
+
+    base_form = models.CharField(max_length=255, unique=True)
     comparative = models.CharField(max_length=255, null=True, blank=True)
     superlative = models.CharField(max_length=255, null=True, blank=True)
-    is_absolute = models.BooleanField(help_text="If adjective is in an absolute")
+    is_absolute = models.BooleanField(
+        default=False, help_text="If adjective is in an absolute"
+    )
 
 
 class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
 
-    base_form = models.CharField(max_length=255, unique=True, help_text="ie. singular")
+    base_form = models.CharField(max_length=255, unique=True)
     plural = models.CharField(max_length=255, null=True, blank=True)
 
 
@@ -613,17 +750,59 @@ class GermanVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
         return self.base_form
 
     base_form = models.CharField(max_length=255, unique=True)
+    present_ich = models.CharField(max_length=255, null=True, blank=True)
+    present_du = models.CharField(max_length=255, null=True, blank=True)
+    present_pronoun = models.CharField(max_length=255, null=True, blank=True)
+    past_tense_ich = models.CharField(max_length=255, null=True, blank=True)
+    past_participle = models.CharField(
+        max_length=255, null=True, blank=True, db_index=True
+    )
+    conjunctive_ich = models.CharField(max_length=255, null=True, blank=True)
+    imperativ_singular = models.CharField(max_length=255, null=True, blank=True)
+    imperativ_plural = models.CharField(max_length=255, null=True, blank=True)
+    helping_verb = models.CharField(max_length=255, null=True, blank=True)
+    infinitiv_zu = models.CharField(
+        max_length=255, null=True, blank=True, db_index=True
+    )
 
 
 class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
 
-    base_form = models.CharField(max_length=255, unique=True, help_text="ie. absolute")
+    def clean(self):
+        super().clean()
+
+        if self.is_absolute:
+            self.comparative = self.base_form
+            self.superlative = self.base_form
+
+    base_form = models.CharField(max_length=255, unique=True)
+    comparative = models.CharField(max_length=255, null=True, blank=True)
+    superlative = models.CharField(max_length=255, null=True, blank=True)
+    is_absolute = models.BooleanField(
+        default=False, help_text="If adjective is in an absolute"
+    )
 
 
 class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
 
-    base_form = models.CharField(max_length=255, unique=True, help_text="ie. singular")
+    base_form = models.CharField(max_length=255, unique=True)
+    female_form = models.CharField(max_length=255, null=True, blank=True)
+    male_form = models.CharField(max_length=255, null=True, blank=True)
+    gender_1 = EnumField(GenderTypeEnum, null=True, blank=True)
+    gender_2 = EnumField(GenderTypeEnum, null=True, blank=True)
+    singular_only = models.BooleanField(default=False)
+    plural_only = models.BooleanField(default=False)
+    sg_nom = models.CharField(max_length=255, null=True, blank=True)
+    sg_dat = models.CharField(max_length=255, null=True, blank=True)
+    sg_dat_2 = models.CharField(max_length=255, null=True, blank=True)
+    sg_gen = models.CharField(max_length=255, null=True, blank=True)
+    sg_gen_2 = models.CharField(max_length=255, null=True, blank=True)
+    sg_acc = models.CharField(max_length=255, null=True, blank=True)
+    pl_nom = models.CharField(max_length=255, null=True, blank=True)
+    pl_gen = models.CharField(max_length=255, null=True, blank=True)
+    pl_dat = models.CharField(max_length=255, null=True, blank=True)
+    pl_acc = models.CharField(max_length=255, null=True, blank=True)

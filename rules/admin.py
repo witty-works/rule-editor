@@ -8,6 +8,9 @@ from django.conf import settings
 from django.db.models import Q
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from django.db.models import Lookup
+from django.db.models import Field
+from django.contrib import messages
 
 import requests
 import json
@@ -39,19 +42,191 @@ from .models import (
     fetch_json,
 )
 
+stopwords = {
+    "de": [
+        "aber",
+        "als",
+        "am",
+        "an",
+        "auch",
+        "auf",
+        "aus",
+        "bei",
+        "bin",
+        "bis",
+        "bist",
+        "da",
+        "dadurch",
+        "daher",
+        "darum",
+        "das",
+        "daß",
+        "dass",
+        "dein",
+        "deine",
+        "dem",
+        "den",
+        "der",
+        "des",
+        "dessen",
+        "deshalb",
+        "die",
+        "dies",
+        "dieser",
+        "dieses",
+        "doch",
+        "dort",
+        "du",
+        "durch",
+        "ein",
+        "eine",
+        "einem",
+        "einen",
+        "einer",
+        "eines",
+        "er",
+        "es",
+        "euer",
+        "eure",
+        "für",
+        "hatte",
+        "hatten",
+        "hattest",
+        "hattet",
+        "hier",
+        "hinter",
+        "ich",
+        "ihr",
+        "ihre",
+        "im",
+        "in",
+        "ist",
+        "ja",
+        "jede",
+        "jedem",
+        "jeden",
+        "jeder",
+        "jedes",
+        "jener",
+        "jenes",
+        "jetzt",
+        "kann",
+        "kannst",
+        "können",
+        "könnt",
+        "machen",
+        "mein",
+        "meine",
+        "mit",
+        "muß",
+        "mußt",
+        "musst",
+        "müssen",
+        "müßt",
+        "nach",
+        "nachdem",
+        "nein",
+        "nicht",
+        "nun",
+        "oder",
+        "seid",
+        "sein",
+        "seine",
+        "sich",
+        "sie",
+        "sind",
+        "soll",
+        "sollen",
+        "sollst",
+        "sollt",
+        "sonst",
+        "soweit",
+        "sowie",
+        "und",
+        "unser",
+        "unsere",
+        "unter",
+        "vom",
+        "von",
+        "vor",
+        "wann",
+        "warum",
+        "was",
+        "weiter",
+        "weitere",
+        "wenn",
+        "wer",
+        "werde",
+        "werden",
+        "werdet",
+        "weshalb",
+        "wie",
+        "wieder",
+        "wieso",
+        "wir",
+        "wird",
+        "wirst",
+        "wo",
+        "woher",
+        "wohin",
+        "zu",
+        "zum",
+        "zur",
+        "über",
+    ],
+    "en": [
+        "a",
+        "about",
+        "an",
+        "are",
+        "as",
+        "at",
+        "be",
+        "by",
+        "for",
+        "from",
+        "how",
+        "in",
+        "is",
+        "it",
+        "of",
+        "on",
+        "or",
+        "that",
+        "the",
+        "this",
+        "to",
+        "was",
+        "what",
+        "when",
+        "where",
+        "who",
+        "will",
+        "with",
+        "the",
+    ],
+}
+
 
 def get_class(class_name):
     return getattr(sys.modules[__name__], class_name)
 
 
-def generate_help_text(name, language, filters, token):
-    match language:
-        case "de":
-            class_name = "German" + name
-        case "en":
-            class_name = "English" + name
-        case _:
-            class_name = name
+@Field.register_lookup
+class NotEqual(Lookup):
+    lookup_name = "ne"
+
+    def as_sql(self, compiler, connection):
+        lhs, lhs_params = self.process_lhs(compiler, connection)
+        rhs, rhs_params = self.process_rhs(compiler, connection)
+        params = lhs_params + rhs_params
+        return "%s <> %s" % (lhs, rhs), params
+
+
+def generate_help_text(name, language, filters, token, text=None):
+    class_name = name
+    if class_name in ["Verb", "Adjective", "Noun"]:
+        class_name = ("German" if language == "de" else "English") + class_name
 
     cls = get_class(class_name)
     instances = cls.objects.filter(**filters)
@@ -60,32 +235,42 @@ def generate_help_text(name, language, filters, token):
         for instance in instances:
             if isinstance(instance, Alternative):
                 link = reverse(f"admin:rules_rule_change", args=[instance.rule.id])
+            elif isinstance(instance, Rule):
+                link = reverse(f"admin:rules_rule_change", args=[instance.id])
             else:
                 link = reverse(
                     f"admin:rules_{class_name.lower()}_change", args=[instance.pk]
                 )
 
             word = instance.lemma if isinstance(instance, Rule) else token
+            text = "" if text is None else " " + text
+            word = f"'{word}'" if word == token else f"'{token}' ({word})"
             help_texts.append(
-                f"{name} <a href=\"{link}\">data available</a> for '{word}'"
+                f'{name} <a href="{link}">data available</a> for {word}\'{text}'
             )
 
         return "<br>".join(help_texts)
 
-    return f"No {name} data available for '{token}'"
+    text = text if text else "data available"
+    return f"No {name} {text} for '{token}'"
 
 
-def update_lemma_help_text(obj, field):
+def update_lemma_help_text(obj, field, type):
     help_texts = [field.help_text]
 
     try:
-        tokens, lemmas = obj.tokenize()
+        tokens, lemmas, generated_word_types = obj.tokenize()
+        message = (
+            f"Auto-detected word_types: {generated_word_types}"
+            if obj.word_types == generated_word_types
+            else f"<b>Auto-detected word_types mismatch: {generated_word_types}</b>"
+        )
+        help_texts.append(message)
+
         word_types = obj.parse_word_types()
-        if word_types is None:
-            return
     except ValidationError as exception:
         help_texts.append(
-            "Tokenization/Word_types validation failed: " + exception.message
+            "<b>Tokenization/Word_types validation failed</b>: " + exception.message
         )
 
         tokens = lemmas = word_types = []
@@ -96,8 +281,8 @@ def update_lemma_help_text(obj, field):
         "n": "Noun",
     }
 
-    for i in range(len(word_types)):
-        if word_types[i]["lemmatize"]:
+    for i in range(len(tokens)):
+        if word_types is not None and word_types[i]["lemmatize"]:
             if tokens[i] != lemmas[i]:
                 help_texts.append(
                     f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
@@ -115,7 +300,51 @@ def update_lemma_help_text(obj, field):
 
             filters = {"lemma": tokens[i], "language": obj.language}
             help_texts.append(
-                generate_help_text("Lemmatization", None, filters, tokens[i])
+                generate_help_text("Lemmatization", obj.language, filters, tokens[i])
+            )
+
+        if type == "rule":
+            filters = {
+                "first_token": obj.first_token,
+                "id__ne": obj.id,
+            }
+
+            help_texts.append(
+                generate_help_text(
+                    "Rule",
+                    obj.language,
+                    filters,
+                    tokens[i],
+                    "overlapping rules with matching first token",
+                )
+            )
+        elif (
+            type == "alternative"
+            and len(lemmas[i]) > 1
+            and tokens[i] not in stopwords[obj.language]
+            and lemmas[i] not in stopwords[obj.language]
+        ):
+            first_tokens = [
+                tokens[i],
+                tokens[i].lower(),
+            ]
+            if tokens[i] != lemmas[i]:
+                first_tokens.append(lemmas[i])
+                first_tokens.append(lemmas[i].lower())
+
+            filters = {
+                "first_token__in": first_tokens,
+                "language": obj.language,
+            }
+
+            help_texts.append(
+                generate_help_text(
+                    "Rule",
+                    obj.language,
+                    filters,
+                    tokens[i],
+                    "potential circular alternative",
+                )
             )
 
     field.help_text = mark_safe("<br>".join(help_texts))
@@ -160,28 +389,46 @@ class AlternativeForm(forms.ModelForm):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
         if instance and isinstance(instance, Alternative):
-            update_lemma_help_text(instance, self.fields["lemma"])
+            update_lemma_help_text(instance, self.fields["lemma"], "alternative")
 
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative
     form = AlternativeForm
-    fields = (
-        "lemma",
-        "word_types",
-        "is_remove",
-        "is_inspiration",
-        "is_advanced",
-        "pluralization",
-        "type",
-        "is_active",
-        "label",
-        "tags",
-        "source",
-        "comment",
-        "order",
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "lemma",
+                    "word_types",
+                    "is_remove",
+                    "is_inspiration",
+                    "is_collective_noun",
+                    "is_advanced",
+                    "pluralization",
+                    "type",
+                    "is_active",
+                    "label",
+                    "order",
+                ),
+            },
+        ),
+        (
+            "Optional Fields",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": (
+                    "tags",
+                    "source",
+                    "sanctions",
+                    "comment",
+                ),
+            },
+        ),
     )
     radio_fields = {"type": admin.HORIZONTAL, "pluralization": admin.HORIZONTAL}
+    filter_horizontal = ("sanctions",)
     ordering = ("order",)
     extra = 0
     sortable_field_name = "order"
@@ -206,7 +453,7 @@ def apply_rule(values):
     for alternative in rule.alternatives.all():
         alternative = {
             "lemma": alternative.lemma,
-            "word_types": alternative.word_types,
+            "word_types": alternative.word_types_json,
             "type": str(alternative.type),
             "pluralization": str(alternative.pluralization),
             "is_inspiration": alternative.is_inspiration,
@@ -222,7 +469,7 @@ def apply_rule(values):
         "text": values["text"],
         "lang": str(rule.language),
         "lemma": rule.lemma,
-        "word_types": rule.word_types,
+        "word_types": rule.word_types_json,
         "subcategories": rule.diversity_dimension_json,
         "lower_case": True,
         "alternatives": alternatives,
@@ -297,6 +544,7 @@ class TrainingSentenceInline(admin.StackedInline):
         "text",
         "is_false_positive",
         "is_training_data",
+        "is_on_website",
         "comment",
         "spacy",
         "response",
@@ -372,6 +620,22 @@ class RuleAdmin(CreatedByAdmin):
     class Meta:
         model = Rule
 
+    def save_formset(self, request, form, formset, change):
+        super(RuleAdmin, self).save_formset(request, form, formset, change)
+
+        rule = formset.instance
+
+        if (
+            formset.prefix == "rulediversitydimension_set"
+            and len(rule.diversity_dimensions.all()) == 0
+        ):
+            message = "Diversity dimensions missing"
+            messages.add_message(request, messages.INFO, message)
+
+        if formset.prefix == "alternatives" and len(rule.alternatives.all()) == 0:
+            message = "Alternatives missing"
+            messages.add_message(request, messages.INFO, message)
+
     def all_diversity_dimensions(self, obj):
         return ", ".join([d.name for d in obj.diversity_dimensions.all()])
 
@@ -379,7 +643,7 @@ class RuleAdmin(CreatedByAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_lemma_help_text(obj, form.base_fields["lemma"])
+            update_lemma_help_text(obj, form.base_fields["lemma"], "rule")
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
@@ -401,15 +665,17 @@ class RuleAdmin(CreatedByAdmin):
             "",
             {
                 "fields": (
-                    "lemma",
                     "language",
                     "text_id",
+                    "lemma",
                     "word_types",
+                    "pattern",
                     "is_marked_for_review",
                     "is_context_aware",
                     "type",
+                    "entity_type",
+                    "pluralization",
                     "is_active",
-                    "tags",
                 ),
             },
         ),
@@ -431,7 +697,9 @@ class RuleAdmin(CreatedByAdmin):
             {
                 "classes": ("grp-collapse grp-closed",),
                 "fields": (
+                    "tags",
                     "source",
+                    "sanctions",
                     "comment",
                     "ownedby",
                 ),
@@ -439,7 +707,13 @@ class RuleAdmin(CreatedByAdmin):
         ),
     )
 
-    radio_fields = {"type": admin.HORIZONTAL, "label_type": admin.HORIZONTAL}
+    radio_fields = {
+        "type": admin.HORIZONTAL,
+        "entity_type": admin.HORIZONTAL,
+        "label_type": admin.HORIZONTAL,
+        "pluralization": admin.HORIZONTAL,
+    }
+    filter_horizontal = ("sanctions",)
     search_fields = (
         "lemma",
         "comment",
@@ -564,12 +838,13 @@ class LemmatizationAdmin(ImportExportModelAdmin):
 
     resource_class = LemmatizationResource
 
-    fields = ("text", "lemma", "language", "comment")
+    fields = ("text", "lemma", "language", "is_plural", "comment")
     search_fields = ("text", "lemma")
     list_filter = ("language",)
     list_display = (
         "text",
         "lemma",
+        "is_plural",
         "language",
     )
 
@@ -593,7 +868,13 @@ class EnglishVerbAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = EnglishVerbResource
-    search_fields = ("base_form",)
+    search_fields = (
+        "base_form",
+        "present_participle",
+        "third_person_singular",
+        "past_tense",
+        "past_participle",
+    )
     fields = (
         "base_form",
         "present_participle",
@@ -630,8 +911,12 @@ class EnglishAdjectiveAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = EnglishAdjectiveResource
-    search_fields = ("base_form",)
+    search_fields = ("base_form", "comparative", "superlative")
     fields = ("base_form", "comparative", "superlative", "is_absolute", "comment")
+    list_filter = (
+        ("comparative", admin.EmptyFieldListFilter),
+        "is_absolute",
+    )
     list_display = ("base_form", "comparative", "superlative", "is_absolute")
 
 
@@ -654,7 +939,7 @@ class NounAdmin(ImportExportModelAdmin):
         return form
 
     resource_class = EnglishNounResource
-    search_fields = ("base_form",)
+    search_fields = ("base_form", "plural")
     fields = ("base_form", "plural", "comment")
     list_display = (
         "base_form",
@@ -676,14 +961,40 @@ class GermanVerbAdmin(ImportExportModelAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
 
         return form
 
     resource_class = GermanVerbResource
-    search_fields = ("base_form",)
-    fields = ("base_form", "comment")
-    list_display = ("base_form",)
+    search_fields = (
+        "base_form",
+        "present_ich",
+        "present_du",
+        "present_pronoun",
+        "past_tense_ich",
+        "past_participle",
+        "conjunctive_ich",
+        "imperativ_singular",
+        "imperativ_plural",
+        "infinitiv_zu",
+        "comment",
+    )
+    fields = (
+        "base_form",
+        "present_ich",
+        "present_du",
+        "present_pronoun",
+        "past_tense_ich",
+        "past_participle",
+        "conjunctive_ich",
+        "imperativ_singular",
+        "imperativ_plural",
+        "helping_verb",
+        "infinitiv_zu",
+        "comment",
+    )
+    list_filter = ("helping_verb",)
+    list_display = ("base_form", "past_participle", "helping_verb", "infinitiv_zu")
 
 
 class GermanAdjectiveResource(resources.ModelResource):
@@ -700,14 +1011,18 @@ class GermanAdjectiveAdmin(ImportExportModelAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
 
         return form
 
     resource_class = GermanAdjectiveResource
-    search_fields = ("base_form",)
-    fields = ("base_form", "comment")
-    list_display = ("base_form",)
+    search_fields = ("base_form", "comparative", "superlative")
+    fields = ("base_form", "comparative", "superlative", "is_absolute", "comment")
+    list_filter = (
+        ("comparative", admin.EmptyFieldListFilter),
+        "is_absolute",
+    )
+    list_display = ("base_form", "comparative", "superlative", "is_absolute")
 
 
 class GermanNounResource(resources.ModelResource):
@@ -724,11 +1039,54 @@ class NounAdmin(ImportExportModelAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
 
         return form
 
     resource_class = GermanNounResource
-    search_fields = ("base_form",)
-    fields = ("base_form", "comment")
-    list_display = ("base_form",)
+    search_fields = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "singular_only",
+        "plural_only",
+        "sg_nom",
+        "sg_dat",
+        "sg_dat_2",
+        "sg_gen",
+        "sg_gen_2",
+        "sg_acc",
+        "pl_nom",
+        "pl_dat",
+        "pl_gen",
+        "pl_acc",
+    )
+    fields = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "gender_1",
+        "gender_2",
+        "singular_only",
+        "plural_only",
+        "sg_nom",
+        "sg_dat",
+        "sg_dat_2",
+        "sg_gen",
+        "sg_gen_2",
+        "sg_acc",
+        "pl_nom",
+        "pl_dat",
+        "pl_gen",
+        "pl_acc",
+        "comment",
+    )
+    list_filter = (
+        ("sg_nom", admin.EmptyFieldListFilter),
+        ("pl_nom", admin.EmptyFieldListFilter),
+        "gender_1",
+        "gender_2",
+        "singular_only",
+        "plural_only",
+    )
+    list_display = ("base_form", "female_form", "male_form", "gender_1")

@@ -10,21 +10,21 @@ class Command(BaseCommand):
         parser.add_argument("--file", type=str)
 
     def handle(self, *args, **options):
-        diversity_dimensions_drivers_file = open(options["file"])
-        diversity_dimensions_drivers = json.load(diversity_dimensions_drivers_file)
+        diversity_dimensions_file = open(options["file"])
+        diversity_dimensions = json.load(diversity_dimensions_file)
 
-        for name in diversity_dimensions_drivers:
-            data = diversity_dimensions_drivers[name]
+        for name in diversity_dimensions:
+            data = diversity_dimensions[name]
 
             if "translations" not in data or "proficiency_level" not in data:
                 continue
 
             try:
-                diversity_dimensions_driver = DiversityDimension.objects.get(name=name)
+                diversity_dimension = DiversityDimension.objects.get(name=name)
                 message = f"Successfully updated diversity dimension '{name}'"
             except DiversityDimension.DoesNotExist:
-                diversity_dimensions_driver = DiversityDimension()
-                diversity_dimensions_driver.name = name
+                diversity_dimension = DiversityDimension()
+                diversity_dimension.name = name
                 message = f"Successfully created diversity dimension '{name}'"
 
             try:
@@ -34,14 +34,13 @@ class Command(BaseCommand):
                 category.name = data["category"]
                 category.save()
 
-            diversity_dimensions_driver.category = category
-            diversity_dimensions_driver.parent_name = name
-            diversity_dimensions_driver.is_advanced = False
-            diversity_dimensions_driver.proficiency_level = (
+            diversity_dimension.category = category
+            diversity_dimension.parent_name = name
+            diversity_dimension.proficiency_level = (
                 data["proficiency_level"].strip().lower()
             )
 
-            diversity_dimensions_driver.save()
+            diversity_dimension.save()
 
             self.stdout.write(self.style.SUCCESS(message))
 
@@ -62,10 +61,7 @@ class Command(BaseCommand):
 
                 child.category = category
                 child.parent_name = name
-                child.is_advanced = True
-                child.proficiency_level = (
-                    data["proficiency_level"].strip().lower()
-                )
+                child.proficiency_level = data["proficiency_level"].strip().lower()
 
                 child.save()
 
