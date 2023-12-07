@@ -11,6 +11,7 @@ from django.core.exceptions import ValidationError
 from django.db.models import Lookup
 from django.db.models import Field
 from django.contrib import messages
+from django.db import connection
 
 import requests
 import json
@@ -39,6 +40,7 @@ from .models import (
     GermanVerb,
     GermanAdjective,
     GermanNoun,
+    LanguageEnum,
     fetch_json,
 )
 
@@ -753,6 +755,8 @@ class RuleAdmin(CreatedByAdmin):
 
 @admin.register(DiversityDimension)
 class DiversityDimensionAdmin(admin.ModelAdmin):
+    list_per_page = 200
+
     class Meta:
         model = DiversityDimension
 
@@ -761,6 +765,35 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         if "delete_selected" in actions:
             del actions["delete_selected"]
         return actions
+
+    def rule_count(self, obj):
+        count_values = []
+        with connection.cursor() as cursor:
+            for language in LanguageEnum:
+                cursor.execute(
+                    "SELECT count(*) FROM rules_rule WHERE language = %s AND diversity_dimension_json LIKE %s",
+                    [language, f'%"{obj.name}"%'],
+                )
+                count = cursor.fetchone()[0]
+                url = f"/admin/rules/rule/?diversity_dimensions__id__in={str(obj.pk)}&language__exact={language}"
+                link = f'<a href="{url}">{language}</a>'
+                count_values.append(f"{count} ({link})")
+
+        return mark_safe(", ".join(count_values))
+
+    def sentences(self, obj):
+        sentences = []
+        with connection.cursor() as cursor:
+            for language in LanguageEnum:
+                cursor.execute(
+                    "SELECT text FROM rules_trainingsentence INNER JOIN rules_rule ON rules_trainingsentence.rule_id = rules_rule.id WHERE is_on_website = 1 AND language = %s AND diversity_dimension_json LIKE %s LIMIT 1",
+                    [language, f'%"{obj.name}"%'],
+                )
+                sentence = cursor.fetchone()
+                if sentence is not None:
+                    sentences.append(sentence[0])
+
+        return " | ".join(sentences)
 
     def __init__(self, model, admin_site):
         super().__init__(model, admin_site)
@@ -772,7 +805,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
     def has_add_permission(self, request, obj=None):  # Here
         return False
 
-    list_display = ("name", "category", "proficiency_level")
+    list_display = ("name", "category", "proficiency_level", "rule_count", "sentences")
     search_fields = ("name",)
     list_filter = (
         "category",
