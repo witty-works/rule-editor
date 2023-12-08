@@ -671,7 +671,7 @@ class TrainingSentence(
         default=False,
         help_text="If sentences should be used for the custom machine learning model",
     )
-    alternative_on_website = models.CharField(max_length=255, help_text="Sentences is an example on the website with the following example")
+    alternative_on_website = models.CharField(max_length=255, blank=True, help_text="Sentences is an example on the website with the following example")
     @computed(
         models.BooleanField(default=False),
         depends=[
