@@ -476,7 +476,7 @@ def apply_rule(values):
         "alternatives": alternatives,
         "false_positives": false_positives,
         "label": rule.label,
-        "pattern":rule.pattern,
+        "pattern": rule.pattern,
         "entity_type": rule.entity_type,
         "pluralization": rule.pluralization,
     }
@@ -549,7 +549,7 @@ class TrainingSentenceInline(admin.StackedInline):
         "text",
         "is_false_positive",
         "is_training_data",
-        "is_on_website",
+        "alternative_on_website",
         "comment",
         "spacy",
         "response",
@@ -789,14 +789,16 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         with connection.cursor() as cursor:
             for language in LanguageEnum:
                 cursor.execute(
-                    "SELECT text FROM rules_trainingsentence INNER JOIN rules_rule ON rules_trainingsentence.rule_id = rules_rule.id WHERE is_on_website = 1 AND language = %s AND diversity_dimension_json LIKE %s LIMIT 1",
+                    "SELECT text, rule_id FROM rules_trainingsentence INNER JOIN rules_rule ON rules_trainingsentence.rule_id = rules_rule.id WHERE is_on_website = 1 AND language = %s AND diversity_dimension_json LIKE %s LIMIT 1",
                     [language, f'%"{obj.name}"%'],
                 )
                 sentence = cursor.fetchone()
                 if sentence is not None:
-                    sentences.append(sentence[0])
+                    url = f"/admin/rules/rule/{sentence[1]}/change/"
+                    link = f'<a href="{url}">{sentence[0]}</a>'
+                    sentences.append(link)
 
-        return " | ".join(sentences)
+        return mark_safe("<br>".join(sentences))
 
     def __init__(self, model, admin_site):
         super().__init__(model, admin_site)
