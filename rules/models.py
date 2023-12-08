@@ -653,7 +653,7 @@ class Alternative(
 
 
 class TrainingSentence(
-    BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel
+    ComputedFieldsModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel
 ):
     def __str__(self):
         return self.text
@@ -671,9 +671,15 @@ class TrainingSentence(
         default=False,
         help_text="If sentences should be used for the custom machine learning model",
     )
-    is_on_website = models.BooleanField(
-        default=False, help_text="If sentences is an example on the website"
+    alternative_on_website = models.CharField(max_length=255, help_text="Sentences is an example on the website with the following example")
+    @computed(
+        models.BooleanField(default=False),
+        depends=[
+            ("self", ["alternative_on_website"]),
+        ],
     )
+    def is_on_website(self):
+        return self.alternative_on_website is not None and len(self.alternative_on_website.strip())
 
     tags = TaggableManager(blank=True)
 
