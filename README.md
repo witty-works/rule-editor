@@ -24,8 +24,15 @@ python manage.py makemigrations rules
 python manage.py migrate
 ```
 
-# Upload files
+# Download/Upload SQLite file
+
+## Download
+```
+platform mount:download --mount database --target ./database -e [ENV]
+```
+
+## Upload
 
 ```
-platform mount:upload --mount foo --source ./foo
+platform mount:upload --mount database --source ./database -e [ENV]
 ```
