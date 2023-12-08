@@ -473,9 +473,12 @@ def apply_rule(values):
         "lemma": rule.lemma,
         "word_types": rule.word_types_json,
         "subcategories": rule.diversity_dimension_json,
-        "lower_case": True,
         "alternatives": alternatives,
         "false_positives": false_positives,
+        "label": rule.label,
+        "pattern":rule.pattern,
+        "entity_type": rule.entity_type,
+        "pluralization": rule.pluralization,
     }
 
     path = "/debug/rule"
