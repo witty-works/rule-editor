@@ -359,6 +359,17 @@ def update_base_form_help_text(obj, field, language):
         "lemma__regex": "\\b(?<!-)" + obj.base_form + "(?!-)\\b",
         "language": language,
     }
+    if (
+        isinstance(obj, EnglishVerb)
+        or isinstance(obj, EnglishAdjective)
+        or isinstance(obj, EnglishNoun)
+        or isinstance(obj, GermanVerb)
+        or isinstance(obj, GermanAdjective)
+        or isinstance(obj, GermanNoun)
+    ):
+        link = f'Open <a href="https://{language}.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
+        help_texts.append(link)
+
     help_texts.append(generate_help_text("Rule", None, filters, obj.base_form))
     help_texts.append(generate_help_text("Alternative", None, filters, obj.base_form))
 
