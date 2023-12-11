@@ -44,7 +44,7 @@ class Command(BaseCommand):
 
             self.stdout.write(self.style.SUCCESS(message))
 
-            if data["proficiency_level"] != "openly_discriminating":
+            if data["proficiency_level"] not in ["openly_discriminating", "inclusive"]:
                 advanced_name = f"{name}_advanced"
 
                 try:
