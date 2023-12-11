@@ -12,6 +12,7 @@ from django.db.models import Lookup
 from django.db.models import Field
 from django.contrib import messages
 from django.db import connection
+from django.http import HttpResponseRedirect
 
 import requests
 import json
@@ -902,11 +903,20 @@ class EnglishVerbResource(resources.ModelResource):
     class Meta:
         model = EnglishVerb
 
-
 @admin.register(EnglishVerb)
 class EnglishVerbAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishVerb
+
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -951,6 +961,16 @@ class EnglishAdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishAdjective
 
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
@@ -975,9 +995,19 @@ class EnglishNounResource(resources.ModelResource):
 
 
 @admin.register(EnglishNoun)
-class NounAdmin(ImportExportModelAdmin):
+class EnglishNounAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishNoun
+
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -1005,6 +1035,16 @@ class GermanVerbResource(resources.ModelResource):
 class GermanVerbAdmin(ImportExportModelAdmin):
     class Meta:
         model = GermanVerb
+
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -1056,6 +1096,16 @@ class GermanAdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
         model = GermanAdjective
 
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
@@ -1080,9 +1130,19 @@ class GermanNounResource(resources.ModelResource):
 
 
 @admin.register(GermanNoun)
-class NounAdmin(ImportExportModelAdmin):
+class GermanNounAdmin(ImportExportModelAdmin):
     class Meta:
         model = GermanNoun
+
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
