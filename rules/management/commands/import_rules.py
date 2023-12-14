@@ -434,7 +434,6 @@ class Command(BaseCommand):
             if not has_plural:
                 config["pluralization"] = PluralizationEnum.DEFAULT
 
-
         if name == "Alt_Sg_reframed":
             config["is_inspiration"] = subcategory not in [
                 "titles",
@@ -683,9 +682,7 @@ class Command(BaseCommand):
                 if "HR" in priorties:
                     rule.tags.add("hr")
 
-                is_basic = (
-                    "basic" in priorties or row["Category"] == "openly_discriminating"
-                )
+                is_basic = "basic" in priorties
                 self.add_diversity_dimension(
                     diversity_dimensions,
                     rule,
@@ -700,19 +697,21 @@ class Command(BaseCommand):
                     and row["Secondary_subcategory"].strip != ""
                 ):
                     secondary_subcategories = row["Secondary_subcategory"].split("|")
+                    i = 0
                     for secondary_subcategory in secondary_subcategories:
                         secondary_subcategory = secondary_subcategory.strip()
                         if (
                             secondary_subcategory != ""
                             and secondary_subcategory != "generic_plural"
                         ):
+                            i += 1
                             self.add_diversity_dimension(
                                 diversity_dimensions,
                                 rule,
                                 row["Category"],
                                 secondary_subcategory,
-                                1,
-                                is_basic,
+                                i,
+                                "advanced_" not in secondary_subcategory,
                             )
 
                 label_types = {

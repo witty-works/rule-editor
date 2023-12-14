@@ -12,6 +12,7 @@ from django.db.models import Lookup
 from django.db.models import Field
 from django.contrib import messages
 from django.db import connection
+from django.http import HttpResponseRedirect
 
 import requests
 import json
@@ -359,6 +360,17 @@ def update_base_form_help_text(obj, field, language):
         "lemma__regex": "\\b(?<!-)" + obj.base_form + "(?!-)\\b",
         "language": language,
     }
+    if (
+        isinstance(obj, EnglishVerb)
+        or isinstance(obj, EnglishAdjective)
+        or isinstance(obj, EnglishNoun)
+        or isinstance(obj, GermanVerb)
+        or isinstance(obj, GermanAdjective)
+        or isinstance(obj, GermanNoun)
+    ):
+        link = f'Open <a href="https://{language}.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
+        help_texts.append(link)
+
     help_texts.append(generate_help_text("Rule", None, filters, obj.base_form))
     help_texts.append(generate_help_text("Alternative", None, filters, obj.base_form))
 
@@ -452,7 +464,7 @@ def apply_rule(values):
     rule = Rule.objects.get(pk=values["rule"])
 
     alternatives = []
-    for alternative in rule.alternatives.all():
+    for alternative in rule.alternatives.all().order_by("order"):
         alternative = {
             "lemma": alternative.lemma,
             "word_types": alternative.word_types_json,
@@ -477,6 +489,7 @@ def apply_rule(values):
         "false_positives": false_positives,
         "label": rule.label,
         "pattern": rule.pattern,
+        "is_pattern_match": rule.is_pattern_match,
         "entity_type": rule.entity_type,
         "pluralization": rule.pluralization,
     }
@@ -642,7 +655,14 @@ class RuleAdmin(CreatedByAdmin):
             messages.add_message(request, messages.INFO, message)
 
     def all_diversity_dimensions(self, obj):
-        return ", ".join([d.name for d in obj.diversity_dimensions.all()])
+        return ", ".join(
+            [
+                d.name
+                for d in obj.diversity_dimensions.all().order_by(
+                    "rulediversitydimension__order"
+                )
+            ]
+        )
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -675,6 +695,7 @@ class RuleAdmin(CreatedByAdmin):
                     "lemma",
                     "word_types",
                     "pattern",
+                    "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
                     "type",
@@ -812,6 +833,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
 
     list_display = ("name", "category", "proficiency_level", "rule_count", "sentences")
     search_fields = ("name",)
+    admin_order_field = ("name", "category", "proficiency_level")
     list_filter = (
         "category",
         "proficiency_level",
@@ -897,6 +919,16 @@ class EnglishVerbAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishVerb
 
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
@@ -940,6 +972,16 @@ class EnglishAdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishAdjective
 
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
@@ -964,9 +1006,19 @@ class EnglishNounResource(resources.ModelResource):
 
 
 @admin.register(EnglishNoun)
-class NounAdmin(ImportExportModelAdmin):
+class EnglishNounAdmin(ImportExportModelAdmin):
     class Meta:
         model = EnglishNoun
+
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -994,6 +1046,16 @@ class GermanVerbResource(resources.ModelResource):
 class GermanVerbAdmin(ImportExportModelAdmin):
     class Meta:
         model = GermanVerb
+
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -1045,6 +1107,16 @@ class GermanAdjectiveAdmin(ImportExportModelAdmin):
     class Meta:
         model = GermanAdjective
 
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
@@ -1069,9 +1141,19 @@ class GermanNounResource(resources.ModelResource):
 
 
 @admin.register(GermanNoun)
-class NounAdmin(ImportExportModelAdmin):
+class GermanNounAdmin(ImportExportModelAdmin):
     class Meta:
         model = GermanNoun
+
+    change_form_template = "admin/change_form_fill_declensions.html"
+
+    def response_change(self, request, obj):
+        if "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions()
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        return super().response_change(request, obj)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)

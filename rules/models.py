@@ -9,6 +9,10 @@ from django_enum import EnumField
 from taggit.managers import TaggableManager
 from computedfields.models import ComputedFieldsModel, computed
 
+from german_nouns.lookup import Nouns
+from inflex import Noun, Verb, Adjective
+from bs4 import BeautifulSoup
+
 import emoji
 
 import requests
@@ -395,6 +399,10 @@ class Rule(
         blank=True,
         help_text="Optional pattern to define word types before and after the lemma. Syntax 'l' for the lemma. '*' means zero or many, '+' means once or many.",
     )
+    is_pattern_match = models.BooleanField(
+        default=False,
+        help_text="if the pattern should expand the matched text or if it is just used to avoid false positives",
+    )
 
     text_id = models.CharField(
         max_length=255,
@@ -529,7 +537,7 @@ class Rule(
     def diversity_dimension_json(self):
         diversity_dimensions = []
         if self.pk:
-            for diversity_dimension in self.diversity_dimensions.all():
+            for diversity_dimension in self.diversity_dimensions.all().order_by('rulediversitydimension__order'):
                 diversity_dimensions.append(diversity_dimension.name)
 
         return diversity_dimensions
@@ -653,7 +661,11 @@ class Alternative(
 
 
 class TrainingSentence(
-    ComputedFieldsModel, BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel, BaseSourcedModel
+    ComputedFieldsModel,
+    BaseTimestampedModel,
+    BaseCreatedByModel,
+    BaseCommentableModel,
+    BaseSourcedModel,
 ):
     def __str__(self):
         return self.text
@@ -671,7 +683,12 @@ class TrainingSentence(
         default=False,
         help_text="If sentences should be used for the custom machine learning model",
     )
-    alternative_on_website = models.CharField(max_length=255, blank=True, help_text="Sentences is an example on the website with the following example")
+    alternative_on_website = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text="Sentences is an example on the website with the following example",
+    )
+
     @computed(
         models.BooleanField(default=False),
         depends=[
@@ -679,7 +696,9 @@ class TrainingSentence(
         ],
     )
     def is_on_website(self):
-        return self.alternative_on_website is not None and len(self.alternative_on_website.strip())
+        return bool(self.alternative_on_website is not None and len(
+            self.alternative_on_website.strip())
+        )
 
     tags = TaggableManager(blank=True)
 
@@ -717,6 +736,18 @@ class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
     def __str__(self):
         return self.base_form
 
+    def fill_declensions(self):
+        inflex = Verb(self.base_form)
+        self.past_tense = inflex.past()
+        self.past_participle = inflex.past_part()
+        self.present_participle = inflex.pres_part()
+        self.third_person_singular = inflex.singular()
+
+        self.save()
+
+        message = "English verb declension data has been filled."
+        return False, message
+
     base_form = models.CharField(max_length=255, unique=True)
     past_tense = models.CharField(max_length=255, null=True, blank=True)
     past_participle = models.CharField(max_length=255, null=True, blank=True)
@@ -727,6 +758,50 @@ class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
 class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
+
+    def fill_declensions(self):
+        self.is_absolute = self.base_form[0].isupper()
+        if self.is_absolute == False:
+            soup = get_soup(self.base_form)
+            if soup is None:
+                message = "Unable to download English adjective Wikitionary data"
+                return True, message
+
+            element = soup.find("span", {"id": "Adjective"})
+            if element is None:
+                message = "English adjective data missing on Wikitionary"
+                return True, message
+
+            element = element.find_next("p")
+
+            uncomparable = element.find(
+                "a", {"href": "/wiki/Appendix:Glossary#uncomparable"}
+            )
+            if uncomparable:
+                self.is_absolute = True
+            else:
+                not_generally = element.select_one('i:-soup-contains("not generally")')
+                if not_generally:
+                    self.is_absolute = True
+                else:
+                    element.find("a", {"href": "/wiki/Appendix:Glossary#comparative"})
+                    comparative = element.find(
+                        "a", {"href": "/wiki/Appendix:Glossary#comparative"}
+                    )
+                    self.is_absolute = not bool(comparative)
+
+        if self.is_absolute:
+            self.comparative = self.base_form
+            self.superlative = self.base_form
+        else:
+            inflex = Adjective(self.base_form)
+            self.comparative = inflex.comparative()
+            self.superlative = inflex.superlative()
+
+        self.save()
+
+        message = "English adjective declension data has been filled."
+        return False, message
 
     def clean(self):
         super().clean()
@@ -747,13 +822,145 @@ class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
     def __str__(self):
         return self.base_form
 
+    def fill_declensions(self):
+        inflex = Noun(self.base_form)
+        self.plural = inflex.plural()
+        self.save()
+
+        message = "English noun declension data has been filled."
+        return False, message
+
     base_form = models.CharField(max_length=255, unique=True)
     plural = models.CharField(max_length=255, null=True, blank=True)
+
+
+def get_soup(base_form, flexion=False):
+    try:
+        url = (
+            "https://de.wiktionary.org/wiki/Flexion:"
+            if flexion
+            else "https://de.wiktionary.org/wiki/"
+        )
+        response = requests.get(url + base_form)
+        return BeautifulSoup(response.text, "html.parser")
+    except requests.exceptions.ConnectionError:
+        pass
+
+    return None
 
 
 class GermanVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
+
+    def fill_declensions(self):
+        soup = get_soup(self.base_form)
+        if soup is None:
+            message = "Unable to download German verb Wikitionary data"
+            return True, message
+
+        elements = soup.find_all("span", {"id": "Verb"})
+        if len(elements) == 0:
+            elements = soup.find_all("span", {"id": "Verb,_unregelmäßig"})
+
+        if len(elements) == 0:
+            message = "German verb data missing on Wikitionary"
+            return True, message
+
+        try:
+            rows = elements[0].parent.find_next_sibling("table")
+            if rows is None:
+                message = "German verb data table missing on Wikitionary"
+                return True, message
+
+            verb_map = {
+                "hilfe:präsens ich": "present_ich",
+                "hilfe:präsens du": "present_du",
+                "hilfe:präsens er, sie, es": "present_pronoun",
+                "hilfe:präteritum ich": "past_tense_ich",
+                "hilfe:konjunktiv ich": "conjunctive_ich",
+                "hilfe:imperativ singular": "imperativ_singular",
+                "hilfe:imperativ plural": "imperativ_plural",
+                "hilfe:perfekt": [
+                    "past_participle",
+                    "helping_verb",
+                ],
+            }
+
+            headline_name = ""
+            for row in rows.find("tbody").find_all("tr"):
+                columns = row.find_all("td")
+                headlines = row.find_all("th")
+                if len(headlines) and headlines[0].find("a"):
+                    headline_name = headlines[0].find("a")["title"].strip().lower()
+
+                if len(columns):
+                    if headline_name in verb_map:
+                        for i in range(len(verb_map[headline_name])):
+                            element = columns[i].find("a")
+                            text = element["title"] if element else ""
+                            setattr(
+                                self,
+                                verb_map[headline_name][i],
+                                text,
+                            )
+                    elif len(columns[0]):
+                        column_name = columns[0].get_text().strip().lower()
+                        verb_name = f"{headline_name} {column_name}"
+
+                        if verb_name in verb_map:
+                            element = columns[1].find("a")
+                            text = element["title"] if element else ""
+                            if (
+                                text != ""
+                                or getattr(
+                                    self,
+                                    verb_map[verb_name],
+                                )
+                                == None
+                            ):
+                                setattr(
+                                    self,
+                                    verb_map[verb_name],
+                                    text,
+                                )
+
+            soup = get_soup(self.base_form, True)
+            if soup is not None and soup.find("table"):
+                element = soup.find("table")
+
+                match = False
+                for row in element.find("tbody").find_all("tr"):
+                    if match:
+                        columns = row.find_all("td")
+                        if (
+                            len(columns)
+                            and columns[0].find("a")["title"] == "Hilfe:Aktiv"
+                        ):
+                            self.infinitiv_zu = columns[1].get_text()
+                        break
+                    else:
+                        headlines = row.find_all("th")
+                        if (
+                            len(headlines)
+                            and headlines[0].get_text().strip()
+                            == "erweiterte Infinitive"
+                        ):
+                            match = True
+        except AttributeError:
+            message = "Unable to find German verb tag in Wikitionary data"
+            return True, message
+        except KeyError:
+            message = "Unable to find German verb title in Wikitionary data"
+            return True, message
+        except Exception:
+            message = "Unable to parse German verb Wikitionary data"
+            return True, message
+
+        self.save()
+
+        message = "German verb declension data has been filled."
+        return False, message
 
     base_form = models.CharField(max_length=255, unique=True)
     present_ich = models.CharField(max_length=255, null=True, blank=True)
@@ -776,6 +983,65 @@ class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableM
     def __str__(self):
         return self.base_form
 
+    def fill_declensions(self):
+        soup = get_soup(self.base_form)
+        if soup is None:
+            message = "Unable to download German adjective Wikitionary data"
+            return True, message
+
+        elements = soup.find_all("span", {"id": "Adjektiv"})
+        if len(elements) == 0:
+            message = "German adjective data missing on Wikitionary"
+            return True, message
+
+        try:
+            rows = elements[0].parent.find_next_sibling("table")
+            if rows is None:
+                self.is_absolute = True
+            else:
+                adjective_map = [
+                    "comparative",
+                    "superlative",
+                ]
+
+                for row in rows.find("tbody").find_all("tr"):
+                    columns = row.find_all("td")
+                    if (
+                        len(columns)
+                        and len(columns[0].contents)
+                        and columns[0].contents[0].strip() == self.base_form
+                    ):
+                        self.is_absolute = False
+                        for i in range(len(columns[1:])):
+                            element = columns[i + 1].find("a")
+                            if element is None:
+                                self.is_absolute = True
+                            else:
+                                setattr(
+                                    self,
+                                    adjective_map[i],
+                                    columns[i + 1].find("a")["title"],
+                                )
+
+        except AttributeError:
+            message = "Unable to find German adjective tag in Wikitionary data"
+            return True, message
+        except KeyError:
+            message = "Unable to find German adjective title in Wikitionary data"
+            return True, message
+        except Exception:
+            message = "Unable to parse German adjective Wikitionary data"
+            return True, message
+
+        if self.is_absolute:
+            self.comparative = self.base_form
+            self.superlative = self.base_form
+
+        self.save()
+
+        message = "German adjective declension data has been filled."
+        return False, message
+
     def clean(self):
         super().clean()
 
@@ -794,6 +1060,262 @@ class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableM
 class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
         return self.base_form
+
+    def get_form(self, base_form, female_form=True):
+        soup = get_soup(self.base_form)
+        if soup is None:
+            message = "Unable to download German noun gender variant Wikitionary data"
+            return True, message
+
+        title = (
+            "Weibliche Varianten des Wortes"
+            if female_form
+            else "Männliche Wortformen Varianten des Wortes"
+        )
+        elements = soup.find_all("p", {"title": title})
+        if len(elements):
+            try:
+                variant = (
+                    elements[0]
+                    .find_next("dl")
+                    .find("dd")
+                    .find("a", attrs={"title": True})["title"]
+                ).removesuffix(" (Seite nicht vorhanden)")
+            except AttributeError:
+                message = f"Fetching female unable to find child tag '{base_form}'"
+                return True, message
+            except KeyError:
+                message = f"Fetching female could not find title '{base_form}'"
+                return True, message
+            except Exception:
+                message = f"Fetching female failed to parse '{base_form}'"
+                return True, message
+
+        return False, variant
+
+    def fill_declensions(self):
+        soup = get_soup(self.base_form)
+        if soup is None:
+            message = "Unable to download German noun Wikitionary data"
+            return True, message
+
+        gender_map = {
+            "": None,
+            "f": GenderTypeEnum.FEMININE,
+            "m": GenderTypeEnum.MASCULINE,
+            "n": GenderTypeEnum.NEUTER,
+        }
+
+        elements = soup.find_all("a", {"href": "/wiki/Hilfe:Wortart#Substantiv"})
+        if len(elements) == 0:
+            nouns = Nouns()
+            result = nouns[self.base_form]
+            if len(result) == 0 or len(result[0]["flexion"]) == 0:
+                if "-" in self.base_form:
+                    words = self.base_form.split("-")
+                    word = words[-1]
+                    prefix = "-".join(words[0:-1]) + "-"
+                    lower = False
+                else:
+                    words = nouns.parse_compound(self.base_form)
+                    if len(words) < 1 or not self.base_form.endswith(words[-1].lower()):
+                        message = "Could not split German noun"
+                        return True, message
+
+                    word = words[-1]
+                    prefix = self.base_form.removesuffix(word.lower())
+                    lower = True
+
+                result = nouns[word]
+                if len(result) == 0:
+                    message = "Could not determine German noun flexion"
+                    return True, message
+
+                for i in range(len(result)):
+                    lemma = result[i]["lemma"].lower() if lower else result[i]["lemma"]
+                    result[i]["lemma"] = prefix + lemma
+                    for flexion in result[i]["flexion"]:
+                        flexion_expanded = (
+                            result[i]["flexion"][flexion].lower()
+                            if lower
+                            else result[i]["flexion"][flexion]
+                        )
+                        result[i]["flexion"][flexion] = prefix + flexion_expanded
+
+            result = result[0]
+
+            singular = False
+            singular_map = {
+                "nominativ singular": "sg_nom",
+                "dativ singular": "sg_dat",
+                "dativ singular*": "sg_dat_2",
+                "genitiv singular": "sg_gen",
+                "genitiv singular*": "sg_gen_2",
+                "akkusativ singular": "sg_acc",
+            }
+
+            plural = False
+            plural_map = {
+                "nominativ plural": "pl_nom",
+                "dativ plural": "pl_dat",
+                "genitiv plural": "pl_gen",
+                "akkusativ plural": "pl_acc",
+            }
+
+            for flexion in result["flexion"]:
+                # TODO handle variations (dativ/genetiv) and stark/schwach/gemischt
+                key = flexion.removesuffix(" 1").removesuffix(" stark")
+                if key in singular_map:
+                    setattr(self, singular_map[key], result["flexion"][flexion])
+                    singular = True
+                elif key in plural_map:
+                    setattr(self, plural_map[key], result["flexion"][flexion])
+                    plural = True
+
+            if (
+                self.sg_gen is not None
+                and self.sg_gen.endswith("es")
+                and self.sg_gen_2 is not None
+                and not self.sg_gen_2.endswith("es")
+            ):
+                sg_gen = self.sg_gen
+                self.sg_gen = self.sg_gen_2
+                self.sg_gen_2 = sg_gen
+
+            if self.sg_dat == self.sg_dat_2:
+                self.sg_dat_2 = None
+
+            if self.sg_gen == self.sg_gen_2:
+                self.sg_gen_2 = None
+
+            if not singular and not plural:
+                message = "Could not find German noun flexion"
+                return True, message
+
+            self.singular_only = bool(singular and not plural)
+            self.plural_only = bool(plural and not singular)
+
+            if "genus" not in result and "genus 1" not in result:
+                message = "German noun genus could not be determined"
+                return True, message
+
+            self.gender_1 = (
+                gender_map[result["genus"]]
+                if "genus" in result
+                else gender_map[result["genus 1"]]
+            )
+
+            self.gender_2 = (
+                gender_map[result["genus 2"]] if "genus 2" in result else None
+            )
+
+            if self.female_form is None:
+                failed, variant = self.get_form(self.base_form)
+                if failed:
+                    return True, variant
+
+                self.female_form = variant
+
+            if self.female_form is None and self.male_form is None:
+                failed, variant = self.get_form(self.base_form, False)
+                if failed:
+                    return True, variant
+
+                self.male_form = variant
+        else:
+            element = elements[0].parent
+            genders = (
+                element["id"].removeprefix("Substantiv,").replace("_", "").split(",")
+            )
+            self.gender_1 = gender_map[genders[0]]
+            if len(genders) > 1:
+                self.gender_2 = gender_map[genders[1]]
+
+            try:
+                rows = element.parent.find_next_sibling("table")
+                if rows is None:
+                    message = "German noun data table missing on Wikitionary"
+                    return True, message
+
+                noun_map = {
+                    "hilfe:nominativ": "nom",
+                    "hilfe:genitiv": "gen",
+                    "hilfe:dativ": "dat",
+                    "hilfe:akkusativ": "acc",
+                }
+
+                headline_name = ""
+                pluralization_map = []
+                for row in rows.find("tbody").find_all("tr"):
+                    headlines = row.find_all("th")
+                    if len(headlines) and headlines[0].find("a"):
+                        headline_name = headlines[0].find("a")["title"].strip().lower()
+                    else:
+                        pluralization_map = []
+                        for i in range(len(headlines[1:])):
+                            title = headlines[i + 1].get_text().strip()
+                            value = "sg_" if title.startswith("Singular") else "pl_"
+                            value += "PLACEHOLDER"
+                            if title.endswith(" 2"):
+                                value += "_2"
+
+                            pluralization_map.append(value)
+
+                        continue
+
+                    columns = row.find_all("td")
+
+                    if (
+                        len(columns)
+                        and len(pluralization_map)
+                        and headline_name in noun_map
+                    ):
+                        for i in range(len(columns)):
+                            if pluralization_map[i].endswith("_2") and (
+                                "plural" in pluralization_map[i]
+                                or noun_map[headline_name] not in ["dat", "gen"]
+                            ):
+                                continue
+
+                            attribute_name = pluralization_map[i].replace(
+                                "PLACEHOLDER", noun_map[headline_name]
+                            )
+
+                            for k in range(len(columns[i].contents)):
+                                field = columns[i].contents[k]
+                                text = (
+                                    field.get_text()
+                                    .strip()
+                                    .removeprefix("die ")
+                                    .removeprefix("das ")
+                                    .removeprefix("der ")
+                                    .removeprefix("den ")
+                                    .removeprefix("dem ")
+                                    .removeprefix("des ")
+                                )
+                                if len(text) and text[0].isupper():
+                                    if k > 1:
+                                        attribute_name += "_2"
+
+                                    setattr(
+                                        self,
+                                        attribute_name,
+                                        text,
+                                    )
+            except AttributeError:
+                message = "Unable to find German noun tag in Wikitionary data"
+                return True, message
+            except KeyError:
+                message = "Unable to find German noun title in Wikitionary data"
+                return True, message
+            except Exception:
+                message = "Unable to parse German noun Wikitionary data"
+                return True, message
+
+        self.save()
+
+        message = "German noun declension data has been filled."
+        return False, message
 
     base_form = models.CharField(max_length=255, unique=True)
     female_form = models.CharField(max_length=255, null=True, blank=True)

@@ -3,7 +3,6 @@ from rules.models import (
     GermanVerb,
     GermanAdjective,
     GermanNoun,
-    GenderTypeEnum,
     EnglishVerb,
     EnglishAdjective,
     EnglishNoun,
@@ -11,11 +10,7 @@ from rules.models import (
     PluralizationEnum,
     LanguageEnum,
 )
-from german_nouns.lookup import Nouns
-from inflex import Noun, Verb, Adjective
 import csv
-import requests
-from bs4 import BeautifulSoup
 
 
 class Command(BaseCommand):
@@ -28,51 +23,6 @@ class Command(BaseCommand):
         parser.add_argument("--nouns", type=bool)
         parser.add_argument("--germanverbs", type=str)
         parser.add_argument("--germannouns", type=str)
-
-    def get_form(self, base_form, female_form=True):
-        try:
-            url = "https://de.wiktionary.org/wiki/" + base_form
-            response = requests.get(url)
-            soup = BeautifulSoup(response.text, "html.parser")
-
-            title = (
-                "Weibliche Varianten des Wortes"
-                if female_form
-                else "Männliche Wortformen Varianten des Wortes"
-            )
-            elements = soup.find_all("p", {"title": title})
-            if len(elements):
-                try:
-                    return (
-                        elements[0]
-                        .find_next("dl")
-                        .find("dd")
-                        .find("a", attrs={"title": True})["title"]
-                    ).removesuffix(" (Seite nicht vorhanden)")
-                except AttributeError:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"Fetching female unable to find child tag '{base_form}'"
-                        )
-                    )
-                    pass
-                except KeyError:
-                    self.stdout.write(
-                        self.style.NOTICE(
-                            f"Fetching female could not find title '{base_form}'"
-                        )
-                    )
-                    pass
-                except Exception:
-                    self.stdout.write(
-                        self.style.NOTICE(
-                            f"Fetching female failed to parse '{base_form}'"
-                        )
-                    )
-        except requests.exceptions.ConnectionError:
-            self.stdout.write(
-                self.style.NOTICE(f"Fetching female failed to download '{base_form}'")
-            )
 
     def german(self, options):
         if options["verbs"]:
@@ -128,97 +78,17 @@ class Command(BaseCommand):
                     )
 
     def german_adjectives(self):
-        adjective_map = [
-            "comparative",
-            "superlative",
-        ]
-
         models = GermanAdjective.objects.filter(comparative=None)
         for model in models:
-            try:
-                url = "https://de.wiktionary.org/wiki/" + model.base_form
-                response = requests.get(url)
-                soup = BeautifulSoup(response.text, "html.parser")
-                elements = soup.find_all("span", {"id": "Adjektiv"})
-                if len(elements) == 0:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"Unable to fetch German adjective data '{model.base_form}'"
-                        )
-                    )
-                    continue
-                else:
-                    try:
-                        rows = elements[0].parent.find_next_sibling("table")
-                        if rows is None:
-                            model.is_absolute = True
-                        else:
-                            for row in rows.find("tbody").find_all("tr"):
-                                columns = row.find_all("td")
-                                if (
-                                    len(columns)
-                                    and len(columns[0].contents)
-                                    and columns[0].contents[0].strip()
-                                    == model.base_form
-                                ):
-                                    model.is_absolute = False
-                                    for i in range(len(columns[1:])):
-                                        element = columns[i + 1].find("a")
-                                        if element is None:
-                                            model.is_absolute = True
-                                        else:
-                                            setattr(
-                                                model,
-                                                adjective_map[i],
-                                                columns[i + 1].find("a")["title"],
-                                            )
+            failed, message = model.fill_declensions()
 
-                    except AttributeError:
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f"Fetching German adjective unable to find tags '{model.base_form}'"
-                            )
-                        )
-                        pass
-                    except KeyError:
-                        self.stdout.write(
-                            self.style.NOTICE(
-                                f"Fetching German adjective could not find title '{model.base_form}'"
-                            )
-                        )
-                        pass
-                    except Exception as e:
-                        self.stdout.write(
-                            self.style.NOTICE(
-                                f"Fetching German adjective failed to parse '{model.base_form}'"
-                            )
-                        )
-            except requests.exceptions.ConnectionError:
-                self.stdout.write(
-                    self.style.NOTICE(
-                        f"Fetching German adjective failed to download '{model.base_form}'"
-                    )
-                )
-
-            if model.is_absolute:
-                model.comparative = model.base_form
-                model.superlative = model.base_form
-
-            model.save()
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"Successfully updated German adjective '{model.base_form}'"
-                )
+            message = model.base_form + ": " + message
+            message = (
+                self.style.ERROR(message) if failed else self.style.SUCCESS(message)
             )
+            self.stdout.write(message)
 
     def german_nouns(self, options):
-        nouns = Nouns()
-        genus_map = {
-            "": None,
-            "n": GenderTypeEnum.NEUTER,
-            "f": GenderTypeEnum.FEMININE,
-            "m": GenderTypeEnum.MASCULINE,
-        }
         models = GermanNoun.objects.filter(gender_1=None)
         for model in models:
             if not model.base_form[0].isupper():
@@ -229,135 +99,13 @@ class Command(BaseCommand):
                 )
                 continue
 
-            result = nouns[model.base_form]
-            if len(result) == 0 or len(result[0]["flexion"]) == 0:
-                if "-" in model.base_form:
-                    words = model.base_form.split("-")
-                    word = words[-1]
-                    prefix = "-".join(words[0:-1]) + "-"
-                    lower = False
-                else:
-                    words = nouns.parse_compound(model.base_form)
-                    if len(words) < 1 or not model.base_form.endswith(
-                        words[-1].lower()
-                    ):
-                        self.stdout.write(
-                            self.style.ERROR(
-                                f"German noun could not split '{model.base_form}'"
-                            )
-                        )
-                        continue
+            failed, message = model.fill_declensions()
 
-                    word = words[-1]
-                    prefix = model.base_form.removesuffix(word.lower())
-                    lower = True
-
-                result = nouns[word]
-                if len(result) == 0:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"German noun '{model.base_form}' could not determine flexion for {word}"
-                        )
-                    )
-                    continue
-
-                for i in range(len(result)):
-                    lemma = result[i]["lemma"].lower() if lower else result[i]["lemma"]
-                    result[i]["lemma"] = prefix + lemma
-                    for flexion in result[i]["flexion"]:
-                        flexion_expanded = (
-                            result[i]["flexion"][flexion].lower()
-                            if lower
-                            else result[i]["flexion"][flexion]
-                        )
-                        result[i]["flexion"][flexion] = prefix + flexion_expanded
-
-            result = result[0]
-
-            singular = False
-            singular_map = {
-                "nominativ singular": "sg_nom",
-                "dativ singular": "sg_dat",
-                "dativ singular*": "sg_dat_2",
-                "genitiv singular": "sg_gen",
-                "genitiv singular*": "sg_gen_2",
-                "akkusativ singular": "sg_acc",
-            }
-
-            plural = False
-            plural_map = {
-                "nominativ plural": "pl_nom",
-                "dativ plural": "pl_dat",
-                "genitiv plural": "pl_gen",
-                "akkusativ plural": "pl_acc",
-            }
-
-            for flexion in result["flexion"]:
-                # TODO handle variations (dativ/genetiv) and stark/schwach/gemischt
-                key = flexion.removesuffix(" 1").removesuffix(" stark")
-                if key in singular_map:
-                    setattr(model, singular_map[key], result["flexion"][flexion])
-                    singular = True
-                elif key in plural_map:
-                    setattr(model, plural_map[key], result["flexion"][flexion])
-                    plural = True
-
-            if (
-                model.sg_gen is not None
-                and model.sg_gen.endswith("es")
-                and model.sg_gen_2 is not None
-                and not model.sg_gen_2.endswith("es")
-            ):
-                sg_gen = model.sg_gen
-                model.sg_gen = model.sg_gen_2
-                model.sg_gen_2 = sg_gen
-
-            if model.sg_dat == model.sg_dat_2:
-                model.sg_dat_2 = None
-
-            if model.sg_gen == model.sg_gen_2:
-                model.sg_gen_2 = None
-
-            if not singular and not plural:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Unable to find flexion data for German noun '{model.base_form}'"
-                    )
-                )
-                continue
-
-            model.singular_only = bool(singular and not plural)
-            model.plural_only = bool(plural and not singular)
-
-            if "genus" not in result and "genus 1" not in result:
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"German noun '{model.base_form}' genus could not be determined"
-                    )
-                )
-            else:
-                model.gender_1 = (
-                    genus_map[result["genus"]]
-                    if "genus" in result
-                    else genus_map[result["genus 1"]]
-                )
-
-            model.gender_2 = (
-                genus_map[result["genus 2"]] if "genus 2" in result else None
+            message = model.base_form + ": " + message
+            message = (
+                self.style.ERROR(message) if failed else self.style.SUCCESS(message)
             )
-
-            if model.female_form is None:
-                model.female_form = self.get_form(model.base_form)
-
-            if model.female_form is None and model.male_form is None:
-                model.male_form = self.get_form(model.base_form, False)
-
-            model.save()
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"Successfully updated German noun '{model.base_form}'"
-                )
-            )
+            self.stdout.write(message)
 
         if options["germannouns"]:
             with open(options["germannouns"]) as f:
@@ -495,91 +243,35 @@ class Command(BaseCommand):
     def english_verbs(self):
         models = EnglishVerb.objects.filter(past_tense=None)
         for model in models:
-            inflex = Verb(model.base_form)
-            model.past_tense = inflex.past()
-            model.past_participle = inflex.past_part()
-            model.present_participle = inflex.pres_part()
-            model.third_person_singular = inflex.singular()
-            model.save()
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"Successfully updated English verb '{model.base_form}'"
-                )
+            failed, message = model.fill_declensions()
+
+            message = model.base_form + ": " + message
+            message = (
+                self.style.ERROR(message) if failed else self.style.SUCCESS(message)
             )
+            self.stdout.write(message)
 
     def english_adjectives(self):
         models = EnglishAdjective.objects.filter(comparative=None)
         for model in models:
-            model.is_absolute = model.base_form[0].isupper()
-            if model.is_absolute == False:
-                try:
-                    url = "https://en.wiktionary.org/wiki/" + model.base_form
-                    response = requests.get(url)
-                    soup = BeautifulSoup(response.text, "html.parser")
-                    element = soup.find("span", {"id": "Adjective"})
-                    if element is None:
-                        self.stdout.write(
-                            self.style.NOTICE(
-                                f"English adjective data missing '{model.base_form}'"
-                            )
-                        )
+            failed, message = model.fill_declensions()
 
-                        continue
-
-                    element = element.find_next("p")
-
-                    uncomparable = element.find(
-                        "a", {"href": "/wiki/Appendix:Glossary#uncomparable"}
-                    )
-                    if uncomparable:
-                        model.is_absolute = True
-                    else:
-                        not_generally = element.select_one(
-                            'i:-soup-contains("not generally")'
-                        )
-                        if not_generally:
-                            model.is_absolute = True
-                        else:
-                            element.find(
-                                "a", {"href": "/wiki/Appendix:Glossary#comparative"}
-                            )
-                            comparative = element.find(
-                                "a", {"href": "/wiki/Appendix:Glossary#comparative"}
-                            )
-                            model.is_absolute = not bool(comparative)
-                except requests.exceptions.ConnectionError:
-                    self.stdout.write(
-                        self.style.NOTICE(
-                            f"Fetching english adjective failed to download '{model.base_form}'"
-                        )
-                    )
-
-            if model.is_absolute:
-                model.comparative = model.base_form
-                model.superlative = model.base_form
-            else:
-                inflex = Adjective(model.base_form)
-                model.comparative = inflex.comparative()
-                model.superlative = inflex.superlative()
-
-            model.save()
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"Successfully updated English adjective '{model.base_form}'"
-                )
+            message = model.base_form + ": " + message
+            message = (
+                self.style.ERROR(message) if failed else self.style.SUCCESS(message)
             )
+            self.stdout.write(message)
 
     def english_nouns(self):
         models = EnglishNoun.objects.filter(plural=None)
         for model in models:
-            inflex = Noun(model.base_form)
-            model.plural = inflex.plural()
-            model.save()
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"Successfully updated English noun '{model.base_form}'"
-                )
+            failed, message = model.fill_declensions()
+
+            message = model.base_form + ": " + message
+            message = (
+                self.style.ERROR(message) if failed else self.style.SUCCESS(message)
             )
+            self.stdout.write(message)
 
     def handle(self, *args, **options):
         if options["language"] == "de":
