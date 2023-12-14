@@ -831,6 +831,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
 
     list_display = ("name", "category", "proficiency_level", "rule_count", "sentences")
     search_fields = ("name",)
+    admin_order_field = ("name", "category", "proficiency_level")
     list_filter = (
         "category",
         "proficiency_level",
