@@ -399,6 +399,10 @@ class Rule(
         blank=True,
         help_text="Optional pattern to define word types before and after the lemma. Syntax 'l' for the lemma. '*' means zero or many, '+' means once or many.",
     )
+    is_pattern_match = models.BooleanField(
+        default=False,
+        help_text="if the pattern should expand the matched text or if it is just used to avoid false positives",
+    )
 
     text_id = models.CharField(
         max_length=255,

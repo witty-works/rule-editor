@@ -489,6 +489,7 @@ def apply_rule(values):
         "false_positives": false_positives,
         "label": rule.label,
         "pattern": rule.pattern,
+        "is_pattern_match": rule.is_pattern_match,
         "entity_type": rule.entity_type,
         "pluralization": rule.pluralization,
     }
@@ -694,6 +695,7 @@ class RuleAdmin(CreatedByAdmin):
                     "lemma",
                     "word_types",
                     "pattern",
+                    "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
                     "type",
