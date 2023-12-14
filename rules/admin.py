@@ -464,7 +464,7 @@ def apply_rule(values):
     rule = Rule.objects.get(pk=values["rule"])
 
     alternatives = []
-    for alternative in rule.alternatives.all():
+    for alternative in rule.alternatives.all().order_by("order"):
         alternative = {
             "lemma": alternative.lemma,
             "word_types": alternative.word_types_json,
@@ -654,7 +654,14 @@ class RuleAdmin(CreatedByAdmin):
             messages.add_message(request, messages.INFO, message)
 
     def all_diversity_dimensions(self, obj):
-        return ", ".join([d.name for d in obj.diversity_dimensions.all()])
+        return ", ".join(
+            [
+                d.name
+                for d in obj.diversity_dimensions.all().order_by(
+                    "rulediversitydimension__order"
+                )
+            ]
+        )
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -902,6 +909,7 @@ class LemmatizationAdmin(ImportExportModelAdmin):
 class EnglishVerbResource(resources.ModelResource):
     class Meta:
         model = EnglishVerb
+
 
 @admin.register(EnglishVerb)
 class EnglishVerbAdmin(ImportExportModelAdmin):

@@ -533,7 +533,7 @@ class Rule(
     def diversity_dimension_json(self):
         diversity_dimensions = []
         if self.pk:
-            for diversity_dimension in self.diversity_dimensions.all():
+            for diversity_dimension in self.diversity_dimensions.all().order_by('rulediversitydimension__order'):
                 diversity_dimensions.append(diversity_dimension.name)
 
         return diversity_dimensions
