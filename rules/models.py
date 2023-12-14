@@ -692,8 +692,8 @@ class TrainingSentence(
         ],
     )
     def is_on_website(self):
-        return self.alternative_on_website is not None and len(
-            self.alternative_on_website.strip()
+        return bool(self.alternative_on_website is not None and len(
+            self.alternative_on_website.strip())
         )
 
     tags = TaggableManager(blank=True)
