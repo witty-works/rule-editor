@@ -464,7 +464,7 @@ def apply_rule(values):
     rule = Rule.objects.get(pk=values["rule"])
 
     alternatives = []
-    for alternative in rule.alternatives.all():
+    for alternative in rule.alternatives.all().order_by("order"):
         alternative = {
             "lemma": alternative.lemma,
             "word_types": alternative.word_types_json,
@@ -489,6 +489,7 @@ def apply_rule(values):
         "false_positives": false_positives,
         "label": rule.label,
         "pattern": rule.pattern,
+        "is_pattern_match": rule.is_pattern_match,
         "entity_type": rule.entity_type,
         "pluralization": rule.pluralization,
     }
@@ -654,7 +655,14 @@ class RuleAdmin(CreatedByAdmin):
             messages.add_message(request, messages.INFO, message)
 
     def all_diversity_dimensions(self, obj):
-        return ", ".join([d.name for d in obj.diversity_dimensions.all()])
+        return ", ".join(
+            [
+                d.name
+                for d in obj.diversity_dimensions.all().order_by(
+                    "rulediversitydimension__order"
+                )
+            ]
+        )
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -687,6 +695,7 @@ class RuleAdmin(CreatedByAdmin):
                     "lemma",
                     "word_types",
                     "pattern",
+                    "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
                     "type",
@@ -824,6 +833,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
 
     list_display = ("name", "category", "proficiency_level", "rule_count", "sentences")
     search_fields = ("name",)
+    admin_order_field = ("name", "category", "proficiency_level")
     list_filter = (
         "category",
         "proficiency_level",
@@ -902,6 +912,7 @@ class LemmatizationAdmin(ImportExportModelAdmin):
 class EnglishVerbResource(resources.ModelResource):
     class Meta:
         model = EnglishVerb
+
 
 @admin.register(EnglishVerb)
 class EnglishVerbAdmin(ImportExportModelAdmin):
