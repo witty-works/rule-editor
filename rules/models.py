@@ -255,7 +255,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         max_length=255,
         null=True,
         blank=True,
-        help_text="'|' separated list of word types (n, a, adv, v, conj, emoji) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
+        help_text="'|' separated list of word types (n, a, adv, v, conj, emoji, num, card) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
     )
 
     @computed(
