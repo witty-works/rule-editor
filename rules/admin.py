@@ -231,6 +231,8 @@ def generate_help_text(name, language, filters, token, text=None):
     if class_name in ["Verb", "Adjective", "Noun"]:
         class_name = ("German" if language == "de" else "English") + class_name
 
+    text = "" if text is None else f" '{text}'"
+
     cls = get_class(class_name)
     instances = cls.objects.filter(**filters)
     if instances:
@@ -246,10 +248,9 @@ def generate_help_text(name, language, filters, token, text=None):
                 )
 
             word = instance.lemma if isinstance(instance, Rule) else token
-            text = "" if text is None else " " + text
             word = f"'{word}'" if word == token else f"'{token}' ({word})"
             help_texts.append(
-                f'{name} <a href="{link}">data available</a> for {word}\'{text}'
+                f'{name} <a href="{link}">data available</a> for {word}{text}'
             )
 
         return "<br>".join(help_texts)
@@ -356,20 +357,27 @@ def update_lemma_help_text(obj, field, type):
 def update_base_form_help_text(obj, field, language):
     help_texts = [field.help_text]
 
+    link = f'Open <a href="https://{language}.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
+    help_texts.append(link)
+
+    if isinstance(obj, GermanNoun):
+        if obj.female_form:
+            filters = {"base_form": obj.female_form}
+            help_texts.append(
+                generate_help_text(
+                    "Noun", "de", filters, obj.female_form, "Female Form"
+                )
+            )
+        elif obj.male_form:
+            filters = {"base_form": obj.male_form}
+            help_texts.append(
+                generate_help_text("Noun", "de", filters, obj.male_form, "Male Form")
+            )
+
     filters = {
         "lemma__regex": "\\b(?<!-)" + obj.base_form + "(?!-)\\b",
         "language": language,
     }
-    if (
-        isinstance(obj, EnglishVerb)
-        or isinstance(obj, EnglishAdjective)
-        or isinstance(obj, EnglishNoun)
-        or isinstance(obj, GermanVerb)
-        or isinstance(obj, GermanAdjective)
-        or isinstance(obj, GermanNoun)
-    ):
-        link = f'Open <a href="https://{language}.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
-        help_texts.append(link)
 
     help_texts.append(generate_help_text("Rule", None, filters, obj.base_form))
     help_texts.append(generate_help_text("Alternative", None, filters, obj.base_form))
