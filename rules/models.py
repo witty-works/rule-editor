@@ -1090,6 +1090,9 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
             except Exception:
                 message = f"Fetching female failed to parse '{base_form}'"
                 return True, message
+        else:
+            message = "Unable to find title for German noun gender variant Wikitionary data"
+            return True, message
 
         return False, variant
 
