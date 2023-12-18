@@ -480,6 +480,8 @@ def apply_rule(values):
             "pluralization": str(alternative.pluralization),
             "is_inspiration": alternative.is_inspiration,
             "is_advanced": alternative.is_advanced,
+            "is_remove": alternative.is_remove,
+            "is_collective_noun": alternative.is_collective_noun,
         }
         alternatives.append(alternative)
 
