@@ -307,49 +307,60 @@ def update_lemma_help_text(obj, field, type):
                 generate_help_text("Lemmatization", obj.language, filters, tokens[i])
             )
 
-        if type == "rule":
-            filters = {
-                "first_token": obj.first_token,
-                "id__ne": obj.id,
-            }
+        match type:
+            case "rule":
+                filters = {
+                    "first_token": obj.first_token,
+                    "id__ne": obj.id,
+                }
 
-            help_texts.append(
-                generate_help_text(
-                    "Rule",
-                    obj.language,
-                    filters,
-                    tokens[i],
-                    "overlapping rules with matching first token",
+                help_texts.append(
+                    generate_help_text(
+                        "Rule",
+                        obj.language,
+                        filters,
+                        tokens[i],
+                        "overlapping rules with matching first token",
+                    )
                 )
-            )
-        elif (
-            type == "alternative"
-            and len(lemmas[i]) > 1
-            and tokens[i] not in stopwords[obj.language]
-            and lemmas[i] not in stopwords[obj.language]
-        ):
-            first_tokens = [
-                tokens[i],
-                tokens[i].lower(),
-            ]
-            if tokens[i] != lemmas[i]:
-                first_tokens.append(lemmas[i])
-                first_tokens.append(lemmas[i].lower())
+            case "alternative":
+                if (
+                    len(lemmas[i]) > 1
+                    and tokens[i] not in stopwords[obj.language]
+                    and lemmas[i] not in stopwords[obj.language]
+                ):
+                    first_tokens = [
+                        tokens[i],
+                        tokens[i].lower(),
+                    ]
+                    if tokens[i] != lemmas[i]:
+                        first_tokens.append(lemmas[i])
+                        first_tokens.append(lemmas[i].lower())
 
-            filters = {
-                "first_token__in": first_tokens,
-                "language": obj.language,
-            }
+                    filters = {
+                        "first_token__in": first_tokens,
+                        "language": obj.language,
+                    }
 
-            help_texts.append(
-                generate_help_text(
-                    "Rule",
-                    obj.language,
-                    filters,
-                    tokens[i],
-                    "potential circular alternative",
-                )
-            )
+                    help_texts.append(
+                        generate_help_text(
+                            "Rule",
+                            obj.language,
+                            filters,
+                            tokens[i],
+                            "potential circular alternative",
+                        )
+                    )
+
+    if (
+        type == "alternative"
+        and len(obj.lemma)
+        and obj.lemma[0] != "~"
+        and "~" in obj.lemma
+    ):
+        variations = apply_german_gender_ending(obj.lemma)
+        help_texts.append("German Gender Ending Variations")
+        help_texts.append("<br>".join(variations))
 
     field.help_text = mark_safe("<br>".join(help_texts))
 
@@ -516,6 +527,13 @@ def apply_spacy(values):
 
     text = values["text"]
     path = f"/debug/spacy?lang={requests.utils.quote(rule.language)}&text={requests.utils.quote(text)}"
+    return fetch_json(path)
+
+
+def apply_german_gender_ending(alternative):
+    path = (
+        f"/debug/german_gender_ending?alternative={requests.utils.quote(alternative)}"
+    )
     return fetch_json(path)
 
 
