@@ -4,6 +4,7 @@ from django.contrib import admin
 from django import forms
 from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy
+from django.shortcuts import redirect
 from django.conf import settings
 from django.db.models import Q
 from django.conf import settings
@@ -21,10 +22,11 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from rangefilter.filters import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
-from dal import autocomplete
+from dal import autocomplete, forward
 from taggit_bulk.actions import tag_wizard
 from dynamic_forms import DynamicField, DynamicFormMixin
 from grappelli.forms import GrappelliSortableHiddenMixin
+import nested_admin
 
 from .models import (
     Rule,
@@ -467,7 +469,7 @@ class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     sortable_field_name = "order"
 
 
-class FalsePositiveInline(admin.StackedInline):
+class FalsePositiveInline(nested_admin.NestedStackedInline):
     model = FalsePositive
     fields = (
         "false_positive",
@@ -482,8 +484,10 @@ def apply_rule(values):
 
     rule = Rule.objects.get(pk=values["rule"])
 
+    rule_alternatives = rule.parent.alternatives if rule.parent else rule.alternatives
+
     alternatives = []
-    for alternative in rule.alternatives.all().order_by("order"):
+    for alternative in rule_alternatives.all().order_by("order"):
         alternative = {
             "lemma": alternative.lemma,
             "word_types": alternative.word_types_json,
@@ -583,7 +587,7 @@ class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
     )
 
 
-class TrainingSentenceInline(admin.StackedInline):
+class TrainingSentenceInline(nested_admin.NestedStackedInline):
     model = TrainingSentence
     form = TrainingSentenceForm
     fields = (
@@ -661,15 +665,126 @@ class LemmaFilter(InputFilter):
             return queryset.filter(Q(lemma=lemma))
 
 
+class RuleForm(forms.ModelForm):
+    class Meta:
+        widgets = {
+            "parent": autocomplete.ModelSelect2(
+                url="rule-autocomplete",
+                forward=(
+                    # Hacky workaround for https://github.com/yourlabs/django-autocomplete-light/issues/1346
+                    forward.Field("children-__prefix__-parent", "ignore_id"),
+                    forward.Field("language"),
+                ),
+                attrs={
+                    "class": "form-control",
+                    "data-placeholder": "Parent rule ..",
+                },
+            )
+        }
+
+    def __init__(self, *args, **kwargs):
+        super(RuleForm, self).__init__(*args, **kwargs)
+        instance = getattr(self, "instance", None)
+        if instance and isinstance(instance, Rule):
+            update_lemma_help_text(instance, self.fields["lemma"], "rule")
+
+    remove_from_parent = forms.BooleanField(required=False)
+
+
+class ParentRuleInline(nested_admin.NestedStackedInline):
+    def remove_from_parent(self, obj):
+        return False
+
+    model = Rule
+    form = RuleForm
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "text_id",
+                    "lemma",
+                    "word_types",
+                    "pattern",
+                    "is_pattern_match",
+                    "is_marked_for_review",
+                    "is_context_aware",
+                    "type",
+                    "entity_type",
+                    "pluralization",
+                    "is_active",
+                    "remove_from_parent",
+                ),
+            },
+        ),
+        (
+            "Custom Label",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": (
+                    "label_type",
+                    "label",
+                    "explanation",
+                    "emoji",
+                    "url",
+                ),
+            },
+        ),
+        (
+            "Optional Fields",
+            {
+                "classes": ("grp-collapse grp-closed",),
+                "fields": (
+                    "tags",
+                    "source",
+                    "sanctions",
+                    "comment",
+                    "ownedby",
+                ),
+            },
+        ),
+    )
+
+    extra = 0
+    inlines = [
+        TrainingSentenceInline,
+        FalsePositiveInline,
+    ]
+
+
 @admin.register(Rule)
-class RuleAdmin(CreatedByAdmin):
+class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     class Meta:
         model = Rule
+
+    form = RuleForm
+
+    def change_view(self, request, object_id, form_url="", extra_context=None):
+        try:
+            rule = Rule.objects.get(pk=object_id)
+            if rule.parent is not None:
+                return redirect(
+                    reverse(f"admin:rules_rule_change", args=[rule.parent.id])
+                )
+        except Rule.DoesNotExist:
+            pass
+
+        return super().change_view(
+            request,
+            object_id,
+            form_url,
+            extra_context=extra_context,
+        )
 
     def save_formset(self, request, form, formset, change):
         super(RuleAdmin, self).save_formset(request, form, formset, change)
 
         rule = formset.instance
+
+        for data in formset.cleaned_data:
+            if "remove_from_parent" in data and data["remove_from_parent"]:
+                data["id"].parent = None
+                data["id"].save()
 
         if (
             formset.prefix == "rulediversitydimension_set"
@@ -697,6 +812,9 @@ class RuleAdmin(CreatedByAdmin):
 
         if obj:
             update_lemma_help_text(obj, form.base_fields["lemma"], "rule")
+
+        form.base_fields["parent"].widget.can_add_related = False
+        form.base_fields["parent"].widget.can_delete_related = False
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
@@ -751,6 +869,8 @@ class RuleAdmin(CreatedByAdmin):
             {
                 "classes": ("grp-collapse grp-closed",),
                 "fields": (
+                    "parent",
+                    "links",
                     "tags",
                     "source",
                     "sanctions",
@@ -767,7 +887,10 @@ class RuleAdmin(CreatedByAdmin):
         "label_type": admin.HORIZONTAL,
         "pluralization": admin.HORIZONTAL,
     }
-    filter_horizontal = ("sanctions",)
+    filter_horizontal = (
+        "links",
+        "sanctions",
+    )
     search_fields = (
         "lemma",
         "comment",
@@ -798,6 +921,7 @@ class RuleAdmin(CreatedByAdmin):
     )
 
     inlines = [
+        ParentRuleInline,
         RuleDiversityDimensionInline,
         AlternativeInline,
         TrainingSentenceInline,

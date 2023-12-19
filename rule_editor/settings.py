@@ -86,6 +86,7 @@ INSTALLED_APPS = [
     "taggit",
     "taggit_bulk",
     "computedfields",
+    "nested_admin",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
