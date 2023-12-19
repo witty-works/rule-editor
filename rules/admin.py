@@ -834,14 +834,28 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
     def __init__(self, model, admin_site):
         super().__init__(model, admin_site)
 
-    def get_list_display_links(self, request, list_display):
-        super().get_list_display_links(request, list_display)
-        return None
+    # def get_list_display_links(self, request, list_display):
+    #    super().get_list_display_links(request, list_display)
+    #    return None
 
-    def has_add_permission(self, request, obj=None):  # Here
+    def has_delete_permission(self, request, obj=None):
         return False
 
-    list_display = ("name", "category", "proficiency_level", "rule_count", "sentences")
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        extra_context = extra_context or {}
+
+        extra_context["show_delete"] = False
+
+        return super().changeform_view(request, object_id, form_url, extra_context)
+
+    list_display = (
+        "name",
+        "category",
+        "proficiency_level",
+        "rule_count",
+        "comment",
+        "sentences",
+    )
     search_fields = ("name",)
     admin_order_field = ("name", "category", "proficiency_level")
     list_filter = (
