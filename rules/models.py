@@ -537,7 +537,9 @@ class Rule(
     def diversity_dimension_json(self):
         diversity_dimensions = []
         if self.pk:
-            for diversity_dimension in self.diversity_dimensions.all().order_by('rulediversitydimension__order'):
+            for diversity_dimension in self.diversity_dimensions.all().order_by(
+                "rulediversitydimension__order"
+            ):
                 diversity_dimensions.append(diversity_dimension.name)
 
         return diversity_dimensions
@@ -696,8 +698,9 @@ class TrainingSentence(
         ],
     )
     def is_on_website(self):
-        return bool(self.alternative_on_website is not None and len(
-            self.alternative_on_website.strip())
+        return bool(
+            self.alternative_on_website is not None
+            and len(self.alternative_on_website.strip())
         )
 
     tags = TaggableManager(blank=True)
@@ -1074,7 +1077,9 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
         )
         elements = soup.find_all("p", {"title": title})
         if len(elements) == 0:
-            message = "Unable to find title for German noun gender variant Wikitionary data"
+            message = (
+                "Unable to find title for German noun gender variant Wikitionary data"
+            )
             return True, message
 
         try:
