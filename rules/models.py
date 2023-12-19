@@ -255,7 +255,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         max_length=255,
         null=True,
         blank=True,
-        help_text="'|' separated list of word types (n, a, adv, v, conj, emoji) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
+        help_text="'|' separated list of word types (n, a, adv, v, conj, emoji, num, card) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
     )
 
     @computed(
@@ -1073,23 +1073,26 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
             else "Männliche Wortformen Varianten des Wortes"
         )
         elements = soup.find_all("p", {"title": title})
-        if len(elements):
-            try:
-                variant = (
-                    elements[0]
-                    .find_next("dl")
-                    .find("dd")
-                    .find("a", attrs={"title": True})["title"]
-                ).removesuffix(" (Seite nicht vorhanden)")
-            except AttributeError:
-                message = f"Fetching female unable to find child tag '{base_form}'"
-                return True, message
-            except KeyError:
-                message = f"Fetching female could not find title '{base_form}'"
-                return True, message
-            except Exception:
-                message = f"Fetching female failed to parse '{base_form}'"
-                return True, message
+        if len(elements) == 0:
+            message = "Unable to find title for German noun gender variant Wikitionary data"
+            return True, message
+
+        try:
+            variant = (
+                elements[0]
+                .find_next("dl")
+                .find("dd")
+                .find("a", attrs={"title": True})["title"]
+            ).removesuffix(" (Seite nicht vorhanden)")
+        except AttributeError:
+            message = f"Fetching female unable to find child tag '{base_form}'"
+            return True, message
+        except KeyError:
+            message = f"Fetching female could not find title '{base_form}'"
+            return True, message
+        except Exception:
+            message = f"Fetching female failed to parse '{base_form}'"
+            return True, message
 
         return False, variant
 
