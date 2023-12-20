@@ -26,6 +26,7 @@ django-forms-dynamic = "*"
 inflex = "*"
 german-nouns = "*"
 beautifulsoup4 = "*"
+django-public-admin = "*"
 
 [dev-packages]
 

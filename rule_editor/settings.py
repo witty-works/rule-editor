@@ -77,7 +77,6 @@ INSTALLED_APPS = [
     "rules",
     "dal",
     "dal_select2",
-    "grappelli",
     "debug_toolbar",
     "import_export",
     "ordered_model",
@@ -86,9 +85,11 @@ INSTALLED_APPS = [
     "taggit",
     "taggit_bulk",
     "computedfields",
+    "django.contrib.contenttypes",
+    "grappelli.dashboard",
+    "grappelli",
     "django.contrib.admin",
     "django.contrib.auth",
-    "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
@@ -172,11 +173,9 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATICFILES_DIRS = ()
-
-STATIC_URL = "/static/"
-
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+STATICFILES_DIRS = [os.path.join(STATIC_ROOT, "img")]
+STATIC_URL = "/static/"
 
 
 # Default primary key field type
@@ -188,15 +187,6 @@ INTERNAL_IPS = [
     "127.0.0.1",
 ]
 
-
-def get_app_list(self, request, app_label=None):
-    app_dict = self._build_app_dict(request, app_label)
-
-    return list(app_dict.values())
-
-
-admin.AdminSite.get_app_list = get_app_list
-
 # Import some Platform.sh settings from the environment.
 config = Config()
 if config.is_valid_platform():
@@ -207,3 +197,11 @@ if config.is_valid_platform():
 
 GRAPPELLI_AUTOCOMPLETE_LIMIT = 10
 GRAPPELLI_SWITCH_USER = False
+GRAPPELLI_INDEX_DASHBOARD = {
+    "django.contrib.admin.site": "rules.dashboard.CustomIndexDashboard",
+    # TODO https://github.com/django-import-export/django-import-export/issues/1726
+    "word_lists.public_admin.public_admin": "word_lists.dashboard.CustomIndexDashboard",
+}
+
+IMPORT_EXPORT_IMPORT_PERMISSION_CODE = "add"
+IMPORT_EXPORT_EXPORT_PERMISSION_CODE = None

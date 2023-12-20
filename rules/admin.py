@@ -18,7 +18,7 @@ import requests
 import json
 
 from import_export import resources
-from import_export.admin import ImportExportModelAdmin
+from import_export.admin import ImportExportModelAdmin, ExportActionMixin
 from rangefilter.filters import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
 from dal import autocomplete
@@ -891,7 +891,7 @@ class SourceResource(resources.ModelResource):
 
 
 @admin.register(Source)
-class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
+class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin, ExportActionMixin):
     class Meta:
         model = Source
 
@@ -934,7 +934,7 @@ class LemmatizationResource(resources.ModelResource):
 
 
 @admin.register(Lemmatization)
-class LemmatizationAdmin(ImportExportModelAdmin):
+class LemmatizationAdmin(ImportExportModelAdmin, ExportActionMixin):
     class Meta:
         model = Lemmatization
 
@@ -957,7 +957,7 @@ class EnglishVerbResource(resources.ModelResource):
 
 
 @admin.register(EnglishVerb)
-class EnglishVerbAdmin(ImportExportModelAdmin):
+class EnglishVerbAdmin(ImportExportModelAdmin, ExportActionMixin):
     class Meta:
         model = EnglishVerb
 
@@ -1010,7 +1010,7 @@ class EnglishAdjectiveResource(resources.ModelResource):
 
 
 @admin.register(EnglishAdjective)
-class EnglishAdjectiveAdmin(ImportExportModelAdmin):
+class EnglishAdjectiveAdmin(ImportExportModelAdmin, ExportActionMixin):
     class Meta:
         model = EnglishAdjective
 
@@ -1048,7 +1048,7 @@ class EnglishNounResource(resources.ModelResource):
 
 
 @admin.register(EnglishNoun)
-class EnglishNounAdmin(ImportExportModelAdmin):
+class EnglishNounAdmin(ImportExportModelAdmin, ExportActionMixin):
     class Meta:
         model = EnglishNoun
 
@@ -1085,7 +1085,7 @@ class GermanVerbResource(resources.ModelResource):
 
 
 @admin.register(GermanVerb)
-class GermanVerbAdmin(ImportExportModelAdmin):
+class GermanVerbAdmin(ImportExportModelAdmin, ExportActionMixin):
     class Meta:
         model = GermanVerb
 
@@ -1145,7 +1145,7 @@ class GermanAdjectiveResource(resources.ModelResource):
 
 
 @admin.register(GermanAdjective)
-class GermanAdjectiveAdmin(ImportExportModelAdmin):
+class GermanAdjectiveAdmin(ImportExportModelAdmin, ExportActionMixin):
     class Meta:
         model = GermanAdjective
 
@@ -1183,7 +1183,7 @@ class GermanNounResource(resources.ModelResource):
 
 
 @admin.register(GermanNoun)
-class GermanNounAdmin(ImportExportModelAdmin):
+class GermanNounAdmin(ImportExportModelAdmin, ExportActionMixin):
     class Meta:
         model = GermanNoun
 

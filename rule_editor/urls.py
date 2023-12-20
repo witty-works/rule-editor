@@ -17,16 +17,22 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import include, path, re_path, reverse_lazy
 from django.views.generic.base import RedirectView
+from word_lists.public_admin import public_admin
 
 from rules.views import TagAutocomplete
 from rules.views import DiversityDimensionAutocomplete
 
-admin.site.site_header = "Witty Works Rule Editor"
+admin.site.site_header = "Witty Rule Editor"
 admin.site.site_title = "Rule Editor"
-admin.site.index_title = "Welcome to Witty Works Rule Editor"
+admin.site.index_title = "Welcome to the Witty Rule Editor"
+
+public_admin.site_header = "Witty Word Lists"
+public_admin.site_title = "Word Lists"
+public_admin.index_title = "Welcome to the Witty Word Lists"
 
 urlpatterns = [
-    path("", RedirectView.as_view(url=reverse_lazy("admin:index"))),
+    path("", RedirectView.as_view(url="/word_lists")),
+    path("word_lists/", public_admin.urls),
     path("grappelli/", include("grappelli.urls")),  # grappelli URLS
     re_path(r"^taggit/", include("taggit_bulk.urls")),
     path("admin/", admin.site.urls),
