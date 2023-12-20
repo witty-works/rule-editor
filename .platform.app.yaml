@@ -7,8 +7,9 @@
 name: "app"
 
 size: S
-base_memory: 138
-memory_ratio: 1024
+resources:
+  base_memory: 138
+  memory_ratio: 1024
 
 # The runtime the application uses.
 type: "python:3.11"
