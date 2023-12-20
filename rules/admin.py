@@ -19,7 +19,7 @@ import json
 
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-from rangefilter.filter import DateRangeFilter
+from rangefilter.filters import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
 from dal import autocomplete
 from taggit_bulk.actions import tag_wizard

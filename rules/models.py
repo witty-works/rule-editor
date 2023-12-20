@@ -28,10 +28,12 @@ def fetch_json(path, data=None):
         else None
     )
 
+    verify=bool(settings.NLP_API_USER)
+
     if data is None:
-        r = requests.get(url, auth=auth, timeout=5)
+        r = requests.get(url, auth=auth, timeout=5, verify=verify)
     else:
-        r = requests.post(url, json=data, auth=auth, timeout=5)
+        r = requests.post(url, json=data, auth=auth, timeout=5, verify=verify)
 
     try:
         if r.status_code != 200:
