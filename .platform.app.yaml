@@ -61,7 +61,7 @@ hooks:
     set -e
     pipenv install --system --deploy
     mkdir logs
-    python manage.py collectstatic
+    python manage.py collectstatic --no-input
     rm -rf logs
   deploy: |
     python manage.py migrate

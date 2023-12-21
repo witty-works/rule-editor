@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+
+{% load static %}
+{% block extrahead %}
+<link rel="icon" type="image/webp" href="{% static 'favicon.webp' %}" />
+{% endblock %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('NEW TITLE') }}{% endblock %}
+
+
+{% block nav-global %}{% endblock %}
+
+
+{% block footer %}
+{% if request.user.is_anonymous %}
+{% load i18n %}
+<footer>
+    <hr />
+    <div style="text-align: center;">
+        <p>
+            <a href="https://creativecommons.org/licenses/by-sa/4.0/">CC BY-SA 4.0 DEED</a> Attribution-ShareAlike 4.0
+            International (CC-BY-SA). Part of the content is derived from <a
+                href="https://en.wiktionary.org/wiki/Wiktionary:Copyrights#:~:text=The%20original%20texts%20of%20Wiktionary,Free%20Documentation%20License%20(GFDL).">Wikitionary</a>
+            and <a href="https://www.netzverb.de/impressum.htm">Netzverb</a>.
+            <br />
+            Please submit improvements to <a href="mailto:support@witty.works">support@witty.works</a>.
+            <a href="https://www.witty.works/impressum">Imprint</a>.
+        </p>
+    </div>
+</footer>
+{% endif %}
+{% endblock %}
