@@ -28,10 +28,12 @@ def fetch_json(path, data=None):
         else None
     )
 
+    verify = bool(settings.NLP_API_USER)
+
     if data is None:
-        r = requests.get(url, auth=auth, timeout=5)
+        r = requests.get(url, auth=auth, timeout=5, verify=verify)
     else:
-        r = requests.post(url, json=data, auth=auth, timeout=5)
+        r = requests.post(url, json=data, auth=auth, timeout=5, verify=verify)
 
     try:
         if r.status_code != 200:
@@ -388,10 +390,15 @@ class Rule(
             raise ValidationError(errors)
 
     def __str__(self):
-        return self.lemma[0:50] + " (" + self.language + ")"
+        return f"{self.lemma[0:40]} - {self.word_types} ({self.language})"
 
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
     tags = TaggableManager(blank=True)
+
+    parent = models.ForeignKey(
+        "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
+    )
+    links = models.ManyToManyField("self", symmetrical=True, blank=True)
 
     pattern = models.CharField(
         max_length=255,
@@ -529,6 +536,7 @@ class Rule(
     @computed(
         models.JSONField(default=dict),
         depends=[
+            ("self", ["parent"]),
             ("diversity_dimensions", ["name"]),
             ("rulediversitydimension", ["diversity_dimension"]),
         ],
@@ -537,8 +545,16 @@ class Rule(
     def diversity_dimension_json(self):
         diversity_dimensions = []
         if self.pk:
-            for diversity_dimension in self.diversity_dimensions.all().order_by('rulediversitydimension__order'):
+            obj = self.parent if self.parent else self
+
+            for diversity_dimension in obj.diversity_dimensions.all().order_by(
+                "rulediversitydimension__order"
+            ):
                 diversity_dimensions.append(diversity_dimension.name)
+
+            for child in self.children.all():
+                child.diversity_dimension_json = diversity_dimensions
+                child.save()
 
         return diversity_dimensions
 
@@ -696,8 +712,9 @@ class TrainingSentence(
         ],
     )
     def is_on_website(self):
-        return bool(self.alternative_on_website is not None and len(
-            self.alternative_on_website.strip())
+        return bool(
+            self.alternative_on_website is not None
+            and len(self.alternative_on_website.strip())
         )
 
     tags = TaggableManager(blank=True)
@@ -1074,7 +1091,9 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
         )
         elements = soup.find_all("p", {"title": title})
         if len(elements) == 0:
-            message = "Unable to find title for German noun gender variant Wikitionary data"
+            message = (
+                "Unable to find title for German noun gender variant Wikitionary data"
+            )
             return True, message
 
         try:
