@@ -753,7 +753,10 @@ class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
     def __str__(self):
         return self.base_form
 
-    def fill_declensions(self):
+    def fill_declensions_standard(self, _=None):
+        return self.fill_declensions()
+
+    def fill_declensions(self, _=None):
         inflex = Verb(self.base_form)
         self.past_tense = inflex.past()
         self.past_participle = inflex.past_part()
@@ -776,7 +779,17 @@ class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentable
     def __str__(self):
         return self.base_form
 
-    def fill_declensions(self):
+    def fill_declensions_standard(self, _=None):
+        inflex = Adjective(self.base_form)
+        self.comparative = inflex.comparative()
+        self.superlative = inflex.superlative()
+
+        self.save()
+
+        message = "Filled English adjective with standard rules"
+        return False, message
+
+    def fill_declensions(self, _=None):
         self.is_absolute = self.base_form[0].isupper()
         if self.is_absolute == False:
             soup = get_soup(self.base_form)
@@ -811,9 +824,7 @@ class EnglishAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentable
             self.comparative = self.base_form
             self.superlative = self.base_form
         else:
-            inflex = Adjective(self.base_form)
-            self.comparative = inflex.comparative()
-            self.superlative = inflex.superlative()
+            self.fill_declensions_standard()
 
         self.save()
 
@@ -839,7 +850,7 @@ class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
     def __str__(self):
         return self.base_form
 
-    def fill_declensions(self):
+    def fill_declensions_standard(self, _=None):
         inflex = Noun(self.base_form)
         self.plural = inflex.plural()
         self.save()
@@ -847,17 +858,24 @@ class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
         message = "English noun declension data has been filled."
         return False, message
 
+    def fill_declensions(self, _=None):
+        return self.fill_declensions_standard()
+
     base_form = models.CharField(max_length=255, unique=True)
     plural = models.CharField(max_length=255, null=True, blank=True)
 
 
-def get_soup(base_form, flexion=False):
+def get_soup(base_form, source="wikitionary", flexion=False):
     try:
-        url = (
-            "https://de.wiktionary.org/wiki/Flexion:"
-            if flexion
-            else "https://de.wiktionary.org/wiki/"
-        )
+        if source == "wikitionary":
+            url = (
+                "https://de.wiktionary.org/wiki/Flexion:"
+                if flexion
+                else "https://de.wiktionary.org/wiki/"
+            )
+        else:
+            url = "https://www.verbformen.de/konjugation/?w="
+
         response = requests.get(url + base_form)
         return BeautifulSoup(response.text, "html.parser")
     except requests.exceptions.ConnectionError:
@@ -870,7 +888,433 @@ class GermanVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     def __str__(self):
         return self.base_form
 
-    def fill_declensions(self):
+    def german_verb_splittable(self):
+        splittable_words = {
+            "durch": [
+                "durchbeißen",
+                "durchbeissen",
+                "durchblasen",
+                "durchblättern",
+                "durchbrausen",
+                "durchdringen",
+                "durchfahren",
+                "durchfallen",
+                "durchfeiern",
+                "durchgehen",
+                "durchglühen",
+                "durchkämpfen",
+                "durchklettern",
+                "durchkramen",
+                "durchkriechen",
+                "durchradeln",
+                "durchrauschen",
+                "durchrennen",
+                "durchrieseln",
+                "durchrinnen",
+                "durchschallen",
+                "durchscheinen",
+                "durchschlafen",
+                "durchschleichen",
+                "durchschnüffeln",
+                "durchschwitzen",
+                "durchsetzen",
+                "durchspringen",
+                "durchsteigen",
+                "durchstreichen",
+                "durchwachen",
+                "durchwachsen",
+                "durchwärmen",
+                "durchwaten",
+                "durchziehen",
+            ],
+            "fremd": [
+                "fremdschämen",
+            ],
+            "über": [
+                "überbeanspruchen",
+                "überbehüten",
+                "überbeißen",
+                "überbeissen",
+                "überbekommen",
+                "überbelasten",
+                "überbelegen",
+                "überbelichten",
+                "überbetonen",
+                "überbewerten",
+                "überbezahlen",
+                "überbleiben",
+                "überdramatisieren",
+                "übererfüllen",
+                "überessen",
+                "überfließen",
+                "überfliessen",
+                "übergehen",
+                "überhandnehmen",
+                "überhängen",
+                "überkippen",
+                "überkippen",
+                "überkochen",
+                "überlaufen",
+                "überleiten",
+                "überpflanzen",
+                "überschießen",
+                "überschiessen",
+                "überschlagen",
+                "übersprudeln",
+                "übersprühen",
+                "überstechen",
+                "übertreten",
+                "übertun",
+                "überversichern",
+                "überversorgen",
+                "überwallen",
+                "überwerfen",
+                "übrigbehalten",
+                "übrigbleiben",
+                "übrighaben",
+                "übriglassen",
+            ],
+            "offen": [
+                "offenbleiben",
+                "offenhalten",
+                "offenlassen",
+                "offenlegen",
+                "offenliegen",
+                "offenstehen",
+            ],
+            "um": [
+                "umackern",
+                "umadressieren",
+                "umändern",
+                "umarbeiten",
+                "umbauen",
+                "umbehalten",
+                "umbenennen",
+                "umbeschreiben",
+                "umbesinnen",
+                "umbestellen",
+                "umbetten",
+                "umbiegen",
+                "umbilden",
+                "umbinden",
+                "umblasen",
+                "umblättern",
+                "umblicken",
+                "umbranden",
+                "umbrausen",
+                "umbrechen",
+                "umbringen",
+                "umbuchen",
+                "umdatieren",
+                "umdecken",
+                "umdefinieren",
+                "umdeklarieren",
+                "umdekorieren",
+                "umdenken",
+                "umdeuten",
+                "umdichten",
+                "umdirigieren",
+                "umdisponieren",
+                "umdrehen",
+                "umdrucken",
+                "umdrücken",
+                "umentscheiden",
+                "umerziehen",
+                "umetikettieren",
+                "umfallen",
+                "umfälschen",
+                "umfärben",
+                "umfinanzieren",
+                "umfirmieren",
+                "umflaggen",
+                "umformatieren",
+                "umformulieren",
+                "umfragen",
+                "umfrisieren",
+                "umfüllen",
+                "umfunktionieren",
+                "umgehen",
+                "umgestalten",
+                "umgewöhnen",
+                "umgießen",
+                "umgiessen",
+                "umgraben",
+                "umgründen",
+                "umgruppieren",
+                "umgucken",
+                "umhaben",
+                "umhacken",
+                "umhängen",
+                "umhauen",
+                "umheben",
+                "umherblicken",
+                "umhinkönnen",
+                "umhören",
+                "uminterpretieren",
+                "umkehren",
+                "umkippen",
+                "umklappen",
+                "umknicken",
+                "umkommen",
+                "umkonstruieren",
+                "umkopieren",
+                "umkrempeln",
+                "umladen",
+                "umlagern",
+                "umlassen",
+                "umlauten",
+                "umlegen",
+                "umleiten",
+                "umlenken",
+                "umlernen",
+                "ummachen",
+                "ummelden",
+                "ummodeln",
+                "ummünzen",
+                "umnehmen",
+                "umnehmen",
+                "umnutzen",
+                "umoperieren",
+                "umordnen",
+                "umorganisieren",
+                "umorientieren",
+                "umpacken",
+                "umparken",
+                "umpflügen",
+                "umplanen",
+                "umpolen",
+                "umprägen",
+                "umprogrammieren",
+                "umpumpen",
+                "umpusten",
+                "umquartieren",
+                "umrangieren",
+                "umräumen",
+                "umrechnen",
+                "umrennen",
+                "umrubeln",
+                "umrühren",
+                "umrüsten",
+                "umsäbeln",
+                "umsacken",
+                "umsägen",
+                "umsatteln",
+                "umschaffen",
+                "umschalten",
+                "umschauen",
+                "umschichten",
+                "umschlagen",
+                "umschmeißen",
+                "umschmeissen",
+                "umschmelzen",
+                "umschmieden",
+                "umschminken",
+                "umschnallen",
+                "umschubsen",
+                "umschulden",
+                "umschulen",
+                "umschütten",
+                "umschwenken",
+                "umsehen",
+                "umsetzen",
+                "umsiedeln",
+                "umsinken",
+                "umsortieren",
+                "umspeichern",
+                "umspringen",
+                "umspritzen",
+                "umspulen",
+                "umstechen",
+                "umstecken",
+                "umsteigen",
+                "umstellen",
+                "umstempeln",
+                "umsteuern",
+                "umstilisieren",
+                "umstimmen",
+                "umstoßen",
+                "umstossen",
+                "umstrukturieren",
+                "umstufen",
+                "umstülpen",
+                "umstürzen",
+                "umtaufen",
+                "umtauschen",
+                "umteilen",
+                "umtopfen",
+                "umtragen",
+                "umtreiben",
+                "umtreten",
+                "umtun",
+                "umverteilen",
+                "umwälzen",
+                "umwandeln",
+                "umwechseln",
+                "umwehen",
+                "umwenden",
+                "umwerfen",
+                "umwerten",
+                "umwidmen",
+                "umwühlen",
+                "umzeichnen",
+                "umziehen",
+            ],
+            "unter": [
+                "unterbelegen",
+                "unterbelichten",
+                "unterbewerten",
+                "unterbezahlen",
+                "unterbringen",
+                "unterbügeln",
+                "unterbuttern",
+                "unterducken",
+                "untereinanderliegen",
+                "untereinanderstehen",
+                "unterfassen",
+                "untergehen",
+                "unterhaken",
+                "unterheben",
+                "unterjubeln",
+                "unterkommen",
+                "unterkriechen",
+                "unterkriegen",
+                "untermengen",
+                "unterordnen",
+                "unterpflügen",
+                "unterrühren",
+                "unterschieben",
+                "unterschlupfen",
+                "unterschlüpfen",
+                "unterschnallen",
+                "untersinken",
+                "untertauchen",
+                "untervermieten",
+                "unterversichern",
+                "unterversorgen",
+                "unterwühlen",
+                "uraufführen",
+                "unterspannen",
+            ],
+        }
+
+        prefixes = (
+            "ge",
+            "er",
+            "be",
+            "ent",
+            "emp",
+            "ver",
+            "zer",
+            "hinter",
+            "miss",
+            "ob",
+        )
+
+        if self.base_form.startswith(prefixes):
+            return None
+
+        prefixes = [
+            "ab",
+            "an",
+            "auf",
+            "aus",
+            "bei",
+            "ein",
+            "mit",
+            "nach",
+            "weg",
+            "zu",
+            "her",
+            "nach",
+            "überein",
+            "umher",
+        ]
+        for prefix in prefixes:
+            if self.base_form.startswith(prefix):
+                return prefix
+
+        for prefix in splittable_words:
+            if self.base_form.startswith(prefix):
+                if self.base_form in splittable_words[prefix]:
+                    return prefix
+
+                return None
+
+        # detect "adjective + verb" case
+        i = 2  # skip the first 2 letters
+        while i < len(self.base_form) - 2:  # skip the last 2 letters
+            prefix = self.base_form[0:i]
+            partial_word = self.base_form[i:]
+            try:
+                partial_word_result = GermanVerb.objects.get(base_form=partial_word)
+            except GermanVerb.DoesNotExist:
+                partial_word_result = None
+
+            if partial_word_result is not None:
+                try:
+                    GermanAdjective.objects.get(base_form=prefix)
+                    return prefix
+                except GermanAdjective.DoesNotExist:
+                    pass
+
+            i += 1
+
+        return None
+
+    def fill_declensions_standard(self, base_form=None):
+        if base_form is None:
+            base_form = self.base_form
+            splittable_prefix = self.german_verb_splittable()
+            if splittable_prefix:
+                base_form = self.base_form.removeprefix(splittable_prefix)
+        else:
+            splittable_prefix = self.base_form.removesuffix(base_form)
+
+        adjective_postifx = " " + splittable_prefix if splittable_prefix else ""
+
+        base_form = (
+            base_form.removesuffix("en")
+            if base_form.endswith("en")
+            else base_form.removesuffix("n")
+        )
+
+        ending = "e" if base_form.endswith("t") else ""
+
+        self.present_ich = base_form + "e" + adjective_postifx
+        self.present_du = (
+            base_form.replace("a", "ä") + ending + "st" + adjective_postifx
+        )
+        self.present_pronoun = (
+            base_form.replace("a", "ä") + ending + "t" + adjective_postifx
+        )
+        self.past_tense_ich = base_form + ending + "te" + adjective_postifx
+        self.past_participle = (
+            self.base_form
+            if self.base_form.startswith("ver")
+            else (
+                splittable_prefix + "ge" + base_form + ending + "t"
+                if splittable_prefix
+                else "ge" + base_form + ending + "t"
+            )
+        )
+        self.conjunctive_ich = (
+            base_form.replace("a", "ä") + ending + "te" + adjective_postifx
+        )
+        self.imperativ_singular = base_form + adjective_postifx + ending
+        self.imperativ_plural = base_form + ending + "t" + adjective_postifx
+        self.helping_verb = "haben/sein"
+        self.infinitiv_zu = (
+            splittable_prefix + "zu" + self.base_form.removeprefix(splittable_prefix)
+            if splittable_prefix
+            else "zu " + self.base_form
+        )
+
+        self.save()
+
+        message = "Filled German verb with standard rules"
+        return False, message
+
+    def fill_declensions(self, _=None):
         soup = get_soup(self.base_form)
         if soup is None:
             message = "Unable to download German verb Wikitionary data"
@@ -942,7 +1386,7 @@ class GermanVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                                     text,
                                 )
 
-            soup = get_soup(self.base_form, True)
+            soup = get_soup(self.base_form, flexion=True)
             if soup is not None and soup.find("table"):
                 element = soup.find("table")
 
@@ -1000,7 +1444,16 @@ class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableM
     def __str__(self):
         return self.base_form
 
-    def fill_declensions(self):
+    def fill_declensions_standard(self, _=None):
+        self.comparative = self.base_form + "er"
+        self.superlative = self.base_form + "sten"
+
+        self.save()
+
+        message = "Filled German adjective with standard rules"
+        return False, message
+
+    def fill_declensions(self, _=None):
         soup = get_soup(self.base_form)
         if soup is None:
             message = "Unable to download German adjective Wikitionary data"
@@ -1078,11 +1531,10 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     def __str__(self):
         return self.base_form
 
-    def get_form(self, base_form, female_form=True):
+    def get_variant(self, base_form, female_form=True):
         soup = get_soup(self.base_form)
         if soup is None:
-            message = "Unable to download German noun gender variant Wikitionary data"
-            return True, message
+            return None
 
         title = (
             "Weibliche Varianten des Wortes"
@@ -1091,10 +1543,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
         )
         elements = soup.find_all("p", {"title": title})
         if len(elements) == 0:
-            message = (
-                "Unable to find title for German noun gender variant Wikitionary data"
-            )
-            return True, message
+            return None
 
         try:
             variant = (
@@ -1103,22 +1552,301 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                 .find("dd")
                 .find("a", attrs={"title": True})["title"]
             ).removesuffix(" (Seite nicht vorhanden)")
-        except AttributeError:
-            message = f"Fetching female unable to find child tag '{base_form}'"
-            return True, message
-        except KeyError:
-            message = f"Fetching female could not find title '{base_form}'"
-            return True, message
         except Exception:
-            message = f"Fetching female failed to parse '{base_form}'"
-            return True, message
+            return None
 
-        return False, variant
+        return variant if len(variant) else None
 
-    def fill_declensions(self):
+    def fill_declensions_standard(self, _=None):
+        endings = ["s", "n"]
+        is_feminine = self.base_form.endswith("in")
+        if is_feminine:
+            self.gender_1 = GenderTypeEnum.FEMININE
+            self.male_form = self.base_form.removesuffix("in")
+        else:
+            if self.base_form.endswith("frau"):
+                self.gender_1 = GenderTypeEnum.FEMININE
+                self.male_form = self.base_form.removesuffix("frau") + "mann"
+            elif self.base_form.endswith("mann"):
+                self.gender_1 = GenderTypeEnum.MASCULINE
+                self.male_form = self.base_form.removesuffix("mann") + "frau"
+
+        if self.female_form is None or len(self.female_form) == 0:
+            self.female_form = self.get_variant(self.base_form)
+
+        if self.male_form is None or len(self.male_form) == 0:
+            self.male_form = self.get_variant(self.base_form, False)
+
+        if not self.plural_only:
+            self.sg_nom = self.base_form
+            if is_feminine:
+                self.sg_dat = self.base_form
+            else:
+                ending = "e" if self.base_form[-1] in endings else ""
+                self.sg_dat = self.base_form + ending + "s"
+            self.sg_gen = self.base_form
+            self.sg_acc = self.base_form
+
+        if not self.singular_only:
+            if is_feminine:
+                self.pl_nom = self.base_form + "nen"
+                self.pl_gen = self.base_form + "nen"
+                self.pl_dat = self.base_form + "nen"
+                self.pl_acc = self.base_form + "nen"
+            else:
+                if self.base_form.endswith("frau") or self.base_form.endswith("mann"):
+                    base_form = self.base_form[0:-4] + "leute"
+                    ending = ""
+                else:
+                    ending = "" if self.base_form.endswith("e") else "e"
+                    if self.base_form[-1] in endings:
+                        endings += "r"
+
+                    base_form = self.base_form.replace("a", "ä").replace("A", "Ä")
+
+                self.pl_nom = base_form + ending
+                self.pl_gen = base_form + ending
+                self.pl_dat = base_form + ending + "n"
+                self.pl_acc = base_form + ending
+
+        self.save()
+
+        message = "Filled German noun with standard rules"
+        return False, message
+
+    def modify_noun(self, noun, noun_prefix, noun_superfix, lower_case):
+        if noun is None or len(noun) == 0:
+            return None
+
+        if noun_superfix:
+            return noun.replace(noun_superfix, "").capitalize()
+
+        if lower_case:
+            noun = noun.lower()
+
+        return noun_prefix + noun
+
+    def fill_declensions(self, base_form=None):
+        noun_prefix = None
+        noun_superfix = None
+        lower_case = True
+        if base_form is None:
+            base_form = self.base_form
+        else:
+            if base_form.lower() in self.base_form:
+                noun_prefix = self.base_form.replace(base_form.lower(), "")
+            elif base_form in self.base_form:
+                lower_case = False
+                noun_prefix = self.base_form.replace(base_form, "")
+            elif self.base_form.lower() in base_form:
+                noun_superfix = base_form.replace(self.base_form.lower(), "")
+            elif self.base_form in base_form:
+                lower_case = False
+                noun_superfix = base_form.replace(self.base_form, "")
+            else:
+                message = f"Supplied base form {base_form} for German noun gender not contained in {self.base_form} (or vice-versa)"
+                return True, message
+
+            try:
+                noun = GermanNoun.objects.get(base_form=base_form)
+
+                self.female_form = self.modify_noun(
+                    noun.female_form,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.male_form = self.modify_noun(
+                    noun.male_form,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.gender_1 = noun.gender_1
+                self.gender_2 = noun.gender_2
+                self.singular_only = noun.singular_only
+                self.plural_only = noun.plural_only
+                self.sg_nom = self.modify_noun(
+                    noun.sg_nom,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.sg_dat = self.modify_noun(
+                    noun.sg_dat,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.sg_dat_2 = self.modify_noun(
+                    noun.sg_dat_2,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.sg_gen = self.modify_noun(
+                    noun.sg_gen,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.sg_gen_2 = self.modify_noun(
+                    noun.sg_gen_2,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.sg_acc = self.modify_noun(
+                    noun.sg_acc,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.pl_nom = self.modify_noun(
+                    noun.pl_nom,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.pl_gen = self.modify_noun(
+                    self.pl_gen,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.pl_dat = self.modify_noun(
+                    noun.pl_dat,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+                self.pl_acc = self.modify_noun(
+                    noun.pl_acc,
+                    noun_prefix,
+                    noun_superfix,
+                    lower_case,
+                )
+
+                self.save()
+
+                message = f"German noun declension data has been filled via '{noun.base_form}' declension data."
+                return False, message
+            except GermanNoun.DoesNotExist:
+                pass
+
+        soup = get_soup(base_form, "verbformen")
+        if soup is None:
+            message = "Unable to download German noun gender variant verbformen data"
+            return self.fill_declensions_wikitionary(message)
+
+        element = soup.find("span", {"title": "Substantiv"})
+        if element is None:
+            message = "Unable to find German noun data on verbformen"
+            return self.fill_declensions_wikitionary(message)
+
+        gender_map = {
+            "feminin": GenderTypeEnum.FEMININE,
+            "maskulin": GenderTypeEnum.MASCULINE,
+            "neutral": GenderTypeEnum.NEUTER,
+        }
+
+        i = 1
+        for t in soup.select("span[title*=Genus]"):
+            title = t["title"].split()
+            if len(title) == 2 and title[1] in gender_map:
+                setattr(self, "gender_" + str(i), gender_map[title[1]])
+                i += 1
+
+        elements = soup.find_all("div", {"class": "vTbl"})
+        if len(elements) == 0:
+            message = "Unable to find table for German noun gender verbformen data"
+            return self.fill_declensions_wikitionary(message)
+
+        heading_map = {
+            "Nom.": "nom",
+            "Dat.": "dat",
+            "Gen.": "gen",
+            "Akk.": "acc",
+        }
+
+        has_singular = False
+        has_plural = False
+        for element in elements:
+            table = element.find("table")
+            rows = table.find_all("tr")
+
+            if len(rows):
+                is_singular = element.find("h2").get_text() == "Singular"
+
+                prefix = "sg_" if is_singular else "pl_"
+                for row in rows:
+                    heading = row.find("th").get_text()
+                    if heading in heading_map:
+                        columns = row.find_all("td")
+                        if len(columns) == 2 and columns[1].get_text():
+                            if is_singular:
+                                has_singular = True
+                            else:
+                                has_plural = True
+
+                            variations = columns[1].get_text().split("/")
+                            if noun_prefix is not None:
+                                for i in range(len(variations)):
+                                    variations[i] = "".join(
+                                        filter(str.isalpha, variations[i])
+                                    )
+                                    variations[i] = self.modify_noun(
+                                        variations[i],
+                                        noun_prefix,
+                                        noun_superfix,
+                                        lower_case,
+                                    )
+
+                            elif noun_superfix is not None:
+                                for i in range(len(variations)):
+                                    variations[i] = self.modify_noun(
+                                        variations[i],
+                                        noun_prefix,
+                                        noun_superfix,
+                                        lower_case,
+                                    )
+
+                            setattr(
+                                self,
+                                prefix + heading_map[heading],
+                                variations[0],
+                            )
+
+                            if (
+                                len(variations) > 1
+                                and is_singular
+                                and heading_map[heading] in ["dat", "gen"]
+                            ):
+                                setattr(
+                                    self,
+                                    prefix + heading_map[heading] + "_2",
+                                    variations[1],
+                                )
+
+        if has_singular and has_plural:
+            self.singular_only = False
+            self.plural_only = False
+        elif has_singular:
+            self.singular_only = True
+            self.plural_only = False
+        elif has_plural:
+            self.plural_only = True
+            self.singular_only = False
+
+        self.save()
+
+        message = "German noun declension data has been filled via verbformen."
+        return False, message
+
+    def fill_declensions_wikitionary(self, message):
         soup = get_soup(self.base_form)
         if soup is None:
-            message = "Unable to download German noun Wikitionary data"
+            message += ". Unable to download German noun Wikitionary data"
             return True, message
 
         gender_map = {
@@ -1141,7 +1869,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                 else:
                     words = nouns.parse_compound(self.base_form)
                     if len(words) < 1 or not self.base_form.endswith(words[-1].lower()):
-                        message = "Could not split German noun"
+                        message += ". Could not split German noun"
                         return True, message
 
                     word = words[-1]
@@ -1150,7 +1878,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
 
                 result = nouns[word]
                 if len(result) == 0:
-                    message = "Could not determine German noun flexion"
+                    message += ". Could not determine German noun flexion"
                     return True, message
 
                 for i in range(len(result)):
@@ -1230,33 +1958,19 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
             self.gender_2 = (
                 gender_map[result["genus 2"]] if "genus 2" in result else None
             )
-
-            if self.female_form is None:
-                failed, variant = self.get_form(self.base_form)
-                if failed:
-                    return True, variant
-
-                self.female_form = variant
-
-            if self.female_form is None and self.male_form is None:
-                failed, variant = self.get_form(self.base_form, False)
-                if failed:
-                    return True, variant
-
-                self.male_form = variant
         else:
             element = elements[0].parent
             genders = (
                 element["id"].removeprefix("Substantiv,").replace("_", "").split(",")
             )
             self.gender_1 = gender_map[genders[0]]
-            if len(genders) > 1:
+            if len(genders) > 1 and genders[1] in gender_map:
                 self.gender_2 = gender_map[genders[1]]
 
             try:
                 rows = element.parent.find_next_sibling("table")
                 if rows is None:
-                    message = "German noun data table missing on Wikitionary"
+                    message += ". German noun data table missing on Wikitionary"
                     return True, message
 
                 noun_map = {
@@ -1325,18 +2039,24 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                                         text,
                                     )
             except AttributeError:
-                message = "Unable to find German noun tag in Wikitionary data"
+                message += ". Unable to find German noun tag in Wikitionary data"
                 return True, message
             except KeyError:
-                message = "Unable to find German noun title in Wikitionary data"
+                message += ". Unable to find German noun title in Wikitionary data"
                 return True, message
             except Exception:
-                message = "Unable to parse German noun Wikitionary data"
+                message += ". Unable to parse German noun Wikitionary data"
                 return True, message
+
+        if self.female_form is None or len(self.female_form) == 0:
+            self.female_form = self.get_variant(self.base_form)
+
+        if self.male_form is None or len(self.male_form) == 0:
+            self.male_form = self.get_variant(self.base_form, False)
 
         self.save()
 
-        message = "German noun declension data has been filled."
+        message = "German noun declension data has been filled via Wikitionary."
         return False, message
 
     base_form = models.CharField(max_length=255, unique=True)

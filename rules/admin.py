@@ -367,10 +367,16 @@ def update_lemma_help_text(obj, field, type):
     field.help_text = mark_safe("<br>".join(help_texts))
 
 
-def update_base_form_help_text(obj, field, language):
+def update_base_form_help_text(obj, field):
     help_texts = [field.help_text]
 
-    link = f'Open <a href="https://{language}.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
+    if isinstance(obj, GermanNoun):
+        language = "de"
+        link = f'Open <a href="https://www.verbformen.de/konjugation/?w={obj.base_form}" target="_new">{obj.base_form}</a> on Verbformen'
+    else:
+        language = "de" if type(obj).__name__.startswith("German") else "en"
+        link = f'Open <a href="https://en.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
+
     help_texts.append(link)
 
     if isinstance(obj, GermanNoun):
@@ -1075,21 +1081,24 @@ class LemmatizationAdmin(ImportExportModelAdmin):
     )
 
 
-class EnglishVerbResource(resources.ModelResource):
-    class Meta:
-        model = EnglishVerb
-
-
-@admin.register(EnglishVerb)
-class EnglishVerbAdmin(ImportExportModelAdmin):
-    class Meta:
-        model = EnglishVerb
-
+class DeclensionAdmin(ImportExportModelAdmin):
     change_form_template = "admin/change_form_fill_declensions.html"
 
     def response_change(self, request, obj):
-        if "_fill_declensions" in request.POST:
-            _, message = obj.fill_declensions()
+        base_form = (
+            request.POST["_declension_base"]
+            if "_declension_base" in request.POST
+            and len(request.POST["_declension_base"])
+            else None
+        )
+
+        if "_fill_declensions_standard" in request.POST:
+            _, message = obj.fill_declensions_standard(base_form)
+            self.message_user(request, message)
+
+            return HttpResponseRedirect(".")
+        elif "_fill_declensions" in request.POST:
+            _, message = obj.fill_declensions(base_form)
             self.message_user(request, message)
 
             return HttpResponseRedirect(".")
@@ -1099,9 +1108,20 @@ class EnglishVerbAdmin(ImportExportModelAdmin):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
         if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
+            update_base_form_help_text(obj, form.base_fields["base_form"])
 
         return form
+
+
+class EnglishVerbResource(resources.ModelResource):
+    class Meta:
+        model = EnglishVerb
+
+
+@admin.register(EnglishVerb)
+class EnglishVerbAdmin(DeclensionAdmin):
+    class Meta:
+        model = EnglishVerb
 
     resource_class = EnglishVerbResource
     search_fields = (
@@ -1134,27 +1154,9 @@ class EnglishAdjectiveResource(resources.ModelResource):
 
 
 @admin.register(EnglishAdjective)
-class EnglishAdjectiveAdmin(ImportExportModelAdmin):
+class EnglishAdjectiveAdmin(DeclensionAdmin):
     class Meta:
         model = EnglishAdjective
-
-    change_form_template = "admin/change_form_fill_declensions.html"
-
-    def response_change(self, request, obj):
-        if "_fill_declensions" in request.POST:
-            _, message = obj.fill_declensions()
-            self.message_user(request, message)
-
-            return HttpResponseRedirect(".")
-        return super().response_change(request, obj)
-
-    def get_form(self, request, obj=None, change=False, **kwargs):
-        form = super().get_form(request, obj=obj, change=change, **kwargs)
-
-        if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
-
-        return form
 
     resource_class = EnglishAdjectiveResource
     search_fields = ("base_form", "comparative", "superlative")
@@ -1172,27 +1174,9 @@ class EnglishNounResource(resources.ModelResource):
 
 
 @admin.register(EnglishNoun)
-class EnglishNounAdmin(ImportExportModelAdmin):
+class EnglishNounAdmin(DeclensionAdmin):
     class Meta:
         model = EnglishNoun
-
-    change_form_template = "admin/change_form_fill_declensions.html"
-
-    def response_change(self, request, obj):
-        if "_fill_declensions" in request.POST:
-            _, message = obj.fill_declensions()
-            self.message_user(request, message)
-
-            return HttpResponseRedirect(".")
-        return super().response_change(request, obj)
-
-    def get_form(self, request, obj=None, change=False, **kwargs):
-        form = super().get_form(request, obj=obj, change=change, **kwargs)
-
-        if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "en")
-
-        return form
 
     resource_class = EnglishNounResource
     search_fields = ("base_form", "plural")
@@ -1209,27 +1193,9 @@ class GermanVerbResource(resources.ModelResource):
 
 
 @admin.register(GermanVerb)
-class GermanVerbAdmin(ImportExportModelAdmin):
+class GermanVerbAdmin(DeclensionAdmin):
     class Meta:
         model = GermanVerb
-
-    change_form_template = "admin/change_form_fill_declensions.html"
-
-    def response_change(self, request, obj):
-        if "_fill_declensions" in request.POST:
-            _, message = obj.fill_declensions()
-            self.message_user(request, message)
-
-            return HttpResponseRedirect(".")
-        return super().response_change(request, obj)
-
-    def get_form(self, request, obj=None, change=False, **kwargs):
-        form = super().get_form(request, obj=obj, change=change, **kwargs)
-
-        if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
-
-        return form
 
     resource_class = GermanVerbResource
     search_fields = (
@@ -1259,7 +1225,10 @@ class GermanVerbAdmin(ImportExportModelAdmin):
         "infinitiv_zu",
         "comment",
     )
-    list_filter = ("helping_verb",)
+    list_filter = (
+        "helping_verb",
+        ("past_participle", admin.EmptyFieldListFilter),
+    )
     list_display = ("base_form", "past_participle", "helping_verb", "infinitiv_zu")
 
 
@@ -1269,27 +1238,9 @@ class GermanAdjectiveResource(resources.ModelResource):
 
 
 @admin.register(GermanAdjective)
-class GermanAdjectiveAdmin(ImportExportModelAdmin):
+class GermanAdjectiveAdmin(DeclensionAdmin):
     class Meta:
         model = GermanAdjective
-
-    change_form_template = "admin/change_form_fill_declensions.html"
-
-    def response_change(self, request, obj):
-        if "_fill_declensions" in request.POST:
-            _, message = obj.fill_declensions()
-            self.message_user(request, message)
-
-            return HttpResponseRedirect(".")
-        return super().response_change(request, obj)
-
-    def get_form(self, request, obj=None, change=False, **kwargs):
-        form = super().get_form(request, obj=obj, change=change, **kwargs)
-
-        if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
-
-        return form
 
     resource_class = GermanAdjectiveResource
     search_fields = ("base_form", "comparative", "superlative")
@@ -1307,27 +1258,9 @@ class GermanNounResource(resources.ModelResource):
 
 
 @admin.register(GermanNoun)
-class GermanNounAdmin(ImportExportModelAdmin):
+class GermanNounAdmin(DeclensionAdmin):
     class Meta:
         model = GermanNoun
-
-    change_form_template = "admin/change_form_fill_declensions.html"
-
-    def response_change(self, request, obj):
-        if "_fill_declensions" in request.POST:
-            _, message = obj.fill_declensions()
-            self.message_user(request, message)
-
-            return HttpResponseRedirect(".")
-        return super().response_change(request, obj)
-
-    def get_form(self, request, obj=None, change=False, **kwargs):
-        form = super().get_form(request, obj=obj, change=change, **kwargs)
-
-        if obj:
-            update_base_form_help_text(obj, form.base_fields["base_form"], "de")
-
-        return form
 
     resource_class = GermanNounResource
     search_fields = (

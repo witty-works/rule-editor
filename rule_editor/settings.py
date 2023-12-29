@@ -39,7 +39,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 if env("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
-        release="1.1.0",
+        release="1.1.1",
         send_default_pii=True,
         integrations=[
             DjangoIntegration(
@@ -178,7 +178,6 @@ STATICFILES_DIRS = ()
 STATIC_URL = "/static/"
 
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
