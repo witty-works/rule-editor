@@ -375,7 +375,7 @@ def update_base_form_help_text(obj, field):
         link = f'Open <a href="https://www.verbformen.de/konjugation/?w={obj.base_form}" target="_new">{obj.base_form}</a> on Verbformen'
     else:
         language = "de" if type(obj).__name__.startswith("German") else "en"
-        link = f'Open <a href="https://en.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
+        link = f'Open <a href="https://{language}.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
 
     help_texts.append(link)
 
