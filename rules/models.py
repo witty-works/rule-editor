@@ -1446,7 +1446,7 @@ class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableM
 
     def fill_declensions_standard(self, _=None):
         self.comparative = self.base_form + "er"
-        self.superlative = self.base_form + "sten"
+        self.superlative = self.base_form + ("e" if self.base_form.endswith("t") else "") + "sten"
 
         self.save()
 
