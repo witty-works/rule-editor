@@ -52,6 +52,7 @@ class LanguageEnum(models.TextChoices):
 
 
 class GenderTypeEnum(models.TextChoices):
+    NONE = ""
     NEUTER = "neuter"
     FEMININE = "feminine"
     MASCULINE = "masculine"

@@ -1303,6 +1303,7 @@ class GermanNounAdmin(DeclensionAdmin):
     list_filter = (
         ("sg_nom", admin.EmptyFieldListFilter),
         ("pl_nom", admin.EmptyFieldListFilter),
+        ("gender_1", admin.EmptyFieldListFilter),
         "gender_1",
         "gender_2",
         "singular_only",
