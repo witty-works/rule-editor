@@ -1607,8 +1607,9 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                     )
                     ending = ""
                 else:
-                    ending = "" if self.base_form.endswith("e") else "e"
+                    ending = ""
                     if self.base_form[-1] in endings:
+                        ending = "" if self.base_form.endswith("e") else "e"
                         endings += "r"
 
                     base_form = self.base_form.replace("a", "ä").replace("A", "Ä")
