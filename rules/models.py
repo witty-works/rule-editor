@@ -502,6 +502,18 @@ class Rule(
         return first_token
 
     @computed(
+        models.CharField(max_length=255, null=True, blank=True),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
+    def first_word_type(self):
+        if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
+            return None
+
+        return self.parsed_word_types[0]["word_type"]
+
+    @computed(
         models.BooleanField(null=True, blank=True),
         depends=[
             ("self", ["word_types"]),

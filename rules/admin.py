@@ -912,6 +912,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "is_active",
         "type",
         "label_type",
+        "first_word_type",
         "has_training_sentences",
         ("diversity_dimensions", MultiSelectRelatedOnlyFilter),
         ("created_at", DateRangeFilter),
@@ -1229,7 +1230,7 @@ class GermanVerbAdmin(DeclensionAdmin):
         "helping_verb",
         ("past_participle", admin.EmptyFieldListFilter),
     )
-    list_display = ("base_form", "past_participle", "helping_verb", "infinitiv_zu")
+    list_display = ("base_form", "present_ich", "past_participle", "helping_verb", "infinitiv_zu")
 
 
 class GermanAdjectiveResource(resources.ModelResource):
