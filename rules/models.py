@@ -52,6 +52,7 @@ class LanguageEnum(models.TextChoices):
 
 
 class GenderTypeEnum(models.TextChoices):
+    NONE = ""
     NEUTER = "neuter"
     FEMININE = "feminine"
     MASCULINE = "masculine"
@@ -499,6 +500,18 @@ class Rule(
             first_token = first_token.lower()
 
         return first_token
+
+    @computed(
+        models.CharField(max_length=255, null=True, blank=True),
+        depends=[
+            ("self", ["word_types"]),
+        ],
+    )
+    def first_word_type(self):
+        if self.parsed_word_types is None or len(self.parsed_word_types) == 0:
+            return None
+
+        return self.parsed_word_types[0]["word_type"]
 
     @computed(
         models.BooleanField(null=True, blank=True),
@@ -1446,7 +1459,9 @@ class GermanAdjective(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableM
 
     def fill_declensions_standard(self, _=None):
         self.comparative = self.base_form + "er"
-        self.superlative = self.base_form + "sten"
+        self.superlative = (
+            self.base_form + ("e" if self.base_form.endswith("t") else "") + "sten"
+        )
 
         self.save()
 
@@ -1560,16 +1575,21 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     def fill_declensions_standard(self, _=None):
         endings = ["s", "n"]
         is_feminine = self.base_form.endswith("in")
+        is_leute = False
         if is_feminine:
             self.gender_1 = GenderTypeEnum.FEMININE
             self.male_form = self.base_form.removesuffix("in")
         else:
-            if self.base_form.endswith("frau"):
+            if self.base_form.lower().endswith("frau"):
                 self.gender_1 = GenderTypeEnum.FEMININE
-                self.male_form = self.base_form.removesuffix("frau") + "mann"
-            elif self.base_form.endswith("mann"):
+                suffix = "mann" if self.base_form.endswith("frau") else "Mann"
+                self.male_form = self.base_form.removesuffix("frau") + suffix
+                is_leute = True
+            elif self.base_form.lower().endswith("mann"):
                 self.gender_1 = GenderTypeEnum.MASCULINE
-                self.male_form = self.base_form.removesuffix("mann") + "frau"
+                suffix = "frau" if self.base_form.endswith("mann") else "Frau"
+                self.male_form = self.base_form.removesuffix("mann") + suffix
+                is_leute = True
 
         if self.female_form is None or len(self.female_form) == 0:
             self.female_form = self.get_variant(self.base_form)
@@ -1594,12 +1614,15 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                 self.pl_dat = self.base_form + "nen"
                 self.pl_acc = self.base_form + "nen"
             else:
-                if self.base_form.endswith("frau") or self.base_form.endswith("mann"):
-                    base_form = self.base_form[0:-4] + "leute"
+                if is_leute:
+                    base_form = self.base_form[0:-4] + (
+                        "leute" if self.base_form[-4:-3].islower() else "Leute"
+                    )
                     ending = ""
                 else:
-                    ending = "" if self.base_form.endswith("e") else "e"
+                    ending = ""
                     if self.base_form[-1] in endings:
+                        ending = "" if self.base_form.endswith("e") else "e"
                         endings += "r"
 
                     base_form = self.base_form.replace("a", "ä").replace("A", "Ä")

@@ -375,7 +375,7 @@ def update_base_form_help_text(obj, field):
         link = f'Open <a href="https://www.verbformen.de/konjugation/?w={obj.base_form}" target="_new">{obj.base_form}</a> on Verbformen'
     else:
         language = "de" if type(obj).__name__.startswith("German") else "en"
-        link = f'Open <a href="https://en.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
+        link = f'Open <a href="https://{language}.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
 
     help_texts.append(link)
 
@@ -912,6 +912,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "is_active",
         "type",
         "label_type",
+        "first_word_type",
         "has_training_sentences",
         ("diversity_dimensions", MultiSelectRelatedOnlyFilter),
         ("created_at", DateRangeFilter),
@@ -1229,7 +1230,7 @@ class GermanVerbAdmin(DeclensionAdmin):
         "helping_verb",
         ("past_participle", admin.EmptyFieldListFilter),
     )
-    list_display = ("base_form", "past_participle", "helping_verb", "infinitiv_zu")
+    list_display = ("base_form", "present_ich", "past_participle", "helping_verb", "infinitiv_zu")
 
 
 class GermanAdjectiveResource(resources.ModelResource):
@@ -1303,6 +1304,7 @@ class GermanNounAdmin(DeclensionAdmin):
     list_filter = (
         ("sg_nom", admin.EmptyFieldListFilter),
         ("pl_nom", admin.EmptyFieldListFilter),
+        ("gender_1", admin.EmptyFieldListFilter),
         "gender_1",
         "gender_2",
         "singular_only",
