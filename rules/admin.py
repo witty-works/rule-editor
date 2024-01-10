@@ -950,42 +950,56 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         return actions
 
     def rule_count(self, obj):
+        if not obj.has_rules:
+            return ""
+
         count_values = []
         with connection.cursor() as cursor:
             for language in LanguageEnum:
+                if not getattr(obj, f"has_{language}_rules", False):
+                    continue
+
+                url = getattr(obj, f"url_{language}")
+                if url:
+                    category = f'<a href="{url}" target="_new">{language}</a>'
+                else:
+                    category = language
+
                 cursor.execute(
-                    "SELECT count(*) FROM rules_rule WHERE language = %s AND diversity_dimension_json LIKE %s",
+                    "SELECT count(*) FROM rules_rule WHERE parent_id is NULL AND language = %s AND diversity_dimension_json LIKE %s",
                     [language, f'%"{obj.name}"%'],
                 )
                 count = cursor.fetchone()[0]
                 url = f"/admin/rules/rule/?diversity_dimensions__id__in={str(obj.pk)}&language__exact={language}"
-                link = f'<a href="{url}">{language}</a>'
-                count_values.append(f"{count} ({link})")
+                filter_link = f'<a href="{url}" target="_new">{count}</a>'
+
+                count_values.append(f"{category} ({filter_link})")
 
         return mark_safe(", ".join(count_values))
 
     def sentences(self, obj):
         sentences = []
         with connection.cursor() as cursor:
-            for language in LanguageEnum:
-                cursor.execute(
-                    "SELECT text, rule_id FROM rules_trainingsentence INNER JOIN rules_rule ON rules_trainingsentence.rule_id = rules_rule.id WHERE is_on_website = 1 AND language = %s AND diversity_dimension_json LIKE %s LIMIT 1",
-                    [language, f'%"{obj.name}"%'],
-                )
-                sentence = cursor.fetchone()
-                if sentence is not None:
-                    url = f"/admin/rules/rule/{sentence[1]}/change/"
-                    link = f'<a href="{url}">{sentence[0]}</a>'
-                    sentences.append(link)
+            if obj.proficiency_level == "openly_discriminating":
+                sentences.append("'openly_discriminating' does not have examples")
+            elif not obj.has_rules:
+                sentences.append("Does not have explicit rules (harded or advanced alternatives only)")
+            else:
+                for language in LanguageEnum:
+                    cursor.execute(
+                        "SELECT text, rule_id FROM rules_trainingsentence INNER JOIN rules_rule ON rules_trainingsentence.rule_id = rules_rule.id WHERE is_on_website = 1 AND language = %s AND diversity_dimension_json LIKE %s LIMIT 1",
+                        [language, f'%"{obj.name}"%'],
+                    )
+                    sentence = cursor.fetchone()
+                    if sentence is not None:
+                        url = f"/admin/rules/rule/{sentence[1]}/change/"
+                        link = f'<a href="{url}">{sentence[0]}</a>'
+                        sentences.append(f"{language}: {link}")
 
         return mark_safe("<br>".join(sentences))
 
     def __init__(self, model, admin_site):
         super().__init__(model, admin_site)
-
-    # def get_list_display_links(self, request, list_display):
-    #    super().get_list_display_links(request, list_display)
-    #    return None
 
     def has_delete_permission(self, request, obj=None):
         return False
@@ -1001,9 +1015,21 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         "name",
         "category",
         "proficiency_level",
+        "has_en_rules",
+        "has_de_rules",
         "rule_count",
-        "comment",
         "sentences",
+        "comment",
+    )
+    readonly_fields = (
+        "name",
+        "parent_name",
+        "category",
+        "proficiency_level",
+        "has_en_rules",
+        "has_de_rules",
+        "url_en",
+        "url_de",
     )
     search_fields = ("name",)
     admin_order_field = ("name", "category", "proficiency_level")
@@ -1011,6 +1037,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         "category",
         "proficiency_level",
         "is_advanced",
+        "has_rules",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )
@@ -1230,7 +1257,13 @@ class GermanVerbAdmin(DeclensionAdmin):
         "helping_verb",
         ("past_participle", admin.EmptyFieldListFilter),
     )
-    list_display = ("base_form", "present_ich", "past_participle", "helping_verb", "infinitiv_zu")
+    list_display = (
+        "base_form",
+        "present_ich",
+        "past_participle",
+        "helping_verb",
+        "infinitiv_zu",
+    )
 
 
 class GermanAdjectiveResource(resources.ModelResource):
