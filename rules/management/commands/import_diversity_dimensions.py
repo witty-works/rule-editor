@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from rules.models import DiversityDimension, Category
+from rules.models import DiversityDimension, Category, LanguageEnum
 import json
 
 
@@ -8,6 +8,21 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--file", type=str)
+
+    def update_language_properties(self, diversity_dimension, data):
+        for language in LanguageEnum:
+            setattr(
+                diversity_dimension,
+                f"has_{language}_rules",
+                data[f"has_{language}_rules"] == "true",
+            )
+
+            if "translations" in data and language in data["translations"]:
+                setattr(
+                    diversity_dimension,
+                    f"url_{language}",
+                    data["translations"][language]["canonical_url"],
+                )
 
     def handle(self, *args, **options):
         diversity_dimensions_file = open(options["file"])
@@ -40,6 +55,8 @@ class Command(BaseCommand):
                 data["proficiency_level"].strip().lower()
             )
 
+            self.update_language_properties(diversity_dimension, data)
+
             diversity_dimension.save()
 
             self.stdout.write(self.style.SUCCESS(message))
@@ -62,6 +79,7 @@ class Command(BaseCommand):
                 child.category = category
                 child.parent_name = name
                 child.proficiency_level = data["proficiency_level"].strip().lower()
+                self.update_language_properties(child, data)
 
                 child.save()
 

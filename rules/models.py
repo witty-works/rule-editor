@@ -318,6 +318,30 @@ class DiversityDimension(
         max_length=255,
         help_text="Proficiency level of the diversity dimension ('inclusive', 'unconscious_bias', 'openly_discriminating', ..)",
     )
+    has_en_rules = models.BooleanField(
+        default=False,
+        help_text="If the diversity dimension has English rules",
+    )
+    has_de_rules = models.BooleanField(
+        default=False,
+        help_text="If the diversity dimension has German rules",
+    )
+    url_en = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="URL to the category page in English",
+    )
+    url_de = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="URL to the category page in German",
+    )
+    has_rules = models.BooleanField(
+        default=True,
+        help_text="If the diversity dimension has rules (or if rules are hardcoded or advanced alternatives only)",
+    )
 
     @computed(
         models.BooleanField(null=True, blank=True),
