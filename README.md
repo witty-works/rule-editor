@@ -4,11 +4,11 @@
 
 ```
 cp .env.example .env
+mkdir database
 pipenv shell
-pipenv install --save
+pipenv install
 python manage.py collectstatic
 python manage.py migrate
-python manage.py createsuperuser
 platform mount:download -e main --mount database --target ./database
 python manage.py runserver 8100
 ```
