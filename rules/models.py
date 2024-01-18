@@ -736,23 +736,15 @@ class TrainingSentence(
         default=False,
         help_text="If sentences should be used for the custom machine learning model",
     )
-    alternative_on_website = models.CharField(
+    alternative_expected = models.CharField(
         max_length=255,
         blank=True,
-        help_text="Sentences is an example on the website with the following example",
+        help_text="Alternative expected to be included in the alternative list",
     )
-
-    @computed(
-        models.BooleanField(default=False),
-        depends=[
-            ("self", ["alternative_on_website"]),
-        ],
+    is_on_website = models.BooleanField(
+        default=False,
+        help_text="If the example is shown on the website",
     )
-    def is_on_website(self):
-        return bool(
-            self.alternative_on_website is not None
-            and len(self.alternative_on_website.strip())
-        )
 
     tags = TaggableManager(blank=True)
 
