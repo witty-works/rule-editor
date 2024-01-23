@@ -967,8 +967,8 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
                     category = language
 
                 cursor.execute(
-                    "SELECT count(*) FROM rules_rule WHERE parent_id is NULL AND language = %s AND diversity_dimension_json LIKE %s",
-                    [language, f'%"{obj.name}"%'],
+                    "SELECT count(*) FROM rules_rule WHERE is_active = 1 AND parent_id is NULL AND language = %s AND diversity_dimension_json LIKE %s",
+                    [language, f'%["{obj.name}"%'],
                 )
                 count = cursor.fetchone()[0]
                 url = f"/admin/rules/rule/?diversity_dimensions__id__in={str(obj.pk)}&language__exact={language}"
@@ -984,7 +984,9 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
             if obj.proficiency_level == "openly_discriminating":
                 sentences.append("'openly_discriminating' does not have examples")
             elif not obj.has_rules:
-                sentences.append("Does not have explicit rules (harded or advanced alternatives only)")
+                sentences.append(
+                    "Does not have explicit rules (harded or advanced alternatives only)"
+                )
             else:
                 for language in LanguageEnum:
                     cursor.execute(
