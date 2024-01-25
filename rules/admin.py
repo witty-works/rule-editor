@@ -932,6 +932,8 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "label_type",
         "first_word_type",
         "has_training_sentences",
+        "source",
+        "sanctions",
         ("diversity_dimensions", MultiSelectRelatedOnlyFilter),
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
