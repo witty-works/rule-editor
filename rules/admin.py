@@ -817,9 +817,6 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
-        if obj:
-            update_lemma_help_text(obj, form.base_fields["lemma"], "rule")
-
         form.base_fields["parent"].widget.can_add_related = False
         form.base_fields["parent"].widget.can_delete_related = False
 
