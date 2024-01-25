@@ -4,12 +4,12 @@
 
 ```
 cp .env.example .env
+mkdir database
 pipenv shell
-pipenv install --save
+pipenv install
 python manage.py collectstatic
 python manage.py migrate
-python manage.py createsuperuser
-python manage.py import_diversity_dimensions --file [diversity_dimension_drivers.json]
+platform mount:download -e main --mount database --target ./database
 python manage.py runserver 8100
 ```
 
