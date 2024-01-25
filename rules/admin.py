@@ -229,6 +229,12 @@ class NotEqual(Lookup):
 
 
 def generate_help_text(name, language, filters, token, text=None):
+    if token.startswith("~"):
+        token = token[1:]
+
+    if "~" in token:
+        return ""
+
     class_name = name
     if class_name in ["Verb", "Adjective", "Noun"]:
         class_name = ("German" if language == "de" else "English") + class_name
@@ -261,87 +267,79 @@ def generate_help_text(name, language, filters, token, text=None):
     return f"No {name} {text} for '{token}'"
 
 
-def update_lemma_help_text(obj, field, type):
+def update_lemma_help_text(obj, language, field, type):
     help_texts = [field.help_text]
 
-    try:
-        tokens, lemmas, generated_word_types = obj.tokenize()
-        message = (
-            f"Auto-detected word_types: {generated_word_types}"
-            if obj.word_types == generated_word_types
-            else f"<b>Auto-detected word_types mismatch: {generated_word_types}</b>"
-        )
-        help_texts.append(message)
+    lemma = obj.lemma
+    if lemma.startswith("~"):
+        lemma = lemma[1:]
 
-        word_types = obj.parse_word_types()
-    except ValidationError as exception:
+    if type == "alternative":
         help_texts.append(
-            "<b>Tokenization/Word_types validation failed</b>: " + exception.message
+            "German Gender Ending Variations: Singular: Foo~in~/~Foo Plural: Foo~innen~ und ~Foo"
         )
 
-        tokens = lemmas = word_types = []
+    if language == "de" and "~" in lemma and type == "alternative":
+        variations = apply_german_gender_ending(obj.lemma)
+        help_texts.append("<br>".join(variations))
+    else:
+        try:
+            tokens, lemmas, generated_word_types = obj.tokenize()
+            message = (
+                f"Auto-detected word_types: {generated_word_types}"
+                if obj.word_types == generated_word_types
+                else f"<b>Auto-detected word_types mismatch: {generated_word_types}</b>"
+            )
+            help_texts.append(message)
 
-    word_type_map = {
-        "v": "Verb",
-        "a": "Adjective",
-        "n": "Noun",
-    }
-
-    for i in range(len(tokens)):
-        if word_types is not None and word_types[i]["lemmatize"]:
-            if tokens[i] != lemmas[i]:
-                help_texts.append(
-                    f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
-                )
-            key = "base_form" if word_types[i]["lower_case"] else "base_form__iexact"
-            filters = {key: tokens[i]}
-
-            for word_type in word_type_map:
-                if word_type in word_types[i]["word_type"]:
-                    help_texts.append(
-                        generate_help_text(
-                            word_type_map[word_type], obj.language, filters, tokens[i]
-                        )
-                    )
-
-            filters = {"lemma": tokens[i], "language": obj.language}
+            word_types = obj.parse_word_types()
+        except ValidationError as exception:
             help_texts.append(
-                generate_help_text("Lemmatization", obj.language, filters, tokens[i])
+                "<b>Tokenization/Word_types validation failed</b>: " + exception.message
             )
 
-        match type:
-            case "rule":
-                filters = {
-                    "first_token": obj.first_token,
-                    "id__ne": obj.id,
-                }
+            tokens = lemmas = word_types = []
 
+        word_type_map = {
+            "v": "Verb",
+            "a": "Adjective",
+            "n": "Noun",
+        }
+
+        for i in range(len(tokens)):
+            if word_types is not None and word_types[i]["lemmatize"]:
+                if tokens[i] != lemmas[i]:
+                    help_texts.append(
+                        f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
+                    )
+                key = (
+                    "base_form" if word_types[i]["lower_case"] else "base_form__iexact"
+                )
+                filters = {key: tokens[i]}
+
+                for word_type in word_type_map:
+                    if word_type in word_types[i]["word_type"]:
+                        help_texts.append(
+                            generate_help_text(
+                                word_type_map[word_type],
+                                obj.language,
+                                filters,
+                                tokens[i],
+                            )
+                        )
+
+                filters = {"lemma": tokens[i], "language": obj.language}
                 help_texts.append(
                     generate_help_text(
-                        "Rule",
-                        obj.language,
-                        filters,
-                        tokens[i],
-                        "overlapping rules with matching first token",
+                        "Lemmatization", obj.language, filters, tokens[i]
                     )
                 )
-            case "alternative":
-                if (
-                    len(lemmas[i]) > 1
-                    and tokens[i] not in stopwords[obj.language]
-                    and lemmas[i] not in stopwords[obj.language]
-                ):
-                    first_tokens = [
-                        tokens[i],
-                        tokens[i].lower(),
-                    ]
-                    if tokens[i] != lemmas[i]:
-                        first_tokens.append(lemmas[i])
-                        first_tokens.append(lemmas[i].lower())
 
+            match type:
+                case "rule":
                     filters = {
-                        "first_token__in": first_tokens,
-                        "language": obj.language,
+                        "first_token": obj.first_token,
+                        "id__ne": obj.id,
                     }
 
                     help_texts.append(
@@ -350,19 +348,37 @@ def update_lemma_help_text(obj, field, type):
                             obj.language,
                             filters,
                             tokens[i],
-                            "potential circular alternative",
+                            "overlapping rules with matching first token",
                         )
                     )
+                case "alternative":
+                    if (
+                        len(lemmas[i]) > 1
+                        and tokens[i] not in stopwords[obj.language]
+                        and lemmas[i] not in stopwords[obj.language]
+                    ):
+                        first_tokens = [
+                            tokens[i],
+                            tokens[i].lower(),
+                        ]
+                        if tokens[i] != lemmas[i]:
+                            first_tokens.append(lemmas[i])
+                            first_tokens.append(lemmas[i].lower())
 
-    if (
-        type == "alternative"
-        and len(obj.lemma)
-        and obj.lemma[0] != "~"
-        and "~" in obj.lemma
-    ):
-        variations = apply_german_gender_ending(obj.lemma)
-        help_texts.append("German Gender Ending Variations")
-        help_texts.append("<br>".join(variations))
+                        filters = {
+                            "first_token__in": first_tokens,
+                            "language": obj.language,
+                        }
+
+                        help_texts.append(
+                            generate_help_text(
+                                "Rule",
+                                obj.language,
+                                filters,
+                                tokens[i],
+                                "potential circular alternative",
+                            )
+                        )
 
     field.help_text = mark_safe("<br>".join(help_texts))
 
@@ -430,7 +446,9 @@ class AlternativeForm(forms.ModelForm):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
         if instance and isinstance(instance, Alternative):
-            update_lemma_help_text(instance, self.fields["lemma"], "alternative")
+            update_lemma_help_text(
+                instance, instance.language, self.fields["lemma"], "alternative"
+            )
 
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
@@ -693,7 +711,9 @@ class RuleForm(forms.ModelForm):
         super(RuleForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
         if instance and isinstance(instance, Rule):
-            update_lemma_help_text(instance, self.fields["lemma"], "rule")
+            update_lemma_help_text(
+                instance, instance.language, self.fields["lemma"], "rule"
+            )
 
     remove_from_parent = forms.BooleanField(required=False)
 
