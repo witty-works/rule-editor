@@ -954,7 +954,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         TrainingSentenceInline,
         FalsePositiveInline,
     ]
-
+    save_as = True
 
 @admin.register(DiversityDimension)
 class DiversityDimensionAdmin(admin.ModelAdmin):
