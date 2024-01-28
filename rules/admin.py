@@ -338,7 +338,7 @@ def update_lemma_help_text(obj, language, field, type):
             match type:
                 case "rule":
                     filters = {
-                        "first_token": obj.first_token,
+                        "first_token__iexact": tokens[i],
                         "id__ne": obj.id,
                     }
 
