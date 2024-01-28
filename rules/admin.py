@@ -228,7 +228,7 @@ class NotEqual(Lookup):
         return "%s <> %s" % (lhs, rhs), params
 
 
-def generate_help_text(name, language, filters, token, text=None):
+def generate_help_text(name, language, filters, token, text="", recurse=True):
     if token.startswith("~"):
         token = token[1:]
 
@@ -239,7 +239,7 @@ def generate_help_text(name, language, filters, token, text=None):
     if class_name in ["Verb", "Adjective", "Noun"]:
         class_name = ("German" if language == "de" else "English") + class_name
 
-    text = "" if text is None else f" '{text}'"
+    text = "" if text == "" else f" '{text}'"
 
     cls = get_class(class_name)
     instances = cls.objects.filter(**filters)
@@ -260,6 +260,24 @@ def generate_help_text(name, language, filters, token, text=None):
             help_texts.append(
                 f'{name} <a href="{link}">data available</a> for {word}{text}'
             )
+
+            if recurse and class_name == "GermanNoun":
+                if instance.male_form:
+                    other_form = instance.male_form
+                    text = "Male Form"
+                elif instance.female_form:
+                    other_form = instance.female_form
+                    text = "Female Form"
+                else:
+                    other_form = None
+
+                if other_form:
+                    filters = {"base_form": other_form}
+                    help_texts.append(
+                        generate_help_text(
+                            name, language, filters, other_form, text, False
+                        )
+                    )
 
         return "<br>".join(help_texts)
 
@@ -400,13 +418,15 @@ def update_base_form_help_text(obj, field):
             filters = {"base_form": obj.female_form}
             help_texts.append(
                 generate_help_text(
-                    "Noun", "de", filters, obj.female_form, "Female Form"
+                    "Noun", "de", filters, obj.female_form, "Female Form", False
                 )
             )
         elif obj.male_form:
             filters = {"base_form": obj.male_form}
             help_texts.append(
-                generate_help_text("Noun", "de", filters, obj.male_form, "Male Form")
+                generate_help_text(
+                    "Noun", "de", filters, obj.male_form, "Male Form", False
+                )
             )
 
     filters = {
@@ -955,6 +975,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         FalsePositiveInline,
     ]
     save_as = True
+
 
 @admin.register(DiversityDimension)
 class DiversityDimensionAdmin(admin.ModelAdmin):
