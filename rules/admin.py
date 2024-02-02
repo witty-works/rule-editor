@@ -331,14 +331,15 @@ def update_lemma_help_text(obj, language, field, type):
 
         for i in range(len(tokens)):
             if word_types is not None and word_types[i]["lemmatize"]:
-                if tokens[i] != lemmas[i]:
+                token = tokens[i]
+                if token != lemmas[i]:
                     help_texts.append(
                         f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
                     )
                 key = (
                     "base_form" if word_types[i]["lower_case"] else "base_form__iexact"
                 )
-                filters = {key: tokens[i]}
+                filters = {key: token}
 
                 for word_type in word_type_map:
                     if word_type in word_types[i]["word_type"]:
@@ -379,6 +380,7 @@ def update_lemma_help_text(obj, language, field, type):
                         len(lemmas[i]) > 1
                         and tokens[i] not in stopwords[obj.language]
                         and lemmas[i] not in stopwords[obj.language]
+                        and not obj.is_gendered_noun
                     ):
                         first_tokens = [
                             tokens[i],
@@ -489,6 +491,7 @@ class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
                     "is_remove",
                     "is_inspiration",
                     "is_collective_noun",
+                    "is_gendered_noun",
                     "is_advanced",
                     "pluralization",
                     "type",
@@ -546,6 +549,7 @@ def apply_rule(values):
             "is_advanced": alternative.is_advanced,
             "is_remove": alternative.is_remove,
             "is_collective_noun": alternative.is_collective_noun,
+            "is_gendered_noun": alternative.is_gendered_noun,
         }
         alternatives.append(alternative)
 
@@ -1359,6 +1363,8 @@ class GermanNounAdmin(DeclensionAdmin):
         "pl_dat",
         "pl_gen",
         "pl_acc",
+        "collective_noun",
+        "collective_noun_2",
     )
     fields = (
         "base_form",
@@ -1378,12 +1384,18 @@ class GermanNounAdmin(DeclensionAdmin):
         "pl_dat",
         "pl_gen",
         "pl_acc",
+        "collective_noun",
+        "collective_noun_2",
         "comment",
     )
     list_filter = (
         ("sg_nom", admin.EmptyFieldListFilter),
         ("pl_nom", admin.EmptyFieldListFilter),
         ("gender_1", admin.EmptyFieldListFilter),
+        ("male_form", admin.EmptyFieldListFilter),
+        ("female_form", admin.EmptyFieldListFilter),
+        ("collective_noun", admin.EmptyFieldListFilter),
+        ("collective_noun_2", admin.EmptyFieldListFilter),
         "gender_1",
         "gender_2",
         "singular_only",
