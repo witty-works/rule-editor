@@ -552,6 +552,7 @@ def apply_rule(values):
         "text": values["text"],
         "lang": str(rule.language),
         "lemma": rule.lemma,
+        "type": rule.type,
         "word_types": rule.word_types_json,
         "subcategories": rule.diversity_dimension_json,
         "alternatives": alternatives,
