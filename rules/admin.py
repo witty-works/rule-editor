@@ -20,7 +20,6 @@ from django.utils.html import escape
 from django.contrib.auth.models import User
 
 
-
 import requests
 import json
 
@@ -1456,7 +1455,7 @@ class LogEntryAdmin(admin.ModelAdmin):
 
     date_hierarchy = "action_time"
 
-    readonly_fields = [f.name for f in LogEntry._meta.get_fields()]
+    readonly_fields = ["object_link"] + [f.name for f in LogEntry._meta.get_fields()]
 
     list_filter = [
         UserFilter,
@@ -1496,7 +1495,7 @@ class LogEntryAdmin(admin.ModelAdmin):
             link = '<a href="%s">%s</a>' % (href, repr_)
         except NoReverseMatch:
             link = repr_
-        return link if obj.action_flag != DELETION else repr_
+        return mark_safe(link if obj.action_flag != DELETION else repr_)
 
     object_link.allow_tags = True
     object_link.admin_order_field = "object_repr"

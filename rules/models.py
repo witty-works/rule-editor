@@ -398,6 +398,9 @@ class Rule(
             self.url = self.url.strip()
             self.url = None if self.url == "" else self.url
 
+        if self.parent:
+            self.language = self.parent.language
+
         if self.url is not None:
             validator = URLValidator()
             try:
