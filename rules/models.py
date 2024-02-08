@@ -895,6 +895,7 @@ class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
 
     base_form = models.CharField(max_length=255, unique=True)
     plural = models.CharField(max_length=255, null=True, blank=True)
+    plural_2 = models.CharField(max_length=255, null=True, blank=True)
 
 
 def get_soup(base_form, source="wikitionary", flexion=False):

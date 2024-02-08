@@ -1249,11 +1249,12 @@ class EnglishNounAdmin(DeclensionAdmin):
         model = EnglishNoun
 
     resource_class = EnglishNounResource
-    search_fields = ("base_form", "plural")
-    fields = ("base_form", "plural", "comment")
+    search_fields = ("base_form", "plural", "plural_2")
+    fields = ("base_form", "plural", "plural_2", "comment")
     list_display = (
         "base_form",
         "plural",
+        "plural_2",
     )
 
 
