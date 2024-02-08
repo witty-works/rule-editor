@@ -851,14 +851,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
             messages.add_message(request, messages.INFO, message)
 
     def all_diversity_dimensions(self, obj):
-        return ", ".join(
-            [
-                d.name
-                for d in obj.diversity_dimensions.all().order_by(
-                    "rulediversitydimension__order"
-                )
-            ]
-        )
+        return ", ".join(obj.diversity_dimension_json)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
