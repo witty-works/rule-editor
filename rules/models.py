@@ -45,6 +45,11 @@ def fetch_json(path, data=None):
     except Exception as e:
         raise ValidationError(url + ": " + str(e))
 
+def strip_non_alpha(text):
+    return "".join(
+        filter(str.isalpha, text)
+    )
+
 
 class LanguageEnum(models.TextChoices):
     EN = "en", "English"
@@ -1835,9 +1840,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                             variations = columns[1].get_text().split("/")
                             if noun_prefix is not None:
                                 for i in range(len(variations)):
-                                    variations[i] = "".join(
-                                        filter(str.isalpha, variations[i])
-                                    )
+                                    variations[i] = strip_non_alpha(variations[i])
                                     variations[i] = self.modify_noun(
                                         variations[i],
                                         noun_prefix,
@@ -1848,7 +1851,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                             elif noun_superfix is not None:
                                 for i in range(len(variations)):
                                     variations[i] = self.modify_noun(
-                                        variations[i],
+                                        strip_non_alpha(variations[i]),
                                         noun_prefix,
                                         noun_superfix,
                                         lower_case,
@@ -1857,7 +1860,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                             setattr(
                                 self,
                                 prefix + heading_map[heading],
-                                variations[0],
+                                strip_non_alpha(variations[0]),
                             )
 
                             if (
@@ -1868,7 +1871,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                                 setattr(
                                     self,
                                     prefix + heading_map[heading] + "_2",
-                                    variations[1],
+                                    strip_non_alpha(variations[1]),
                                 )
 
         if has_singular and has_plural:
