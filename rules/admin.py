@@ -859,6 +859,9 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         form.base_fields["parent"].widget.can_add_related = False
         form.base_fields["parent"].widget.can_delete_related = False
 
+        if obj and obj.children.count():
+            form.base_fields["parent"].disabled = True
+
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
             attrs={"class": "form-control", "data-placeholder": "Tag names .."},
