@@ -45,10 +45,9 @@ def fetch_json(path, data=None):
     except Exception as e:
         raise ValidationError(url + ": " + str(e))
 
+
 def strip_non_alpha(text):
-    return "".join(
-        filter(str.isalpha, text)
-    )
+    return "".join(filter(str.isalpha, text))
 
 
 class LanguageEnum(models.TextChoices):
@@ -665,6 +664,26 @@ class Alternative(
         if self.is_remove:
             self.lemma = "-"
             self.word_types = ""
+        else:
+            words = self.lemma.split()
+            gendered_noun_found = False
+            for word in words:
+                if word.endswith("~"):
+                    if not word.startswith("~"):
+                        raise ValidationError(
+                            "Word in lemma may not end with '~'"
+                        )
+
+                    gendered_noun_found = True
+                    if not self.is_gendered_noun:
+                        raise ValidationError(
+                            "Gendered noun markers detected (noun with '~' prefix+suffix) but alternative not marked as 'gendered noun'"
+                        )
+
+        if self.is_gendered_noun and not gendered_noun_found:
+            raise ValidationError(
+                "No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun'"
+            )
 
         return super().clean()
 
@@ -695,6 +714,10 @@ class Alternative(
     is_collective_noun = models.BooleanField(
         default=False,
         help_text="If this is a collective noun, which means do not pluralize.",
+    )
+    is_gendered_noun = models.BooleanField(
+        default=False,
+        help_text="If this is a alternative contains gendered nouns and non gendered variations should be generated.",
     )
     sanctions = models.ManyToManyField(
         Source, blank=True, related_name="alternative_sanctions"
@@ -1571,6 +1594,31 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     def __str__(self):
         return self.base_form
 
+    def clean(self):
+        super().clean()
+
+        try:
+            if self.female_form:
+                other_form = GermanNoun.objects.get(base_form=self.female_form)
+            elif self.male_form:
+                other_form = GermanNoun.objects.get(base_form=self.male_form)
+            else:
+                return
+        except GermanNoun.DoesNotExist:
+            return
+
+        # check to see if collective_noun needs to be copied
+        if self._state.adding:
+            if self.collective_noun is None or len(self.collective_noun) == 0:
+                self.collective_noun = other_form.collective_noun
+            if self.collective_noun_2 is None or len(self.collective_noun_2) == 0:
+                self.collective_noun_2 = other_form.collective_noun_2
+        # update collective_noun on the other form
+        else:
+            other_form.collective_noun = self.collective_noun
+            other_form.collective_noun_2 = self.collective_noun_2
+            other_form.save()
+
     def get_variant(self, base_form, female_form=True):
         soup = get_soup(self.base_form)
         if soup is None:
@@ -2122,3 +2170,5 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     pl_gen = models.CharField(max_length=255, null=True, blank=True)
     pl_dat = models.CharField(max_length=255, null=True, blank=True)
     pl_acc = models.CharField(max_length=255, null=True, blank=True)
+    collective_noun = models.CharField(max_length=255, null=True, blank=True)
+    collective_noun_2 = models.CharField(max_length=255, null=True, blank=True)
