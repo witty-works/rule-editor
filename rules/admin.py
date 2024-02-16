@@ -298,27 +298,27 @@ def update_lemma_help_text(obj, language, field, type):
         lemma = lemma[1:]
 
     if type == "alternative":
-        help_texts.append(
-            "German Gender Ending Variations: Singular: Foo~in~/~Foo Plural: Foo~innen~ und ~Foo"
-        )
+        help_texts.append("German Gender Lemma (check 'is gendered noun'): ~Male Form~")
 
-    if language == "de" and "~" in lemma and type == "alternative":
+    if language == "de" and type == "alternative" and obj.is_gendered_noun:
         variations = apply_german_gender_ending(obj.lemma)
-        help_texts.append("<br>".join(variations))
+        help_texts.append(
+            "<br><b>German Gender Variations:</b><br>" + "<br>".join(variations)
+        )
     else:
         try:
             tokens, lemmas, generated_word_types = obj.tokenize()
             message = (
-                f"Auto-detected word_types: {generated_word_types}"
+                f"<br>Auto-detected word_types: {generated_word_types}"
                 if obj.word_types == generated_word_types
-                else f"<b>Auto-detected word_types mismatch: {generated_word_types}</b>"
+                else f"<br><b>Auto-detected word_types mismatch: {generated_word_types}</b>"
             )
             help_texts.append(message)
 
             word_types = obj.parse_word_types()
         except ValidationError as exception:
             help_texts.append(
-                "<b>Tokenization/Word_types validation failed</b>: " + exception.message
+                "<br><b>Tokenization/Word_types validation failed</b>: " + exception.message
             )
 
             tokens = lemmas = word_types = []
@@ -331,14 +331,15 @@ def update_lemma_help_text(obj, language, field, type):
 
         for i in range(len(tokens)):
             if word_types is not None and word_types[i]["lemmatize"]:
-                if tokens[i] != lemmas[i]:
+                token = tokens[i]
+                if token != lemmas[i]:
                     help_texts.append(
                         f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
                     )
                 key = (
                     "base_form" if word_types[i]["lower_case"] else "base_form__iexact"
                 )
-                filters = {key: tokens[i]}
+                filters = {key: token}
 
                 for word_type in word_type_map:
                     if word_type in word_types[i]["word_type"]:
@@ -379,6 +380,7 @@ def update_lemma_help_text(obj, language, field, type):
                         len(lemmas[i]) > 1
                         and tokens[i] not in stopwords[obj.language]
                         and lemmas[i] not in stopwords[obj.language]
+                        and not obj.is_gendered_noun
                     ):
                         first_tokens = [
                             tokens[i],
@@ -489,6 +491,7 @@ class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
                     "is_remove",
                     "is_inspiration",
                     "is_collective_noun",
+                    "is_gendered_noun",
                     "is_advanced",
                     "pluralization",
                     "type",
@@ -546,6 +549,7 @@ def apply_rule(values):
             "is_advanced": alternative.is_advanced,
             "is_remove": alternative.is_remove,
             "is_collective_noun": alternative.is_collective_noun,
+            "is_gendered_noun": alternative.is_gendered_noun,
         }
         alternatives.append(alternative)
 
@@ -858,6 +862,9 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         form.base_fields["parent"].widget.can_add_related = False
         form.base_fields["parent"].widget.can_delete_related = False
+
+        if obj and obj.children.count():
+            form.base_fields["parent"].disabled = True
 
         form.base_fields["tags"].widget = autocomplete.TaggitSelect2(
             url=reverse_lazy("tag-autocomplete"),
@@ -1356,6 +1363,8 @@ class GermanNounAdmin(DeclensionAdmin):
         "pl_dat",
         "pl_gen",
         "pl_acc",
+        "collective_noun",
+        "collective_noun_2",
     )
     fields = (
         "base_form",
@@ -1375,12 +1384,18 @@ class GermanNounAdmin(DeclensionAdmin):
         "pl_dat",
         "pl_gen",
         "pl_acc",
+        "collective_noun",
+        "collective_noun_2",
         "comment",
     )
     list_filter = (
         ("sg_nom", admin.EmptyFieldListFilter),
         ("pl_nom", admin.EmptyFieldListFilter),
         ("gender_1", admin.EmptyFieldListFilter),
+        ("male_form", admin.EmptyFieldListFilter),
+        ("female_form", admin.EmptyFieldListFilter),
+        ("collective_noun", admin.EmptyFieldListFilter),
+        ("collective_noun_2", admin.EmptyFieldListFilter),
         "gender_1",
         "gender_2",
         "singular_only",

@@ -46,6 +46,7 @@ class RuleAutocomplete(autocomplete.Select2QuerySetView):
             return Rule.objects.none()
 
         qs = Rule.objects.all()
+        qs = qs.filter(parent__isnull=True)
 
         ignore_id = self.forwarded.get("ignore_id", None)
         if ignore_id:
