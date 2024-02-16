@@ -298,27 +298,27 @@ def update_lemma_help_text(obj, language, field, type):
         lemma = lemma[1:]
 
     if type == "alternative":
-        help_texts.append(
-            "German Gender Ending Variations: Singular: Foo~in~/~Foo Plural: Foo~innen~ und ~Foo"
-        )
+        help_texts.append("German Gender Lemma (check 'is gendered noun'): ~Male Form~")
 
-    if language == "de" and "~" in lemma and type == "alternative":
+    if language == "de" and type == "alternative" and obj.is_gendered_noun:
         variations = apply_german_gender_ending(obj.lemma)
-        help_texts.append("<br>".join(variations))
+        help_texts.append(
+            "<br><b>German Gender Variations:</b><br>" + "<br>".join(variations)
+        )
     else:
         try:
             tokens, lemmas, generated_word_types = obj.tokenize()
             message = (
-                f"Auto-detected word_types: {generated_word_types}"
+                f"<br>Auto-detected word_types: {generated_word_types}"
                 if obj.word_types == generated_word_types
-                else f"<b>Auto-detected word_types mismatch: {generated_word_types}</b>"
+                else f"<br><b>Auto-detected word_types mismatch: {generated_word_types}</b>"
             )
             help_texts.append(message)
 
             word_types = obj.parse_word_types()
         except ValidationError as exception:
             help_texts.append(
-                "<b>Tokenization/Word_types validation failed</b>: " + exception.message
+                "<br><b>Tokenization/Word_types validation failed</b>: " + exception.message
             )
 
             tokens = lemmas = word_types = []
