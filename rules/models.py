@@ -199,7 +199,9 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         if self.lemma == "-":
             return ["-"], ["-"], ""
 
-        path = f"/debug/spacy?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}"
+        language = requests.utils.quote(self.language)
+        text = requests.utils.quote(self.lemma.strip("~"))
+        path = f"/debug/spacy?lang={language}&text={text}"
         result = fetch_json(path)
         word_types = result.pop(0)
         word_types = "" if "word_type" not in word_types else word_types["word_type"]
@@ -670,9 +672,7 @@ class Alternative(
             for word in words:
                 if word.endswith("~"):
                     if not word.startswith("~"):
-                        raise ValidationError(
-                            "Word in lemma may not end with '~'"
-                        )
+                        raise ValidationError("Word in lemma may not end with '~'")
 
                     gendered_noun_found = True
                     if not self.is_gendered_noun:
