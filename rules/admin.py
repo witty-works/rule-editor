@@ -293,10 +293,6 @@ def generate_help_text(name, language, filters, token, text="", recurse=True):
 def update_lemma_help_text(obj, language, field, type):
     help_texts = [field.help_text]
 
-    lemma = obj.lemma
-    if lemma.startswith("~"):
-        lemma = lemma[1:]
-
     if type == "alternative":
         help_texts.append("German Gender Lemma (check 'is gendered noun'): ~Male Form~")
 
@@ -305,65 +301,90 @@ def update_lemma_help_text(obj, language, field, type):
         help_texts.append(
             "<br><b>German Gender Variations:</b><br>" + "<br>".join(variations)
         )
-    else:
-        try:
-            tokens, lemmas, generated_word_types = obj.tokenize()
-            message = (
-                f"<br>Auto-detected word_types: {generated_word_types}"
-                if obj.word_types == generated_word_types
-                else f"<br><b>Auto-detected word_types mismatch: {generated_word_types}</b>"
-            )
-            help_texts.append(message)
 
-            word_types = obj.parse_word_types()
-        except ValidationError as exception:
-            help_texts.append(
-                "<br><b>Tokenization/Word_types validation failed</b>: " + exception.message
-            )
+    try:
+        tokens, lemmas, generated_word_types = obj.tokenize()
+        message = (
+            f"<br>Auto-detected word_types: {generated_word_types}"
+            if obj.word_types == generated_word_types
+            else f"<br><b>Auto-detected word_types mismatch: {generated_word_types}</b>"
+        )
+        help_texts.append(message)
 
-            tokens = lemmas = word_types = []
+        word_types = obj.parse_word_types()
+    except ValidationError as exception:
+        help_texts.append(
+            "<br><b>Tokenization/Word_types validation failed</b>: " + exception.message
+        )
 
-        word_type_map = {
-            "v": "Verb",
-            "a": "Adjective",
-            "n": "Noun",
-        }
+        tokens = lemmas = word_types = []
 
-        for i in range(len(tokens)):
-            if word_types is not None and word_types[i]["lemmatize"]:
-                token = tokens[i]
-                if token != lemmas[i]:
-                    help_texts.append(
-                        f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
-                    )
-                key = (
-                    "base_form" if word_types[i]["lower_case"] else "base_form__iexact"
+    word_type_map = {
+        "v": "Verb",
+        "a": "Adjective",
+        "n": "Noun",
+    }
+
+    for i in range(len(tokens)):
+        if word_types is not None and word_types[i]["lemmatize"]:
+            token = tokens[i]
+            if token != lemmas[i]:
+                help_texts.append(
+                    f"<strong>Token '{tokens[i]}' does not match lemma '{lemmas[i]}'</strong>"
                 )
-                filters = {key: token}
+            key = "base_form" if word_types[i]["lower_case"] else "base_form__iexact"
+            filters = {key: token.strip("~")}
 
-                for word_type in word_type_map:
-                    if word_type in word_types[i]["word_type"]:
-                        help_texts.append(
-                            generate_help_text(
-                                word_type_map[word_type],
-                                obj.language,
-                                filters,
-                                tokens[i],
-                            )
+            for word_type in word_type_map:
+                if word_type in word_types[i]["word_type"]:
+                    help_texts.append(
+                        generate_help_text(
+                            word_type_map[word_type],
+                            obj.language,
+                            filters,
+                            tokens[i],
                         )
+                    )
 
-                filters = {"lemma": tokens[i], "language": obj.language}
+            filters = {"lemma": tokens[i].strip("~"), "language": obj.language}
+            help_texts.append(
+                generate_help_text("Lemmatization", obj.language, filters, tokens[i])
+            )
+
+        match type:
+            case "rule":
+                filters = {
+                    "first_token__iexact": tokens[i],
+                    "id__ne": obj.id,
+                }
+
                 help_texts.append(
                     generate_help_text(
-                        "Lemmatization", obj.language, filters, tokens[i]
+                        "Rule",
+                        obj.language,
+                        filters,
+                        tokens[i],
+                        "overlapping rules with matching first token",
                     )
                 )
+            case "alternative":
+                if (
+                    len(lemmas[i]) > 1
+                    and tokens[i] not in stopwords[obj.language]
+                    and lemmas[i] not in stopwords[obj.language]
+                    and not obj.is_gendered_noun
+                ):
+                    first_tokens = [
+                        tokens[i],
+                        tokens[i].lower(),
+                    ]
+                    if tokens[i] != lemmas[i]:
+                        first_tokens.append(lemmas[i])
+                        first_tokens.append(lemmas[i].lower())
 
-            match type:
-                case "rule":
                     filters = {
-                        "first_token__iexact": tokens[i],
-                        "id__ne": obj.id,
+                        "first_token__in": first_tokens,
+                        "language": obj.language,
                     }
 
                     help_texts.append(
@@ -371,39 +392,10 @@ def update_lemma_help_text(obj, language, field, type):
                             "Rule",
                             obj.language,
                             filters,
-                            tokens[i],
-                            "overlapping rules with matching first token",
+                            tokens[i].strip("~"),
+                            "potential circular alternative",
                         )
                     )
-                case "alternative":
-                    if (
-                        len(lemmas[i]) > 1
-                        and tokens[i] not in stopwords[obj.language]
-                        and lemmas[i] not in stopwords[obj.language]
-                        and not obj.is_gendered_noun
-                    ):
-                        first_tokens = [
-                            tokens[i],
-                            tokens[i].lower(),
-                        ]
-                        if tokens[i] != lemmas[i]:
-                            first_tokens.append(lemmas[i])
-                            first_tokens.append(lemmas[i].lower())
-
-                        filters = {
-                            "first_token__in": first_tokens,
-                            "language": obj.language,
-                        }
-
-                        help_texts.append(
-                            generate_help_text(
-                                "Rule",
-                                obj.language,
-                                filters,
-                                tokens[i],
-                                "potential circular alternative",
-                            )
-                        )
 
     field.help_text = mark_safe("<br>".join(help_texts))
 
