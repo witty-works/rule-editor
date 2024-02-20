@@ -313,6 +313,12 @@ class DiversityDimension(
         unique=True,
         help_text="Machine name of the diversity dimension (with optional '_advanced' suffix)",
     )
+    external_name = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Public name of the diversity dimension",
+    )
     parent_name = models.CharField(
         max_length=255,
         help_text="Machine name of the diversity dimension (without optional '_advanced' suffix)",

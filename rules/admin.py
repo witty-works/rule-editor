@@ -1054,6 +1054,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
 
     list_display = (
         "name",
+        "external_name",
         "category",
         "proficiency_level",
         "has_en_rules",
@@ -1064,6 +1065,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
     )
     readonly_fields = (
         "name",
+        "external_name",
         "parent_name",
         "category",
         "proficiency_level",
@@ -1072,7 +1074,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         "url_en",
         "url_de",
     )
-    search_fields = ("name",)
+    search_fields = ("name", "external_name",)
     admin_order_field = ("name", "category", "proficiency_level")
     list_filter = (
         "category",
