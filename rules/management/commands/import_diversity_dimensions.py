@@ -10,11 +10,12 @@ class Command(BaseCommand):
         parser.add_argument("--file", type=str)
 
     def update_language_properties(self, diversity_dimension, data):
+        external_name = []
         for language in LanguageEnum:
             setattr(
                 diversity_dimension,
                 f"has_{language}_rules",
-                data[f"has_{language}_rules"] == "true",
+                language in data[f"has_rules"],
             )
 
             if "translations" in data and language in data["translations"]:
@@ -24,11 +25,17 @@ class Command(BaseCommand):
                     data["translations"][language]["canonical_url"],
                 )
 
+                external_name.append(data["translations"][language]["hs_name"])
+
+        diversity_dimension.external_name = (" / ").join(external_name)
+
     def handle(self, *args, **options):
         diversity_dimensions_file = open(options["file"])
         diversity_dimensions = json.load(diversity_dimensions_file)
 
         for name in diversity_dimensions:
+            self.stdout.write(self.style.WARNING(f"Processing {name}"))
+
             data = diversity_dimensions[name]
 
             if "translations" not in data or "proficiency_level" not in data:
