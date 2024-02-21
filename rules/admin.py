@@ -960,6 +960,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "lemma",
         "word_types",
         "language",
+        "type",
         "is_active",
         "all_diversity_dimensions",
         "tag_list",
@@ -1074,7 +1075,10 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         "url_en",
         "url_de",
     )
-    search_fields = ("name", "external_name",)
+    search_fields = (
+        "name",
+        "external_name",
+    )
     admin_order_field = ("name", "category", "proficiency_level")
     list_filter = (
         "category",
