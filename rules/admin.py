@@ -1011,6 +1011,8 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
                 )
                 count = cursor.fetchone()[0]
                 url = f"/admin/rules/rule/?diversity_dimensions__id__in={str(obj.pk)}&language__exact={language}"
+                if count < 5:
+                    count = f'<span style="color: red">{count}</span>'
                 filter_link = f'<a href="{url}" target="_new">{count}</a>'
 
                 count_values.append(f"{category} ({filter_link})")
