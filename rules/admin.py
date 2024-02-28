@@ -865,6 +865,27 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         return form
 
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
+        if obj.is_active:
+            diversity_dimensions = obj.diversity_dimensions.all()
+
+            if diversity_dimensions.count() == 0:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    "Rule must have a diversity dimension when marked active!",
+                )
+            elif obj.alternatives.count() == 0:
+                for diversity_dimension in diversity_dimensions:
+                    if diversity_dimension.proficiency_level != "inclusive":
+                        messages.add_message(
+                            request,
+                            messages.ERROR,
+                            "Rule with non-inclusive diversity dimension should have an alternative if marked active!",
+                        )
+
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("tags")
 
@@ -960,6 +981,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "lemma",
         "word_types",
         "language",
+        "type",
         "is_active",
         "all_diversity_dimensions",
         "tag_list",
@@ -1010,6 +1032,8 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
                 )
                 count = cursor.fetchone()[0]
                 url = f"/admin/rules/rule/?diversity_dimensions__id__in={str(obj.pk)}&language__exact={language}"
+                if count < 5:
+                    count = f'<span style="color: red">{count}</span>'
                 filter_link = f'<a href="{url}" target="_new">{count}</a>'
 
                 count_values.append(f"{category} ({filter_link})")
@@ -1074,7 +1098,10 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         "url_en",
         "url_de",
     )
-    search_fields = ("name", "external_name",)
+    search_fields = (
+        "name",
+        "external_name",
+    )
     admin_order_field = ("name", "category", "proficiency_level")
     list_filter = (
         "category",

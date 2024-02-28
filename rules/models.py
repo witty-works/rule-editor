@@ -429,6 +429,22 @@ class Rule(
         if len(errors):
             raise ValidationError(errors)
 
+    def save_model(self, request, obj, form, change):
+        super.save_model(request, obj, form, change)
+        if self.is_active:
+            diversity_dimensions = self.diversity_dimensions.all()
+
+            failed = diversity_dimensions.count() == 0
+
+            if self.alternatives.count() == 0:
+                for diversity_dimension in diversity_dimensions:
+                    if diversity_dimension.proficiency_level != "inclusive":
+                        failed = True
+
+            if failed:
+                messages.add_message(request, messages.INFO, 'Hello world.')
+
+
     def __str__(self):
         return f"{self.lemma[0:40]} - {self.word_types} ({self.language})"
 
@@ -1604,14 +1620,30 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
         super().clean()
 
         try:
+            other_form = None
             if self.female_form:
                 other_form = GermanNoun.objects.get(base_form=self.female_form)
             elif self.male_form:
                 other_form = GermanNoun.objects.get(base_form=self.male_form)
-            else:
-                return
         except GermanNoun.DoesNotExist:
             return
+
+        # Add missing reference to other
+        if other_form is None:
+            try:
+                other_form = GermanNoun.objects.get(female_form=self.base_form)
+                if other_form is None:
+                    other_form = GermanNoun.objects.get(male_form=self.base_form)
+
+                if other_form is None:
+                    return
+
+                if other_form.female_form is not None:
+                    self.male_form = other_form.base_form
+                elif other_form.male_form is not None:
+                    self.female_form = other_form.base_form
+            except GermanNoun.DoesNotExist:
+                return
 
         # check to see if collective_noun needs to be copied
         if self._state.adding:
@@ -1619,10 +1651,19 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
                 self.collective_noun = other_form.collective_noun
             if self.collective_noun_2 is None or len(self.collective_noun_2) == 0:
                 self.collective_noun_2 = other_form.collective_noun_2
+
+            if other_form.female_form is not None:
+                self.male_form = other_form.base_form
+            elif other_form.male_form is not None:
+                self.female_form = other_form.base_form
         # update collective_noun on the other form
         else:
             other_form.collective_noun = self.collective_noun
             other_form.collective_noun_2 = self.collective_noun_2
+            if self.female_form is not None:
+                other_form.male_form = self.base_form
+            elif self.male_form is not None:
+                other_form.female_form = self.base_form
             other_form.save()
 
     def get_variant(self, base_form, female_form=True):
