@@ -442,14 +442,13 @@ class Rule(
                         failed = True
 
             if failed:
-                messages.add_message(request, messages.INFO, 'Hello world.')
-
+                messages.add_message(request, messages.INFO, "Hello world.")
 
     def __str__(self):
         return f"{self.lemma[0:40]} - {self.word_types} ({self.language})"
 
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
-    tags = TaggableManager(blank=True)
+    tags = TaggableManager(blank=True, related_name="RuleTags")
 
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
