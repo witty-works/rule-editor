@@ -426,6 +426,11 @@ class Rule(
             if self.tokenized is not None and len(self.tokenized) > 1:
                 errors["type"] = "Rules with a non default type can only have one token"
 
+        if len(errors):
+            raise ValidationError(errors)
+
+    def save_model(self, request, obj, form, change):
+        super.save_model(request, obj, form, change)
         if self.is_active:
             diversity_dimensions = self.diversity_dimensions.all()
 
@@ -437,12 +442,8 @@ class Rule(
                         failed = True
 
             if failed:
-                errors["is_active"] = (
-                    "Active inclusive rules must have at least one diversity dimension and if any diversity dimension is non-inclusive then also at least one alternative"
-                )
+                messages.add_message(request, messages.INFO, 'Hello world.')
 
-        if len(errors):
-            raise ValidationError(errors)
 
     def __str__(self):
         return f"{self.lemma[0:40]} - {self.word_types} ({self.language})"

@@ -865,6 +865,27 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         return form
 
+    def save_related(self, request, form, formsets, change):
+        super().save_related(request, form, formsets, change)
+        obj = form.instance
+        if obj.is_active:
+            diversity_dimensions = obj.diversity_dimensions.all()
+
+            if diversity_dimensions.count() == 0:
+                messages.add_message(
+                    request,
+                    messages.ERROR,
+                    "Rule must have a diversity dimension when marked active!",
+                )
+            elif obj.alternatives.count() == 0:
+                for diversity_dimension in diversity_dimensions:
+                    if diversity_dimension.proficiency_level != "inclusive":
+                        messages.add_message(
+                            request,
+                            messages.ERROR,
+                            "Rule with non-inclusive diversity dimension should have an alternative if marked active!",
+                        )
+
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("tags")
 
