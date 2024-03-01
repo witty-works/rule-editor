@@ -91,3 +91,5 @@ local_settings.py
 .env
 database/*
 data/*
+
+empty_responses.txt
