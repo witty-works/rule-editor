@@ -502,6 +502,10 @@ class Rule(
     is_marked_for_review = models.BooleanField(
         default=False, help_text="Rule should be reviewed"
     )
+    has_failing_training_sentence = models.BooleanField(
+        default=False,
+        help_text="If one of the training sentences is not triggering the given rule as expected",
+    )
 
     diversity_dimensions = models.ManyToManyField(
         DiversityDimension, through="RuleDiversityDimension"
