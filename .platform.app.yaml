@@ -73,3 +73,12 @@ crons:
             if [ "$PLATFORM_BRANCH" = main ]; then
                 platform snapshot:create --yes --no-wait
             fi
+    check_rules:
+        spec: "30 2 * * *"
+        cmd: |
+            if [ "$PLATFORM_BRANCH" = main ]; then
+                pipenv run python manage.py check_rules
+            fi
+
+
+            

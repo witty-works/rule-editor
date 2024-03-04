@@ -758,6 +758,7 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
+                    "has_failing_training_sentence",
                     "type",
                     "entity_type",
                     "pluralization",
@@ -877,14 +878,28 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     messages.ERROR,
                     "Rule must have a diversity dimension when marked active!",
                 )
-            elif obj.alternatives.count() == 0:
+            else:
+                has_non_inclusive = None
+                has_inclusive = None
                 for diversity_dimension in diversity_dimensions:
-                    if diversity_dimension.proficiency_level != "inclusive":
-                        messages.add_message(
-                            request,
-                            messages.ERROR,
-                            "Rule with non-inclusive diversity dimension should have an alternative if marked active!",
-                        )
+                    if diversity_dimension.proficiency_level == "inclusive":
+                        has_inclusive = True
+                    else:
+                        has_non_inclusive = True
+
+                if has_non_inclusive and obj.alternatives.count() == 0:
+                    messages.add_message(
+                        request,
+                        messages.ERROR,
+                        "Rule with non-inclusive diversity dimension should have an alternative if marked active!",
+                    )
+
+                if has_non_inclusive and has_inclusive:
+                    messages.add_message(
+                        request,
+                        messages.ERROR,
+                        "Rule should not mix inclusive and non-inclusive diversity dimensions when marked active!",
+                    )
 
     def get_queryset(self, request):
         return super().get_queryset(request).prefetch_related("tags")
@@ -907,6 +922,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
+                    "has_failing_training_sentence",
                     "type",
                     "entity_type",
                     "pluralization",
@@ -971,6 +987,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "label_type",
         "first_word_type",
         "has_training_sentences",
+        "has_failing_training_sentence",
         "source",
         "sanctions",
         ("diversity_dimensions", MultiSelectRelatedOnlyFilter),

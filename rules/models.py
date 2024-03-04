@@ -442,14 +442,13 @@ class Rule(
                         failed = True
 
             if failed:
-                messages.add_message(request, messages.INFO, 'Hello world.')
-
+                messages.add_message(request, messages.INFO, "Hello world.")
 
     def __str__(self):
         return f"{self.lemma[0:40]} - {self.word_types} ({self.language})"
 
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
-    tags = TaggableManager(blank=True)
+    tags = TaggableManager(blank=True, related_name="RuleTags")
 
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
@@ -502,6 +501,10 @@ class Rule(
     )
     is_marked_for_review = models.BooleanField(
         default=False, help_text="Rule should be reviewed"
+    )
+    has_failing_training_sentence = models.BooleanField(
+        default=False,
+        help_text="If one of the training sentences is not triggering the given rule as expected",
     )
 
     diversity_dimensions = models.ManyToManyField(

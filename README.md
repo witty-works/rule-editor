@@ -36,3 +36,9 @@ platform mount:download --mount database --target ./database -e [ENV]
 ```
 platform mount:upload --mount database --source ./database -e [ENV]
 ```
+
+## Check training sentences
+
+```
+pipenv run python manage.py check_rules
+```
