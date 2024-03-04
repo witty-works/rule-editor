@@ -20,7 +20,10 @@ class Command(BaseCommand):
                 for sentence in training_sentences:
                     if sentence.is_false_positive:  # dont expect this to work yet
                         continue
-                    response = apply_rule({"rule": rule.id, "text": sentence.text})
+                    try:
+                        response = apply_rule({"rule": rule.id, "text": sentence.text})
+                    except:
+                        continue
                     if len(response) == 0:
                         if not sentence.is_false_positive:
                             self.stdout.write(
