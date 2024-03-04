@@ -1002,6 +1002,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "is_active",
         "all_diversity_dimensions",
         "tag_list",
+        "has_failing_training_sentence",
     )
 
     inlines = [
