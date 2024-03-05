@@ -549,6 +549,15 @@ def apply_rule(values):
     for false_positive in rule.false_positives.all():
         false_positives.append(false_positive.false_positive)
 
+    lemmatizations = {}
+    for token in rule.lemma_json:
+        token_lemmatizations = Lemmatization.objects.filter(lemma=token)
+        if token_lemmatizations is None:
+            continue
+
+        for token_lemmatization in token_lemmatizations:
+            lemmatizations[token_lemmatization.text] = token_lemmatization.lemma
+
     data = {
         "text": values["text"],
         "lang": str(rule.language),
@@ -563,6 +572,7 @@ def apply_rule(values):
         "is_pattern_match": rule.is_pattern_match,
         "entity_type": rule.entity_type,
         "pluralization": rule.pluralization,
+        "lemmatizations": lemmatizations,
     }
 
     path = "/debug/rule"
@@ -1002,6 +1012,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "is_active",
         "all_diversity_dimensions",
         "tag_list",
+        "has_failing_training_sentence",
     )
 
     inlines = [
