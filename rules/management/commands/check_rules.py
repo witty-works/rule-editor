@@ -55,7 +55,7 @@ class Command(BaseCommand):
         if failing_rules:
             self.stdout.write(
                 self.style.ERROR(
-                    f"There are {failing_rules} with {new_failing_rules} newly failing rules and {new_passing_rules} newly passing rules"
+                    f"There are {failing_rules} failing rules with {new_failing_rules} newly failing rules and {new_passing_rules} newly passing rules"
                 )
             )
 
