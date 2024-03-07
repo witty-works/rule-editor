@@ -687,7 +687,7 @@ class Command(BaseCommand):
                     diversity_dimensions,
                     rule,
                     row["Category"],
-                    row["Primary_subcategory"],
+                    row["Primary_subcategory"],#here 
                     0,
                     is_basic,
                 )
