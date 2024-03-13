@@ -551,7 +551,9 @@ def apply_rule(values):
 
     lemmatizations = {}
     for token in rule.lemma_json:
-        token_lemmatizations = Lemmatization.objects.filter(lemma=token,language=rule.language)
+        token_lemmatizations = Lemmatization.objects.filter(
+            lemma=token, language=rule.language
+        )
         if token_lemmatizations is None:
             continue
 
@@ -768,6 +770,7 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
+                    "is_hr_rule",
                     "has_failing_training_sentence",
                     "type",
                     "entity_type",
@@ -932,6 +935,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
+                    "is_hr_rule",
                     "has_failing_training_sentence",
                     "type",
                     "entity_type",
@@ -991,6 +995,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         LemmaFilter,
         "language",
         "is_marked_for_review",
+        "is_hr_rule",
         "tags",
         "is_active",
         "type",

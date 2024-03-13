@@ -506,6 +506,10 @@ class Rule(
         default=False,
         help_text="If one of the training sentences is not triggering the given rule as expected",
     )
+    is_hr_rule = models.BooleanField(
+        default=False,
+        help_text="If this rule is enabled only for the HR-addon",
+    )
 
     diversity_dimensions = models.ManyToManyField(
         DiversityDimension, through="RuleDiversityDimension"
