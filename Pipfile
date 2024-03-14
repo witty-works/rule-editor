@@ -27,6 +27,7 @@ inflex = "*"
 german-nouns = "*"
 beautifulsoup4 = "*"
 django-nested-admin = "*"
+breame = "*"
 
 [dev-packages]
 
