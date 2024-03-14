@@ -551,7 +551,9 @@ def apply_rule(values):
 
     lemmatizations = {}
     for token in rule.lemma_json:
-        token_lemmatizations = Lemmatization.objects.filter(lemma=token,language=rule.language)
+        token_lemmatizations = Lemmatization.objects.filter(
+            lemma=token, language=rule.language
+        )
         if token_lemmatizations is None:
             continue
 
