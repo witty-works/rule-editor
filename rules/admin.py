@@ -32,6 +32,7 @@ from taggit_bulk.actions import tag_wizard
 from dynamic_forms import DynamicField, DynamicFormMixin
 from grappelli.forms import GrappelliSortableHiddenMixin
 import nested_admin
+from breame.spelling import get_american_spelling, get_british_spelling
 
 from .models import (
     Rule,
@@ -551,7 +552,9 @@ def apply_rule(values):
 
     lemmatizations = {}
     for token in rule.lemma_json:
-        token_lemmatizations = Lemmatization.objects.filter(lemma=token,language=rule.language)
+        token_lemmatizations = Lemmatization.objects.filter(
+            lemma=token, language=rule.language
+        )
         if token_lemmatizations is None:
             continue
 
@@ -768,6 +771,7 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
+                    "is_hr_rule",
                     "has_failing_training_sentence",
                     "type",
                     "entity_type",
@@ -839,23 +843,10 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     def save_formset(self, request, form, formset, change):
         super(RuleAdmin, self).save_formset(request, form, formset, change)
 
-        rule = formset.instance
-
         for data in formset.cleaned_data:
             if "remove_from_parent" in data and data["remove_from_parent"]:
                 data["id"].parent = None
                 data["id"].save()
-
-        if (
-            formset.prefix == "rulediversitydimension_set"
-            and len(rule.diversity_dimensions.all()) == 0
-        ):
-            message = "Diversity dimensions missing"
-            messages.add_message(request, messages.INFO, message)
-
-        if formset.prefix == "alternatives" and len(rule.alternatives.all()) == 0:
-            message = "Alternatives missing"
-            messages.add_message(request, messages.INFO, message)
 
     def all_diversity_dimensions(self, obj):
         return ", ".join(obj.diversity_dimension_json)
@@ -878,9 +869,9 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
     def save_related(self, request, form, formsets, change):
         super().save_related(request, form, formsets, change)
-        obj = form.instance
-        if obj.is_active:
-            diversity_dimensions = obj.diversity_dimensions.all()
+        rule = form.instance
+        if rule.is_active:
+            diversity_dimensions = rule.diversity_dimensions.all()
 
             if diversity_dimensions.count() == 0:
                 messages.add_message(
@@ -897,11 +888,11 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     else:
                         has_non_inclusive = True
 
-                if has_non_inclusive and obj.alternatives.count() == 0:
+                if has_non_inclusive and rule.alternatives.count() == 0:
                     messages.add_message(
                         request,
                         messages.ERROR,
-                        "Rule with non-inclusive diversity dimension should have an alternative if marked active!",
+                        "Rule with non-inclusive diversity dimension should have at least 1 alternative if marked active!",
                     )
 
                 if has_non_inclusive and has_inclusive:
@@ -909,6 +900,41 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                         request,
                         messages.ERROR,
                         "Rule should not mix inclusive and non-inclusive diversity dimensions when marked active!",
+                    )
+
+            alternative_lemma = None
+            if rule.language == "de":
+                if "ß" in rule.lemma:
+                    alternative_lemma = rule.lemma.replace("ß", "ss")
+                elif "ss" in rule.lemma:
+                    alternative_lemma = rule.lemma.replace("ss", "ß")
+            elif rule.language == "en":
+                tokens = rule.lemma.split()
+                potential_alternative_lemma = []
+                for token in tokens:
+                    if token != get_american_spelling(token):
+                        potential_alternative_lemma.append(get_american_spelling(token))
+                    elif token != get_british_spelling(token):
+                        potential_alternative_lemma.append(get_british_spelling(token))
+                    else:
+                        potential_alternative_lemma.append(token)
+
+                potential_alternative_lemma = " ".join(potential_alternative_lemma)
+                if potential_alternative_lemma != rule.lemma:
+                    alternative_lemma = potential_alternative_lemma
+
+            if alternative_lemma is not None:
+                alternative_lemma_found = False
+                for child in rule.children.all():
+                    if child.lemma == alternative_lemma:
+                        alternative_lemma_found = True
+                        break
+
+                if not alternative_lemma_found:
+                    messages.add_message(
+                        request,
+                        messages.WARNING,
+                        f"Rule includes a dialect specific spelling, please create a child rule for lemma '{alternative_lemma}'",
                     )
 
     def get_queryset(self, request):
@@ -932,6 +958,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
+                    "is_hr_rule",
                     "has_failing_training_sentence",
                     "type",
                     "entity_type",
@@ -991,6 +1018,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         LemmaFilter,
         "language",
         "is_marked_for_review",
+        "is_hr_rule",
         "tags",
         "is_active",
         "type",

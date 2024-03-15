@@ -429,21 +429,6 @@ class Rule(
         if len(errors):
             raise ValidationError(errors)
 
-    def save_model(self, request, obj, form, change):
-        super.save_model(request, obj, form, change)
-        if self.is_active:
-            diversity_dimensions = self.diversity_dimensions.all()
-
-            failed = diversity_dimensions.count() == 0
-
-            if self.alternatives.count() == 0:
-                for diversity_dimension in diversity_dimensions:
-                    if diversity_dimension.proficiency_level != "inclusive":
-                        failed = True
-
-            if failed:
-                messages.add_message(request, messages.INFO, "Hello world.")
-
     def __str__(self):
         return f"{self.lemma[0:40]} - {self.word_types} ({self.language})"
 
@@ -505,6 +490,10 @@ class Rule(
     has_failing_training_sentence = models.BooleanField(
         default=False,
         help_text="If one of the training sentences is not triggering the given rule as expected",
+    )
+    is_hr_rule = models.BooleanField(
+        default=False,
+        help_text="If this rule is enabled only for the HR-addon",
     )
 
     diversity_dimensions = models.ManyToManyField(
