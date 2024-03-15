@@ -34,10 +34,12 @@ from grappelli.forms import GrappelliSortableHiddenMixin
 import nested_admin
 
 from .models import (
+    AlternativeEvaluation,
     Rule,
     Alternative,
     DiversityDimension,
     RuleDiversityDimension,
+    RuleStructureEvaluation,
     Source,
     FalsePositive,
     TrainingSentence,
@@ -49,6 +51,7 @@ from .models import (
     GermanAdjective,
     GermanNoun,
     LanguageEnum,
+    TrainingSentenceEvaluation,
     fetch_json,
 )
 
@@ -468,9 +471,15 @@ class AlternativeForm(forms.ModelForm):
             update_lemma_help_text(
                 instance, instance.language, self.fields["lemma"], "alternative"
             )
+    
+    more_inclusive_than_trigger_word = forms.ChoiceField(choices=AlternativeEvaluation._meta.get_field('more_inclusive_than_trigger_word').choices, required=False, label='More Inclusive Than Trigger Word')
+    same_meaning_as_trigger_word = forms.ChoiceField(choices=AlternativeEvaluation._meta.get_field('same_meaning_as_trigger_word').choices, required=False, label='Same Meaning As Trigger Word')
+    how_good_is_alternative = forms.ChoiceField(choices=AlternativeEvaluation._meta.get_field('how_good_is_alternative').choices, required=False, label='How Good Is Alternative')
+    notes_from_evaluator_alternative = forms.CharField(widget=forms.Textarea, required=False, label='Notes from Evaluator')
 
 
-class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
+
+class AlternativeInline(nested_admin.NestedStackedInline, GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative
     form = AlternativeForm
     fieldsets = (
@@ -490,6 +499,10 @@ class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
                     "is_active",
                     "label",
                     "order",
+                    "more_inclusive_than_trigger_word",
+                    "same_meaning_as_trigger_word",
+                    "how_good_is_alternative",
+                    "notes_from_evaluator_alternative",
                 ),
             },
         ),
@@ -641,7 +654,11 @@ class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
         encoder=lambda form: PrettyJSONEncoder,
         help_text=lambda form: visualize_sentence(form.initial),
     )
-
+    gramatically_correct = forms.ChoiceField(choices=TrainingSentenceEvaluation._meta.get_field('gramatically_correct').choices, required=False, label='Gramatically Correct')
+    fits_context = forms.ChoiceField(choices=TrainingSentenceEvaluation._meta.get_field('fits_context').choices, required=False, label='Fits Context')
+    written_by_human = forms.ChoiceField(choices=TrainingSentenceEvaluation._meta.get_field('written_by_human').choices, required=False, label='Written By Human')
+    should_trigger_rule = forms.ChoiceField(choices=TrainingSentenceEvaluation._meta.get_field('should_trigger_rule').choices, required=False, label='Should Trigger Rule')
+    notes_from_evaluator_training_sentences = forms.CharField(widget=forms.Textarea, required=False, label='Notes from Evaluator')
 
 class TrainingSentenceInline(nested_admin.NestedStackedInline):
     model = TrainingSentence
@@ -655,6 +672,11 @@ class TrainingSentenceInline(nested_admin.NestedStackedInline):
         "comment",
         "spacy",
         "response",
+        "gramatically_correct",
+        "fits_context",
+        "written_by_human",
+        "should_trigger_rule",
+        "notes_from_evaluator_training_sentences",
     )
     extra = 0
 
@@ -748,6 +770,14 @@ class RuleForm(forms.ModelForm):
             )
 
     remove_from_parent = forms.BooleanField(required=False)
+
+    text_id_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('text_id_correctness').choices, required=False, label='Text ID Correctness')
+    lemma_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('lemma_correctness').choices, required=False, label='Lemma Correctness')
+    word_types_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('word_types_correctness').choices, required=False, label='Word Types Correctness')
+    type_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('type_correctness').choices, required=False, label='Type Correctness')
+    entity_type_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('entity_type_correctness').choices, required=False, label='Entity Type Correctness')
+    pluralization_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('pluralization_correctness').choices, required=False, label='Pluralization Correctness')
+    notes_from_evaluator_structure = forms.CharField(widget=forms.Textarea, required=False, label='Notes from Evaluator')
 
 
 class ParentRuleInline(nested_admin.NestedStackedInline):
@@ -926,17 +956,24 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                 "fields": (
                     "language",
                     "text_id",
+                    "text_id_correctness",
                     "lemma",
+                    "lemma_correctness",
                     "word_types",
+                    "word_types_correctness",
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",
                     "is_context_aware",
                     "has_failing_training_sentence",
                     "type",
+                    "type_correctness",
                     "entity_type",
+                    "entity_type_correctness",
                     "pluralization",
+                    "pluralization_correctness",
                     "is_active",
+                    "notes_from_evaluator_structure",
                 ),
             },
         ),
