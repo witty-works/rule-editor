@@ -66,7 +66,7 @@ class Command(BaseCommand):
             api_version="2024-02-15-preview"
             )
         rules = Rule.objects.all()
-        for rule in rules[:5]:
+        for rule in rules:
             try:
                 training_sentences = TrainingSentence.objects.filter(rule=rule)
                 if len(training_sentences) < 2:
@@ -97,6 +97,11 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f'Generated sentences: {api_response}'))
 
                     tp_sentences = api_response["true_positive_examples"].values()    
+                    
+                    if "I'm sorry, but I can't provide examples for this request" in tp_sentences or "I'm sorry, but I can't fulfill this request" in tp_sentences:
+                        self.stdout.write(self.style.ERROR(f'Failed to generate sentences for rule: {rule}. Error: {tp_sentences}'))
+                        continue
+
                     for sentence in tp_sentences:
                         if sentence:  # Ensure the sentence is not empty
                             TrainingSentence.objects.create(
