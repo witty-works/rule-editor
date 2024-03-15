@@ -69,7 +69,7 @@ class Command(BaseCommand):
         for rule in rules:
             try:
                 training_sentences = TrainingSentence.objects.filter(rule=rule)
-                if len(training_sentences) < 2:
+                if len(training_sentences) < 2 and rule.language == "en":
                     formatted_rule_for_generation = f"""{{
                         "rule_specification":{{
                             "rule_trigger":"{rule.text_id}",
@@ -97,7 +97,7 @@ class Command(BaseCommand):
                     self.stdout.write(self.style.SUCCESS(f'Generated sentences: {api_response}'))
 
                     tp_sentences = api_response["true_positive_examples"].values()    
-                    
+
                     if "I'm sorry, but I can't provide examples for this request" in tp_sentences or "I'm sorry, but I can't fulfill this request" in tp_sentences:
                         self.stdout.write(self.style.ERROR(f'Failed to generate sentences for rule: {rule}. Error: {tp_sentences}'))
                         continue
