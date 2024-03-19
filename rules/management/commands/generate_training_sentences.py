@@ -4,9 +4,10 @@ from os import environ
 from openai import AzureOpenAI
 import json
 
+
 class Command(BaseCommand):
-    help = "Generates additional training sentences for rules"    
-    
+    help = "Generates additional training sentences for rules"
+
     def handle(self, *args, **options):
         instruction = """You are a sentence generator for inclusive language rules.
         You take a rule word or phrase as input and output sentences that contain that word or phrase in a way that should trigger the rule.
@@ -58,18 +59,20 @@ class Command(BaseCommand):
                 }
             }
         }"""
-        trigger =  "Complete the empty sentence fields in the last json. Return only the complete json."
-        
+        trigger = "Complete the empty sentence fields in the last json. Return only the complete json."
+
         client = AzureOpenAI(
-            azure_endpoint = "https://openai-test-solveig-helland.openai.azure.com/", 
-            api_key=environ.get("AZURE_OPENAI_KEY"),  
-            api_version="2024-02-15-preview"
-            )
-        rules = Rule.objects.all()
+            azure_endpoint="https://openai-test-solveig-helland.openai.azure.com/",
+            api_key=environ.get("AZURE_OPENAI_KEY"),
+            api_version="2024-02-15-preview",
+        )
+        rules = Rule.objects.filter(language="en")
         for rule in rules:
             try:
-                training_sentences = TrainingSentence.objects.filter(rule=rule)
-                if len(training_sentences) < 2 and rule.language == "en":
+                training_sentences = TrainingSentence.objects.filter(
+                    rule=rule, is_false_positive=0
+                )
+                if len(training_sentences) < 2:
                     formatted_rule_for_generation = f"""{{
                         "rule_specification":{{
                             "rule_trigger":"{rule.text_id}",
@@ -81,25 +84,43 @@ class Command(BaseCommand):
                             "true_positive_sentence_2":""
                         }},
                     }}"""
-                    prompt = [{"role":"system","content": instruction + examples + formatted_rule_for_generation + trigger}]
+                    prompt = [
+                        {
+                            "role": "system",
+                            "content": instruction
+                            + examples
+                            + formatted_rule_for_generation
+                            + trigger,
+                        }
+                    ]
                     chat_completion = client.chat.completions.create(
                         model="gpt40125preview",
-                        messages = prompt,
+                        messages=prompt,
                         temperature=0.8,
                         max_tokens=800,
                         top_p=0.95,
                         frequency_penalty=0,
                         presence_penalty=0,
-                        stop=None
+                        stop=None,
+                    )
+                    print(
+                        f"chat_completion: {chat_completion.choices[0].message.content}"
+                    )
+                    api_response = json.loads(
+                        chat_completion.choices[0].message.content
+                    )
+                    self.stdout.write(
+                        self.style.SUCCESS(f"Generated sentences: {api_response}")
+                    )
+
+                    tp_sentences = api_response["true_positive_examples"].values()
+
+                    if tp_sentences.startswith("I'm sorry"):
+                        self.stdout.write(
+                            self.style.ERROR(
+                                f"Failed to generate sentences for rule: {rule}. Error: {tp_sentences}"
+                            )
                         )
-                    print(f'chat_completion: {chat_completion.choices[0].message.content}')
-                    api_response = json.loads(chat_completion.choices[0].message.content)
-                    self.stdout.write(self.style.SUCCESS(f'Generated sentences: {api_response}'))
-
-                    tp_sentences = api_response["true_positive_examples"].values()    
-
-                    if "I'm sorry, but I can't provide examples for this request" in tp_sentences or "I'm sorry, but I can't fulfill this request" in tp_sentences:
-                        self.stdout.write(self.style.ERROR(f'Failed to generate sentences for rule: {rule}. Error: {tp_sentences}'))
                         continue
 
                     for sentence in tp_sentences:
@@ -108,10 +129,18 @@ class Command(BaseCommand):
                                 rule=rule,
                                 text=sentence,
                                 is_false_positive=False,
-                                comment='auto generated'
+                                comment="auto generated",
                             )
-                    self.stdout.write(self.style.SUCCESS(f'Generated additional training sentences for rule: {rule}'))
-                
+                    self.stdout.write(
+                        self.style.SUCCESS(
+                            f"Generated additional training sentences for rule: {rule}"
+                        )
+                    )
+
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f'Failed to generate sentences for rule: {rule}. Error: {e}'))
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"Failed to generate sentences for rule: {rule}. Error: {e}"
+                    )
+                )
                 continue
