@@ -10,18 +10,23 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-      rules = Rule.objects.all()
-   
-      with open('rules/management/commands/diversity_dimensions.json', 'r') as file:
-         all_diversity_dimensions = json.load(file)
+        rules = Rule.objects.all()
+        with open('rules/management/commands/translated_rules.json', 'w') as file:
+            file.write('')
 
-         client = AzureOpenAI(
+        
+        with open('rules/management/commands/diversity_dimensions.json', 'r') as file:
+            all_diversity_dimensions = json.load(file)
+         
+
+        client = AzureOpenAI(
             azure_endpoint = "https://openai-test-solveig-helland.openai.azure.com/", 
             api_key=environ.get("AZURE_OPENAI_KEY"),  
             api_version="2024-02-15-preview"
             )
         
-         for rule in rules:
+        shuffled_rules = rules.order_by('?')
+        for rule in shuffled_rules:
             if rule.language != "en":
                 continue
 
@@ -34,7 +39,10 @@ class Command(BaseCommand):
                 continue
 
             dimension_key = rule.diversity_dimension_json[0]
-            dimension_info = all_diversity_dimensions.get(dimension_key, {})
+            if dimension_key.endswith('_advanced'):
+                dimension_key = dimension_key[:-9]
+
+            dimension_info = all_diversity_dimensions[dimension_key]
             dimension_info = str(dimension_info).replace("'", '"')
             print('dimension_info', dimension_info)
 
@@ -80,5 +88,8 @@ class Command(BaseCommand):
                frequency_penalty=0,
                presence_penalty=0
             )
-            
+            #write results to file
+            with open('rules/management/commands/translated_rules.json', 'a') as file:
+               file.write(json.dumps(chat_completion.choices[0].message.content) + '\n')
+        
             self.stdout.write(self.style.SUCCESS(f'Generated rule: {chat_completion.choices[0].message.content}'))
