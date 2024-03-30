@@ -768,9 +768,21 @@ class RuleForm(forms.ModelForm):
             update_lemma_help_text(
                 instance, instance.language, self.fields["lemma"], "rule"
             )
+            #TODO: figure out how to set initial values for evaluation fields
+            print('instance', instance)
+            if hasattr(instance, 'rulestructureevaluation'):
+                rule_eval = instance.rulestructureevaluation
+                self.fields["text_id_correctness"].initial = rule_eval.text_id_correctness
+                self.fields["lemma_correctness"].initial = rule_eval.lemma_correctness
+                self.fields["word_types_correctness"].initial = rule_eval.word_types_correctness
+                self.fields["type_correctness"].initial = rule_eval.type_correctness
+                self.fields["entity_type_correctness"].initial = rule_eval.entity_type_correctness
+                self.fields["pluralization_correctness"].initial = rule_eval.pluralization_correctness
+                self.fields["notes_from_evaluator_structure"].initial = rule_eval.notes_from_evaluator_structure
+
 
     remove_from_parent = forms.BooleanField(required=False)
-
+    #selected should be taken from db
     text_id_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('text_id_correctness').choices, required=False, label='Text ID Correctness')
     lemma_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('lemma_correctness').choices, required=False, label='Lemma Correctness')
     word_types_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('word_types_correctness').choices, required=False, label='Word Types Correctness')
@@ -867,9 +879,73 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         )
 
     def save_formset(self, request, form, formset, change):
+        print('!!!!save_formset')
         super(RuleAdmin, self).save_formset(request, form, formset, change)
 
         rule = formset.instance
+
+        #also save evaluation data
+        rule_evaluation_obj = RuleStructureEvaluation.objects.filter(rule=rule).first()
+        #if no evaluation object exists, create one
+        if not rule_evaluation_obj:
+            rule_evaluation_obj = RuleStructureEvaluation(rule=rule)
+            rule_evaluation_obj.save()
+
+        print('?rule_evaluation_obj', rule_evaluation_obj)
+        print('text_id_correctness' in form.cleaned_data)
+        print(" form.cleaned_data['text_id_correctness']" , form.cleaned_data['text_id_correctness'])
+        if 'text_id_correctness' in form.cleaned_data:
+            rule_evaluation_obj.text_id_correctness = form.cleaned_data['text_id_correctness']
+            print('rule_evaluation_obj.text_id_correctness', rule_evaluation_obj.text_id_correctness)
+        if 'lemma_correctness' in form.cleaned_data:
+            rule_evaluation_obj.lemma_correctness = form.cleaned_data['lemma_correctness']
+        if 'word_types_correctness' in form.cleaned_data:
+            rule_evaluation_obj.word_types_correctness = form.cleaned_data['word_types_correctness']
+        if 'type_correctness' in form.cleaned_data:
+            rule_evaluation_obj.type_correctness = form.cleaned_data['type_correctness']
+        if 'entity_type_correctness' in form.cleaned_data:
+            rule_evaluation_obj.entity_type_correctness = form.cleaned_data['entity_type_correctness']
+        if 'pluralization_correctness' in form.cleaned_data:
+            rule_evaluation_obj.pluralization_correctness = form.cleaned_data['pluralization_correctness']
+        if 'notes_from_evaluator_structure' in form.cleaned_data:
+            rule_evaluation_obj.notes_from_evaluator_structure = form.cleaned_data['notes_from_evaluator_structure']
+
+        rule_evaluation_obj.save()
+
+        # alternative_evaluation_obj = AlternativeEvaluation.objects.filter(rule=rule).first()
+        # if not alternative_evaluation_obj:
+        #     alternative_evaluation_obj = AlternativeEvaluation(alternative=rule.alternatives.first())
+        #     alternative_evaluation_obj.save()
+        
+        # if 'more_inclusive_than_trigger_word' in form.cleaned_data:
+        #     alternative_evaluation_obj.more_inclusive_than_trigger_word = form.cleaned_data['more_inclusive_than_trigger_word']
+        # if 'same_meaning_as_trigger_word' in form.cleaned_data:
+        #     alternative_evaluation_obj.same_meaning_as_trigger_word = form.cleaned_data['same_meaning_as_trigger_word']
+        # if 'how_good_is_alternative' in form.cleaned_data:
+        #     alternative_evaluation_obj.how_good_is_alternative = form.cleaned_data['how_good_is_alternative']
+        # if 'notes_from_evaluator_alternative' in form.cleaned_data:
+        #     alternative_evaluation_obj.notes_from_evaluator_alternative = form.cleaned_data['notes_from_evaluator_alternative']
+        
+        # alternative_evaluation_obj.save()
+
+        # training_sentence_evaluation_obj = TrainingSentenceEvaluation.objects.filter(rule=rule).first()
+        # if not training_sentence_evaluation_obj:
+        #     training_sentence_evaluation_obj = TrainingSentenceEvaluation(training_sentence=rule.training_sentences.first())
+        #     training_sentence_evaluation_obj.save()
+
+        # if 'gramatically_correct' in form.cleaned_data:
+        #     training_sentence_evaluation_obj.gramatically_correct = form.cleaned_data['gramatically_correct']
+        # if 'fits_context' in form.cleaned_data:
+        #     training_sentence_evaluation_obj.fits_context = form.cleaned_data['fits_context']
+        # if 'written_by_human' in form.cleaned_data:
+        #     training_sentence_evaluation_obj.written_by_human = form.cleaned_data['written_by_human']
+        # if 'should_trigger_rule' in form.cleaned_data:
+        #     training_sentence_evaluation_obj.should_trigger_rule = form.cleaned_data['should_trigger_rule']
+        # if 'notes_from_evaluator_training_sentences' in form.cleaned_data:
+        #     training_sentence_evaluation_obj.notes_from_evaluator_training_sentences = form.cleaned_data['notes_from_evaluator_training_sentences']
+
+        # training_sentence_evaluation_obj.save()
+
 
         for data in formset.cleaned_data:
             if "remove_from_parent" in data and data["remove_from_parent"]:

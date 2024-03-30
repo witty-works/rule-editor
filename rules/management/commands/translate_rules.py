@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand
-from rules.models import Rule, TrainingSentence, Alternative
+from rules.models import DiversityDimension, Rule, RuleDiversityDimension, TrainingSentence, Alternative
 from openai import AzureOpenAI
 from os import environ
 import json
@@ -29,19 +29,27 @@ class Command(BaseCommand):
             api_key=environ.get("AZURE_OPENAI_KEY"),
             api_version="2024-02-15-preview"
         )
+        # goldSample = ['eye-opener', 'tranny', 'policeman', 'goal-getter', 'witch', 'slant-eye', 'fat', 'in the front-line', 'illegal immigrant', 'midget', 'boss', 'light in the loafers', 'world-wide', 'man-power', 'fall on deaf ears', 'guys', 'partner', 'housekeeping', 'world leader', 'punctual Germans', 'blacklisting', 'crazy', 'homeless', 'merry christmas', 'going the extra mile', 'young', 'can\'t learn an old dog new tricks', 'tard', 'handicapped']
+        # goldSampleRules = []
+        # for term in goldSample:
+        #     # Find a matching rule
+        #     matching_rule = next((rule for rule in rules if rule.text_id == term), None)
+        #     # If a matching rule is found, add it to goldSampleRules
+        #     if matching_rule:
+        #         goldSampleRules.append(matching_rule)
 
         for rule in rules.order_by('?'): # Randomize the order of rules
             try:
                 if rule.language != "en":
                     continue
 
-                alternatives = Alternative.objects.filter(rule_id=rule.id, is_inspiration=0)
+                alternatives = Alternative.objects.filter(rule_id=rule.id)
                 example_sentences = TrainingSentence.objects.filter(rule=rule)
 
                 #if no alternatives or example sentences, skip rule
-                if len(alternatives) == 0 or len(example_sentences) == 0:
-                    # self.stdout.write(self.style.ERROR(f"Skipping rule {rule} because it has no alternatives or example sentences"))
-                    continue
+                # if len(alternatives) == 0 or len(example_sentences) == 0:
+                #     # self.stdout.write(self.style.ERROR(f"Skipping rule {rule} because it has no alternatives or example sentences"))
+                #     continue
 
                 dimension_key = rule.diversity_dimension_json[0]
                 if dimension_key.endswith('_advanced'):
@@ -56,9 +64,6 @@ class Command(BaseCommand):
                         "rule_trigger": rule.text_id,
                         "lemma": rule.lemma,
                         "word_type": rule.word_types,
-                        "lemma_type": rule.type,
-                        "entity_type": rule.entity_type,
-                        "pluralism": rule.pluralization
                     },
                     "alternatives":{
                         "alternative_prio_1": alternatives[0].lemma if len(alternatives) > 0 else "",
@@ -72,34 +77,411 @@ class Command(BaseCommand):
                 }
                 rule_formatted_for_translation = str(rule_formatted_for_translation).replace("'", '"')
                 self.stdout.write(self.style.SUCCESS(f"Translating rule: {rule_formatted_for_translation}"))
+
+                instruction = """Your task is to function as an inclusive rule translator, focusing on translating and adapting language rules from English into German. The translation process must consider the inclusivity and cultural nuances of the German-speaking audience. For each provided rule, ensure the translated rule trigger exists in the German dictionary and retains the original rule's intent without creating new words. If a direct translation of the rule trigger would not be considered problematic in German, do not translate the rule and return an empty JSON object instead. If multiple synonyms exist in German, choose the one with the most offensive connotation to ensure clarity on what needs to be avoided. Provide new, culturally relevant examples in German that include the rule trigger in a natural way. The alternatives suggested should be more inclusive and avoid other offensive terms, adapted to fit the German context. If the alternatives do not apply or make sense in German, it's acceptable to come up with new ones. Each translation must include filled fields in a JSON format, only excluding translations when a direct German equivalent of the rule trigger does not exist.
+
+                    Explanation of JSON fields: 
+                    - `rule_category`: The inclusivity category the rule belongs to.
+                    - `rule_trigger`: The word or phrase that triggers the rule by being non-inclusive.
+                    - `lemma`: The base form of the rule trigger, or the citation form of a set of word forms.
+                    - `word_type`: Lists of word types (e.g., `n` for noun, `pron` for pronoun) separated by '|' with optional modifiers for case sensitivity and lemmatization.
+                    - `alternatives`: More inclusive alternatives to the rule trigger, ranked from best to worst. If the best alternative is to remove the word entirely, the alternative should be ‘-‘.\
+                    - `is_collective_noun`: alternative lemma referres to a collection of things taken as a whole. If it is a collective noun, it means do not pluralize.
+                    - `is_gendered_noun`: If an alternative lemma contains gendered nouns then non gendered variations should be generated.
+                    - `is_advanced`: alternative lemma is not a well understood concept.  
+                    - `true_positive_examples`: Sentences that contain the rule_trigger in its exact lemma form to test if the rule is triggered.
+
+                    Translations must accurately reflect the original rule's intent while being adapted for German cultural and linguistic nuances. Return translations as a JSON object. Make sure every field in the json is present, even if its left empty.
+
+                    Examples of correct translations
+                    1. Vision Category Example:
+                    Original:
+                    {
+                    "rule_category":"vision",
+                    "rule_specification":{
+                        "rule_trigger":"blind as a bat",
+                        "lemma":"blind as a bat",
+                        "word_type":"~a|||~n"
+                    },
+                    "alternatives":{
+                        "alternative_prio_1":{
+                            "lemma”:”Blind”,
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        },
+                        "alternative_prio_2":{
+                            "lemma":"((who is)) visually impaired",
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        }
+                    },
+                    "alternative_prio_3":{
+                        "lemma":"vision-impaired ((person))",
+                        "is_collective_noun":false,
+                        "is_gendered_noun":false,
+                        "is_advanced":false
+                    },
+                    "true_positive_examples":{
+                        "true_positive_sentence_1":"She was as blind as a bat when it came to understanding the complex math problem.",
+                        "true_positive_sentence_2":"He was so blind as a bat that he couldn't even see the sign in front of him."
+                    }
+                    }
+                    Translation:
+                    {
+                    "rule_category":"vision",
+                    "rule_specification":{
+                        "rule_trigger":"blind wie eine Fledermaus",
+                        "lemma":"blind wie eine Fledermaus",
+                        "word_type":"a||~|n"
+                    },
+                    "alternatives":{
+                        "alternative_prio_1":{
+                            "lemma":"schlecht sehen",
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        },
+                        "alternative_prio_2":{
+                            "lemma":"mit schwachem Sehvermögen",
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        }
+                    },
+                    "alternative_prio_3":{
+                        "lemma":"",
+                        "is_collective_noun":false,
+                        "is_gendered_noun":false,
+                        "is_advanced":false
+                    },
+                    "true_positive_examples":{
+                        "true_positive_sentence_1":"Er war so blind wie eine Fledermaus, dass er das Schild vor ihm nicht sehen konnte.",
+                        "true_positive_sentence_2":"Sie ist blind wie eine Fledermaus."
+                    }
+                    }
+
+                    2. Sexual Orientation Category Example:
+                    Original:
+                    {
+                    "rule_category":"sexual_orientation",
+                    "rule_specification":{
+                        "rule_trigger":"play for the other team",
+                        "lemma":"play for the other team",
+                        "word_type":"v|||a|n"
+                    },
+                    "alternatives":{
+                        "alternative_prio_1":{
+                            "lemma":"identify as lesbian",
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        },
+                        "alternative_prio_2":{
+                            "lemma":"identify as gay",
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        }
+                    },
+                    "alternative_prio_3":{
+                        "lemma":"identify as a member of the LGBT+ community",
+                        "is_collective_noun":false,
+                        "is_gendered_noun":false,
+                        "is_advanced":false
+                    },
+                    "true_positive_examples":{
+                        "true_positive_sentence_1":"Does he play for the other team?",
+                        "true_positive_sentence_2":",When you play for the other team, it means you are attracted to the same gender",
+                    }
+                    }
+                    Translation: 
+                    {
+                    "rule_category":"sexual_orientation",
+                    "rule_specification":{
+                        "rule_trigger":"vom anderen Ufer",
+                        "lemma":"vom anderen Ufer",
+                        "word_type":"|a|n"
+                    },
+                    "alternatives":{
+                        "alternative_prio_1":{
+                            "lemma":"-",
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        },
+                        "alternative_prio_2":{
+                            "lemma":"schwul",
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        }
+                    },
+                    "alternative_prio_3":{
+                        "lemma":"lesbisch",
+                        "is_collective_noun":false,
+                        "is_gendered_noun":false,
+                        "is_advanced":false
+                    },
+                    "true_positive_examples":{
+                        "true_positive_sentence_1":"Er ist vom anderen Ufer.”,
+                        "true_positive_sentence_2":"Sie hat mir erzählt, dass sie vom anderen Ufer ist.”,
+                    }
+                    }
+
+                    3. Titles Category example:
+                    Original: 
+                    {
+                    "rule_category":"titles",
+                    "rule_specification":{
+                        "rule_trigger":"policeman",
+                        "lemma":"policeman",
+                        "word_type":"n"
+                    },
+                    "alternatives":{
+                        "alternative_prio_1":{
+                            "lemma”:”they”,
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        },
+                        "alternative_prio_2":{
+                            "lemma":"someone in the police",
+                            "is_collective_noun":false,
+                            "is_gendered_noun":false,
+                            "is_advanced":false
+                        }
+                    },
+                    "alternative_prio_3":{
+                        "lemma":"someone from the precinct",
+                        "is_collective_noun":false,
+                        "is_gendered_noun":false,
+                        "is_advanced":false
+                    },
+                    "true_positive_examples":{
+                        "true_positive_sentence_1":"The policeman stopped the car for speeding.",
+                        "true_positive_sentence_2":"A policeman helped the lost child find her parents."
+                    }
+                    }
+                    Translation: 
+                    {
+                    "rule_category":"titles",
+                    "rule_specification":{
+                        "rule_trigger":"Polizist",
+                        "lemma":"Polizist",
+                        "word_type":"n"
+                    },
+                    "alternatives":{
+                        "alternative_prio_1":{
+                            "lemma”:”~Polizist~”,
+                            "is_collective_noun":false,
+                            "is_gendered_noun”:true,
+                            "is_advanced":false
+                        },
+                        "alternative_prio_2":{
+                            "lemma":"~Polizei",
+                            "is_collective_noun”:true,
+                            "is_gendered_noun":false,
+                            "is_advanced”:true
+                        }
+                    },
+                    "alternative_prio_3":{
+                        "lemma":"~Polizeikraft",
+                        "is_collective_noun":false,
+                        "is_gendered_noun":false,
+                        "is_advanced":false
+                    },
+                    "true_positive_examples":{
+                        "true_positive_sentence_1”:”Der Polizist hielt den Verkehr an, um den Kindern das sichere Überqueren der Straße zu ermöglichen."
+                        "true_positive_sentence_2":"Im Krimi ermittelte der erfahrene Polizist geschickt und löste den Fall innerhalb von Tagen."
+                    }
+                    }
+                    4. Gender Identity Category example:
+                    Original: 
+                    {
+                    "rule_category":"gender_identity",
+                    "rule_specification":{
+                        "rule_trigger":"guys",
+                        "lemma":"guys",
+                        "word_type":"~n"
+                    },
+                    "alternatives":{
+                        "alternative_prio_1":{
+                            "lemma”:”team”,
+                            "is_collective_noun”:true,
+                            "is_gendered_noun”:false,
+                            "is_advanced”:true
+                        },
+                        "alternative_prio_2":{
+                            "lemma":"everyone",
+                            "is_collective_noun”:true,
+                            "is_gendered_noun":false,
+                            "is_advanced”:false
+                        }
+                    },
+                    "alternative_prio_3":{
+                        "lemma”:”folks”,
+                        "is_collective_noun":false,
+                        "is_gendered_noun":false,
+                        "is_advanced":false
+                    },
+                    "true_positive_examples":{
+                        "true_positive_sentence_1”:”Hey guys, are you coming to the party tonight?"
+                        "true_positive_sentence_2":"I told the guys that we need to leave early tomorrow."
+                    }
+                    }
+                    Translation
+                    {
+                    "rule_category":"gender_identity",
+                    "rule_specification":{
+                        "rule_trigger”:”jungs”,
+                        "lemma":"jungs",
+                        "word_type":"~n"
+                    },
+                    "alternatives":{
+                        "alternative_prio_1":{
+                            "lemma”:”Leute”,
+                            "is_collective_noun”:true,
+                            "is_gendered_noun”:false,
+                            "is_advanced”:true
+                        },
+                        "alternative_prio_2":{
+                            "lemma”:”Alle”,
+                            "is_collective_noun”:false,
+                            "is_gendered_noun":false,
+                            "is_advanced”:false
+                        }
+                    },
+                    "alternative_prio_3":{
+                        "lemma”:”Freunde”,
+                        "is_collective_noun”:true,
+                        "is_gendered_noun":false,
+                        "is_advanced":false
+                    },
+                    "true_positive_examples":{
+                        "true_positive_sentence_1”:”Hey Jungs, kommt ihr heute Abend zur Party?”,
+                        "true_positive_sentence_2":"Ich habe den Jungs gesagt, dass wir morgen früh früh raus müssen."
+                    }
+                    }"""
         
-                prompt=[
-                {
+                prompt=[        
+                    {
                     "role": "system",
-                    "content": "You are tasked with the role of an inclusive rule translator. Your input consists of an inclusive category description and a JSON object containing English descriptions of language rules. Your goal is to translate these rules into German while considering rule category. The translation can be direct or adapted to better align with German cultural or linguistic nuances. Focus on translations that adjusts phrases and concepts to fit the cultural and linguistic context of the target language, while maintaining the original intent. Return only the translations as a json where every field is filled.  If there is no good German translation of the rule trigger, return an empty json. \n\nExplanation of JSON fields: \nrule_category: category that inclusivity rule belongs to\nrule_trigger: word or saying that triggers rule by being un inclusive\nlemma: dictionary form of rule_trigger, or citation form of a set of word forms\nword_type: ’|' separated list of word types (n, pron, a, adv, v, conj, emoji, num, card) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized\nlemma_type: Should the rule check on part of the lemma (either: default (full lemma), prefix, suffix, substring)\nentity_type: If the rule should only match on a specific entity type (either: default (nothing), name, non_name, person, non_person, number, datetime)\npluralism: Show alternative in case rule triggered on singular/plural/both (either: default (both), singular_only, plural_only )\nalternatives: more inclusive alternatives to the rule_trigger, ranked from best to worst. If the best alternative is to remove the word, the alternative should be ‘-‘.  \ntrue_positive_examples: sentences containing the rule_trigger in that exact form to test if rule gets triggered. The rule trigger should fit organically in the sentence, no quotes. \n\nExamples of correct translations: \n{\n   \"rule_category\":\"vision\",\n   \"rule_specification\":{\n      \"rule_trigger\":\"blind as a bat\",\n      \"lemma\":\"blind as a bat\",\n      \"word_type\":\"~a|||~n\",\n      \"lemma_type\":\"default\",\n      \"entity_type\":\"default\",\n      \"pluralism\":\"default\"\n   },\n   \"alternatives\":{\n      \"alternative_prio_1\":\"blind\",\n      \"alternative_prio_2\":\"vision impaired person\",\n      \"alternative_prio_3\":\"person who is blind\"\n   },\n   \"true_positive_examples\":{\n      \"true_positive_sentence_1\":\"She was as blind as a bat when it came to understanding the complex math problem.\",\n      \"true_positive_sentence_2\":\"He was so blind as a bat that he couldn't even see the sign in front of him.\"\n   }\n}\n=> \n{\n   \"rule_category\":\"vision\",\n   \"rule_specification\":{\n      \"rule_trigger\":\"blind wie eine Fledermaus\",\n      \"lemma\":\"blind wie eine Fledermaus\",\n      \"word_type\":\"a||~|n\",\n      \"lemma_type\":\"default\",\n      \"entity_type\":\"default\",\n      \"pluralism\":\"default\"\n   },\n   \"alternatives\":{\n      \"alternative_prio_1\":\"schlecht sehen\",\n      \"alternative_prio_2\":\"mit schwachem Sehvermögen\",\n      \"alternative_prio_3\":\"\"\n   },\n   \"true_positive_examples\":{\n      \"true_positive_sentence_1\":\"Er war so blind wie eine Fledermaus, dass er das Schild vor ihm nicht sehen konnte.\",\n      \"true_positive_sentence_2\":\"Sie ist blind wie eine Fledermaus.\"\n   }\n}\n_________\n{\n   \"rule_category\":\"sexual_orientation\",\n   \"rule_specification\":{\n      \"rule_trigger\":\"play for the other team\",\n      \"lemma\":\"play for the other team\",\n      \"word_type\":\"v|||a|n\",\n      \"lemma_type\":\"default\",\n      \"entity_type\":\"default\",\n      \"pluralism\":\"default\"\n   },\n   \"alternatives\":{\n      \"alternative_prio_1\":\"identify as lesbian\",\n      \"alternative_prio_2\":\"identify as gay\",\n      \"alternative_prio_3\":\"identify as a member of the LGBT+ community\"\n   },\n   \"true_positive_examples\":{\n      \"true_positive_sentence_1\":\"Does he play for the other team?\",\n      \"true_positive_sentence_2\":\"She plays for the other team.\"\n   }\n}\n=> \n{\n   \"rule_category\":\"sexual_orientation\",\n   \"rule_specification\":{\n      \"rule_trigger\":\"vom anderen Ufer\",\n      \"lemma\":\"vom anderen Ufer\",\n      \"word_type\":\"|a|n\",\n      \"lemma_type\":\"default\",\n      \"entity_type\":\"default\",\n      \"pluralism\":\"default\"\n   },\n   \"alternatives\":{\n      \"alternative_prio_1”:”-“,\n      \"alternative_prio_2\":\"schwul\",\n      \"alternative_prio_3\":\"lesbisch\"\n   },\n   \"true_positive_examples\":{\n      \"true_positive_sentence_1\":\"Er ist vom anderen Ufer.\",\n      \"true_positive_sentence_2\":\"Sie hat mir erzählt, dass sie vom anderen Ufer ist.\"\n   }\n}\n_________\n   {\n   \"rule_category\":\"leadership\",\n   \"rule_specification\":{\n      \"rule_trigger\":\"boss\",\n      \"lemma\":\"boss\",\n      \"word_type\":\"n\",\n      \"lemma_type\":\"default\",\n      \"entity_type\":\"default\",\n      \"pluralism\":\"default\"\n   },\n   \"alternatives\":{\n      \"alternative_prio_1\":\"management\",\n      \"alternative_prio_2\":\"administration\",\n      \"alternative_prio_3\":\"supervisor\"\n   },\n   \"true_positive_examples\":{\n      \"true_positive_sentence_1\":\"I'll have to ask my boss about this decision.\",\n      \"true_positive_sentence_2\":\"The boss is always right.\"\n   }\n}\n=> \n{\n   \"rule_category\":\"leadership\",\n   \"rule_specification\":{\n      \"rule_trigger\":\"Chef\",\n      \"lemma\":\"Chef\",\n      \"word_type\":\"n\",\n      \"lemma_type\":\"suffix\",\n      \"entity_type\":\"non_person\",\n      \"pluralism\":\"default\"\n   },\n   \"alternatives\":{\n      \"alternative_prio_1\":\"Leitungsperson\",\n      \"alternative_prio_2\":\"CEOs\",\n      \"alternative_prio_3\":\"verantwortliche Person\"\n   },\n   \"true_positive_examples\":{\n      \"true_positive_sentence_1\":\"Der Chef hat die Entscheidung getroffen.\",\n      \"true_positive_sentence_2\":\"Er ist der Chef des Unternehmens.\"\n   }\n}\n_________\n{\n   \"rule_category\":\"ableism\",\n   \"rule_specification\":{\n      \"rule_trigger\":\"herp-derp\",\n      \"lemma\":\"herp-derp\",\n      \"word_type\":\"n\",\n      \"lemma_type\":\"default\",\n      \"entity_type\":\"default\",\n      \"pluralism\":\"default\"\n   },\n   \"alternatives\":{\n      \"alternative_prio_1\":\"-\",\n      \"alternative_prio_2\":\"\",\n      \"alternative_prio_3\":\"\"\n   },\n   \"true_positive_examples\":{\n      \"true_positive_sentence_1\":\"He was talking in a herp-derp manner, making no sense at all.\",\n      \"true_positive_sentence_2\":\"The dialogue in that comedy sketch was pure herp-derp.\"\n   }\n}\n=>\n{}\n_________"
-                },
+                    "content": instruction,
+                    },
                 {
                     "role": "user",
-                    "content": "category information: " + dimension_info + "rule to translate: " + rule_formatted_for_translation
+                    "content": "rule category information: " + dimension_info + "rule to translate: " + rule_formatted_for_translation
                 },
                 ]
                 chat_completion = client.chat.completions.create(
-                model="gpt40125preview",#try gpt-4
+                model="gpt40125preview",
                 messages = prompt,
                 temperature=1.2,
-                max_tokens=256,
+                max_tokens=500,
                 top_p=1,
                 frequency_penalty=0,
                 presence_penalty=0
                 )
 
                 # Append results to file
-                with open('rules/management/commands/translated_rules.json', 'a') as file:
-                    file.write(json.dumps(rule_formatted_for_translation) + '\n')
-                    file.write(json.dumps(chat_completion.choices[0].message.content) + '\n')
+                # with open('rules/management/commands/translated_rules.json', 'a') as file:
+                #     file.write(json.dumps(rule_formatted_for_translation) + '\n')
+                #     file.write(json.dumps(chat_completion.choices[0].message.content) + '\n')
 
-                self.stdout.write(self.style.SUCCESS(f'Generated rule: {chat_completion.choices[0].message.content}'))
+                try:
+                    # strip away everyting outside {}
+                    result = chat_completion.choices[0].message.content
+                    result = result[result.find("{"):result.rfind("}")+1]
+                    print(f'result: {result}')
 
+
+                    result_as_json = json.loads(result)
+                    if 'rule_specification' not in result_as_json or 'alternatives' not in result_as_json:
+                         raise ValueError("JSON structure is not as expected.")
+                    
+                    result_text_id = result_as_json['rule_specification']['rule_trigger']
+                    result_lemma = result_as_json['rule_specification']['lemma']
+                    result_word_types = result_as_json['rule_specification']['word_type']
+                    result_alternatives_with_info = []
+
+                    for i in range(1, 4):
+                        alternative_key = f'alternative_prio_{i}'
+                        if alternative_key in result_as_json['alternatives'] and len(result_as_json['alternatives'][alternative_key]['lemma']) > 0:
+                            result_alternatives_with_info.append({
+                                "lemma": result_as_json['alternatives'][alternative_key]['lemma'],
+                                "priority": i,
+                                "is_collective_noun": result_as_json['alternatives'][alternative_key]['is_collective_noun'],
+                                "is_gendered_noun": result_as_json['alternatives'][alternative_key]['is_gendered_noun'],
+                                "is_advanced": result_as_json['alternatives'][alternative_key]['is_advanced']
+                            })
+                                                    
+                    result_example_sentences = []
+                    for i in range(1, 3):
+                        if result_as_json['true_positive_examples'][f'true_positive_sentence_{i}'] != "":
+                            result_example_sentences.append(result_as_json['true_positive_examples'][f'true_positive_sentence_{i}'])
+
+                    #add new rule to db
+                    new_rule = Rule.objects.create(
+                        #todo: only add rule if it doesn't already exist -> anyways gets rejected when trying to add
+                        text_id=result_text_id,
+                        lemma=result_lemma,
+                        word_types=result_word_types,
+                        language="de",
+                        is_active=False,
+                        is_marked_for_review=True,
+                        # all_diversity_dimensions=result_diversity_dimension_json #TODO: how do i add the diversity dimension?
+                    )
+                    new_rule.save()
+
+                    #add RuleDiversityDimension
+                    existing_diversity_dimension = DiversityDimension.objects.get(name=dimension_key)
+                    new_rule_diversity_dimension = RuleDiversityDimension.objects.create(
+                        rule=new_rule,  # Assuming new_rule is the Rule instance you've created or fetched
+                        diversity_dimension=existing_diversity_dimension,
+                        order=1
+                    )
+                    new_rule_diversity_dimension.save()
+                    self.stdout.write(self.style.SUCCESS(f"Successfully linked RuleDiversityDimension with existing DiversityDimension '{dimension_key}'."))
+                    
+
+                    # new_rule_diversity_dimension = RuleDiversityDimension.objects.create(
+                    #     diversity_dimension=dimension_key
+                    # )
+                    # new_rule_diversity_dimension.save()
+
+                    #add new alternatives to db
+                    for i, alternative in enumerate(result_alternatives_with_info):
+                        new_alternative = Alternative.objects.create(
+                            rule=new_rule,
+                            lemma=alternative['lemma'],
+                            order=alternative['priority'],
+                            is_collective_noun=alternative['is_collective_noun'],
+                            is_gendered_noun=alternative['is_gendered_noun'],
+                            is_advanced=alternative['is_advanced']
+                        )
+                        new_alternative.save()
+
+                    #add new example sentences to db
+                    for i, example_sentence in enumerate(result_example_sentences):
+                        #make sure is contains the rule trigger
+                        if result_text_id not in example_sentence:
+                            print(f"Skipping example sentence {example_sentence} because it doesn't contain the rule trigger")
+                            continue
+
+                        new_example_sentence = TrainingSentence.objects.create(
+                            rule=new_rule,
+                            text=example_sentence,
+                            is_false_positive=False,
+                            comment='auto generated'
+                        )
+                        new_example_sentence.save()
+                    
+
+                    self.stdout.write(self.style.SUCCESS(f'added rule: {chat_completion.choices[0].message.content}'))
+                except Exception as e:
+                    logger.error(f"Error processing rule: {e}")
             except Exception as e:
                 # Log the error and skip to the next rule
                 logger.error(f"Error processing rule {rule.id}: {e}")

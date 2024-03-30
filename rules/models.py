@@ -284,6 +284,11 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         help_text="Additional label to add to the short explanation/alternative",
     )
 
+    # is_auto_generated = models.BooleanField(
+    #     default=False, help_text="If the rule was auto generated"
+    # )
+
+
 
 class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     class Meta:
@@ -379,6 +384,7 @@ class Rule(
         indexes = [
             models.Index(
                 fields=[
+                    # "is_auto_generated",
                     "is_active",
                     "language",
                     "type",
