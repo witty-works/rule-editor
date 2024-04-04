@@ -543,6 +543,7 @@ def apply_rule(values):
             "is_remove": alternative.is_remove,
             "is_collective_noun": alternative.is_collective_noun,
             "is_gendered_noun": alternative.is_gendered_noun,
+            "is_placeholder": alternative.is_placeholder,
         }
         alternatives.append(alternative)
 
