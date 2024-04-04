@@ -1,0 +1,1425 @@
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: force - n (en)
+Result: {
+    "rule_category": "agentic",
+    "rule_specification": {
+        "rule_trigger": "Gewalt",
+        "lemma": "Gewalt",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "Ressource",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "Effektivität",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "Einfluss",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Die Polizei verwendete bei der Festnahme übermäßige Gewalt.",
+        "true_positive_sentence_2": "Sie trat der Luftwaffe bei, um ihrem Land zu dienen."
+    }
+}
+Error: {'__all__': ["No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun'"]}
+Rule: delivery man - ~n|n (en)
+Result: {
+  "rule_category": "titles",
+  "rule_specification": {
+    "rule_trigger": "Lieferant",
+    "lemma": "Lieferant",
+    "word_type": "~n|n"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "Lieferpersonal",
+      "is_collective_noun": true,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "Lieferteam",
+      "is_collective_noun": true,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "Zusteller*innen",
+      "is_collective_noun": false,
+      "is_gendered_noun": true,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Der Lieferant kam wegen des Verkehrs zu spät.",
+    "true_positive_sentence_2": "Sie wartete auf den Lieferanten, der ihr Paket bringen sollte."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: decidedness - n (en)
+Result: {
+    "rule_category": "agentic",
+    "rule_specification": {
+        "rule_trigger": "Entschlossenheit",
+        "lemma": "Entschlossenheit",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "Zielstrebigkeit",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "Sicherheit",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "Standhaftigkeit",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Seine Entschlossenheit angesichts von Widrigkeiten war wirklich inspirierend.",
+        "true_positive_sentence_2": "Das Projekt wurde aufgrund ihrer Entschlossenheit und ihrer Führung zum Erfolg."
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: MVP - ~ (en)
+Result: {
+    "rule_category": "abbreviation",
+    "rule_specification": {
+        "rule_trigger": "MVP",
+        "lemma": "MVP",
+        "word_type": "~"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "Minimum Viable Product",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "Minimum Viable Product (MVP)",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "wertvollster Spieler",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Er wurde nach dem Erzielen des Gewinnertreffers zum wertvollsten Spieler des Spiels erklärt.",
+        "true_positive_sentence_2": "Der wertvollste Spieler der Saison wird nächste Woche bekannt gegeben."
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: BD - = (en)
+Result: {
+  "rule_category": "abbreviation",
+  "rule_specification": {
+    "rule_trigger": "BD",
+    "lemma": "BD",
+    "word_type": "="
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "Business Development",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "Business Development (BD)",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Er hat gerade seine Business Development-Initiativen erweitert.",
+    "true_positive_sentence_2": "Kennst du die neuesten Strategien im Business Development von deinem Lieblingsunternehmen?"
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: courageous - a (en)
+Result: {
+  "rule_category": "agentic",
+  "rule_specification": {
+    "rule_trigger": "mutig",
+    "lemma": "mutig",
+    "word_type": "a"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "neugierig",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "findig",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "großherzig",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Der Feuerwehrmann war unglaublich mutig und rannte ohne zu zögern in das brennende Gebäude.",
+    "true_positive_sentence_2": "Sie war bekannt für ihre mutige Haltung zu sozialen Themen und hatte nie Angst, ihre Meinung zu äußern."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: bugger - n (en)
+Result: {
+    "rule_category": "homophobia",
+    "rule_specification": {
+        "rule_trigger": "Schwuchtel",
+        "lemma": "Schwuchtel",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "-",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Jemand nannte ihn eine Schwuchtel nach dem Streit.",
+        "true_positive_sentence_2": "Sie benutzten den Begriff Schwuchtel, um ihn zu beleidigen."
+    }
+}
+Error: JSON structure is not as expected.
+Rule: establishment - n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: WYSIWYG - = (en)
+Result: {
+  "rule_category": "abbreviation",
+  "rule_specification": {
+    "rule_trigger": "WYSIWYG",
+    "lemma": "WYSIWYG",
+    "word_type": "="
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma":"What you see is what you get",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma":"WYSIWYG (What you see is what you get)",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma":"",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Die neue Bearbeitungssoftware ist großartig, denn sie ist WYSIWYG, daher sehen Sie sofort, wie das endgültige Dokument aussehen wird.",
+    "true_positive_sentence_2": "Beim Gestalten der Webseite habe ich einen WYSIWYG-Editor bevorzugt, um den Prozess zu vereinfachen."
+  }
+}
+Error: JSON structure is not as expected.
+Rule: take it offline - v|~n|a (en)
+Result: {}
+Error: JSON structure is not as expected.
+Rule: TUFU - n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: ass bandit - ~n|n (en)
+Result: {
+    "rule_category":"homophobia",
+    "rule_specification":{
+        "rule_trigger":"Arschpirat",
+        "lemma":"Arschpirat",
+        "word_type":"n"
+    },
+    "alternatives":{
+        "alternative_prio_1":{
+            "lemma":"-",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        },
+        "alternative_prio_2":{
+            "lemma":"",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        }
+    },
+    "alternative_prio_3":{
+        "lemma":"",
+        "is_collective_noun":false,
+        "is_gendered_noun":false,
+        "is_advanced":false
+    },
+    "true_positive_examples":{
+        "true_positive_sentence_1":"",
+        "true_positive_sentence_2":""
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: minority - n (en)
+Result: {
+  "rule_category": "migration",
+  "rule_specification": {
+    "rule_trigger": "Minderheit",
+    "lemma": "Minderheit",
+    "word_type": "n"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "unterrepräsentierte Gruppe",
+      "is_collective_noun": true,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "traditionell unterrepräsentierte Gruppe",
+      "is_collective_noun": true,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "marginalisierte Gemeinschaft",
+      "is_collective_noun": true,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Er setzt sich immer für die Minderheit ein, um sicherzustellen, dass sie eine Stimme haben.",
+    "true_positive_sentence_2": "Die neue Politik zielt darauf ab, die Rechte der Minderheit in der Gemeinschaft zu schützen."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: doucher - n (en)
+Result: {
+    "rule_category": "offensive_language",
+    "rule_specification": {
+        "rule_trigger": "Vollidiot",
+        "lemma": "Vollidiot",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "-",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Er nannte ihn einen Vollidioten nach dem Streit.",
+        "true_positive_sentence_2": "Warum benimmst du dich vor allen wie ein Vollidiot?"
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: bipolar - a (en)
+Result: {
+  "rule_category": "mental_wellbeing",
+  "rule_specification": {
+    "rule_trigger": "bipolar",
+    "lemma": "bipolar",
+    "word_type": "a"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "eine bipolare Störung haben",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "launisch",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "Stimmungsschwankungen erleben",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Er wurde als bipolar diagnostiziert, nachdem er extreme Stimmungsschwankungen erlebt hatte.",
+    "true_positive_sentence_2": "Sie beschrieb ihren Ex-Partner als bipolar wegen seines unvorhersehbaren Verhaltens."
+  }
+}
+Error: JSON structure is not as expected.
+Rule: profit - n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: competitive - a (en)
+Result: {
+    "rule_category":"agentic",
+    "rule_specification":{
+        "rule_trigger":"konkurrenzfähig",
+        "lemma":"konkurrenzfähig",
+        "word_type":"a"
+    },
+    "alternatives":{
+        "alternative_prio_1":{
+            "lemma":"eifrig",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        },
+        "alternative_prio_2":{
+            "lemma":"unternehmerisch",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        },
+        "alternative_prio_3":{
+            "lemma":"engagiert",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        }
+    },
+    "true_positive_examples":{
+        "true_positive_sentence_1":"Er hatte immer einen konkurrenzfähigen Vorsprung bei allem, was er tat, und strebte stets danach, der Beste zu sein.",
+        "true_positive_sentence_2":"Der Arbeitsmarkt ist extrem konkurrenzfähig, mit vielen Bewerbern, die um eine einzelne Position kämpfen."
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: risk - n (en)
+Result: {
+    "rule_category": "agentic",
+    "rule_specification": {
+        "rule_trigger": "Risiko",
+        "lemma": "Risiko",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "Veränderung",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "Unsicherheit",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "Chance",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Nachts diesen Weg zu nehmen, ist ein großes Risiko.",
+        "true_positive_sentence_2": "Das Risiko eines Fehlschlags hat sie nicht davon abgehalten, es zu versuchen."
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: brilliant - a (en)
+Result: {
+  "rule_category": "exaggerating",
+  "rule_specification": {
+    "rule_trigger": "brillant",
+    "lemma": "brillant",
+    "word_type": "a"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "inspiriert",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "talentiert",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "erfinderisch",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Sie hat eine brillante Präsentation auf der Konferenz gegeben.",
+    "true_positive_sentence_2": "Die von ihm gefundene Lösung war absolut brillant."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: CTR - = (en)
+Result: {
+  "rule_category": "abbreviation",
+  "rule_specification": {
+    "rule_trigger": "CTR",
+    "lemma": "CTR",
+    "word_type": "="
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "Klickrate",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "Klickrate (CTR)",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Das Marketing-Team feierte eine Erhöhung der Klickrate (CTR) für ihre letzte Kampagne.",
+    "true_positive_sentence_2": "Die Verbesserung der Klickrate kann die Leistung von Online-Anzeigen erheblich steigern."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: shithead - n (en)
+Result: {
+    "rule_category": "offensive_language",
+    "rule_specification": {
+        "rule_trigger": "Arschloch",
+        "lemma": "Arschloch",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": "-",
+        "alternative_prio_2": "",
+        "alternative_prio_3": ""
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Er hat seinen Gegner während des hitzigen Streits ein Arschloch genannt.",
+        "true_positive_sentence_2": "Warum benimmst du dich wie ein Arschloch vor allen Leuten?"
+    }
+}
+Error: JSON structure is not as expected.
+Rule: jork - n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: lower-class - a (en)
+Result: {
+  "rule_category": "classism",
+  "rule_specification": {
+    "rule_trigger": "Unterschicht",
+    "lemma": "Unterschicht",
+    "word_type": "a"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "arbeitende Bevölkerung",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "sozioökonomisch benachteiligt",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "aus einem ökonomisch benachteiligten Hintergrund",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": true
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Unsere neue Marketingkampagne zielt auf die Unterschicht ab, um unsere Kundenbasis zu erweitern.",
+    "true_positive_sentence_2": "Sie wurden behandelt, als ob sie zur Unterschicht gehören würden."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: hermie - n (en)
+Result: {
+    "rule_category": "transphobia",
+    "rule_specification": {
+        "rule_trigger": "Zwitter",
+        "lemma": "Zwitter",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "-",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "alternative_prio_3": {
+        "lemma": "",
+        "is_collective_noun": false,
+        "is_gendered_noun": false,
+        "is_advanced": false
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Hast du gehört, dass jemand Alex einen Zwitter genannt hat?",
+        "true_positive_sentence_2": "Ich habe eine Gruppe Schüler gehört, die den Begriff Zwitter in abwertender Weise verwendet haben."
+    }
+}
+Error: JSON structure is not as expected.
+Rule: controller - ~n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: POI - = (en)
+Result: {
+  "rule_category": "abbreviation",
+  "rule_specification": {
+    "rule_trigger": "POI",
+    "lemma": "POI",
+    "word_type": "="
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "Punkt von Interesse",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "Punkt von Interesse (POI)",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Die Kartenanwendung nutzt verschiedene Punkte von Interesse (POIs), um den Nutzern bei der Navigation durch die Stadt zu helfen.",
+    "true_positive_sentence_2": "Sie suchte nach nahegelegenen Punkten von Interesse, um ein gutes Restaurant zu finden."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: knobhead - n (en)
+Result: {
+  "rule_category": "offensive_language",
+  "rule_specification": {
+    "rule_trigger": "Depp",
+    "lemma": "Depp",
+    "word_type": "n"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma":"-",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma":"",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "alternative_prio_3": {
+    "lemma":"",
+    "is_collective_noun": false,
+    "is_gendered_noun": false,
+    "is_advanced": false
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Er nannte seinen Freund einen Deppen nach dem Streit.",
+    "true_positive_sentence_2": "Sei kein Depp, entschuldige dich bei ihr."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: hunt - v (en)
+Result: {
+    "rule_category": "agentic",
+    "rule_specification": {
+        "rule_trigger": "jagen",
+        "lemma": "jagen",
+        "word_type": "v"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "nach Essen suchen",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma":"sammeln",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma":"suchen",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Viele Menschen jagen immer noch zum Spaß, ohne die Auswirkungen auf Tierpopulationen zu bedenken.",
+        "true_positive_sentence_2": "Er lernte in jungen Jahren jagen, indem er während der Jagdsaison mit seiner Familie ausging."
+    }
+}
+Error: 'NoneType' object has no attribute 'find'
+Rule: queaf - n (en)
+Result: None
+Error: JSON structure is not as expected.
+Rule: binch - n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: mong - n (en)
+Result: {
+  "rule_category": "medical_state",
+  "rule_specification": {
+    "rule_trigger": "Mongoloid",
+    "lemma": "Mongoloid",
+    "word_type": "n"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "Person mit Down-Syndrom",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "Person mit Trisomie 21",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Ich habe jemanden den Begriff 'Mongoloid' in einem Gespräch verwenden hören, was mich unwohl gefühlt hat.",
+    "true_positive_sentence_2": "Das Wort 'Mongoloid' als Beleidigung zu verwenden, ist nicht nur veraltet, sondern zutiefst beleidigend."
+  }
+}
+Error: JSON structure is not as expected.
+Rule: LAMP - = (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: MoM - = (en)
+Result: {
+    "rule_category": "abbreviation",
+    "rule_specification": {
+        "rule_trigger": "MoM",
+        "lemma": "MoM",
+        "word_type": "="
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "monat über monat",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "monat über monat (MoM)",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Er wurde zum 'monat über monat (MoM)' Spieler wegen seiner herausragenden Leistung im Spiel ernannt.",
+        "true_positive_sentence_2": "Die Auszeichnung für 'monat über monat (MoM)' wurde dem Spieler verliehen, der außergewöhnliches Geschick zeigte."
+    }
+}
+Error: {'__all__': ["No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun'"]}
+Rule: thug - n (en)
+Result: {
+  "rule_category": "racist_source",
+  "rule_specification": {
+    "rule_trigger": "Schläger",
+    "lemma": "Schläger",
+    "word_type": "n"
+  },
+  "alternatives": {
+    "alternative_prio_1": "-",
+    "alternative_prio_2": {
+      "lemma": "Verdächtige",
+      "is_collective_noun": false,
+      "is_gendered_noun": true,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "Kriminelle",
+      "is_collective_noun": false,
+      "is_gendered_noun": true,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Der Film stellt ihn als Schläger dar, der die Nachbarschaft terrorisiert.",
+    "true_positive_sentence_2": "Sie nannten ihn einen Schläger wegen seines Aussehens, aber sie kannten ihn nicht wirklich."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: injun - n (en)
+Result: {
+    "rule_category": "racism",
+    "rule_specification": {
+        "rule_trigger": "Rothaut",
+        "lemma": "Rothaut",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "indigene Völker Amerikas",
+            "is_collective_noun": true,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "Native Americans",
+            "is_collective_noun": true,
+            "is_gendered_noun": false,
+            "is_advanced": true
+        },
+        "alternative_prio_3": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Die Bezeichnung Rothaut wird heute als beleidigend angesehen und sollte nicht verwendet werden.",
+        "true_positive_sentence_2": "Die Verwendung des Wortes Rothaut ist respektlos und in jeglichem Kontext unangemessen."
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: pro-active - a (en)
+Result: {
+    "rule_category": "agentic",
+    "rule_specification": {
+        "rule_trigger": "proaktiv",
+        "lemma": "proaktiv",
+        "word_type": "a"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "energetisch",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "unternehmerisch",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "sich wohlfühlen, die Initiative zu ergreifen",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": true
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Sie wurde für ihren proaktiven Ansatz zur Lösung von Problemen gelobt.",
+        "true_positive_sentence_2": "Proaktiv bei diesem Projekt zu sein, wird definitiv zu seinem Erfolg führen."
+    }
+}
+Error: JSON structure is not as expected.
+Rule: success rate - ~n|n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: immigrant - n (en)
+Result: {
+  "rule_category": "migration",
+  "rule_specification": {
+    "rule_trigger": "Einwanderer",
+    "lemma": "Einwanderer",
+    "word_type": "n"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "Person mit Migrationshintergrund",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "Person, die in ihr jetziges Wohnsitzland migriert ist",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": true
+    },
+    "alternative_prio_3": {
+      "lemma": "Person auf der Suche nach einem besseren Leben",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Jeder Einwanderer hat seine eigene einzigartige Geschichte von Hoffnung und Widerstandsfähigkeit.",
+    "true_positive_sentence_2": "Er ist ein Einwanderer, der hart gearbeitet hat, um in diesem Land ein neues Leben aufzubauen."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: outstanding - a (en)
+Result: {
+  "rule_category": "exaggerating",
+  "rule_specification": {
+    "rule_trigger": "herausragend",
+    "lemma": "herausragend",
+    "word_type": "a"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "inspirierend",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "wohlverdient",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "geschickt",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Ihre Leistung war wahrhaftig herausragend und setzte neue Maßstäbe für andere.",
+    "true_positive_sentence_2": "Die herausragenden Schulden des Unternehmens haben einen historischen Höchststand erreicht."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: FAQ - ~ (en)
+Result: {
+  "rule_category": "abbreviation",
+  "rule_specification": {
+    "rule_trigger": "FAQ",
+    "lemma": "FAQ",
+    "word_type": "~"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "Häufig gestellte Fragen",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "Häufig gestellte Fragen (FAQ)",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Bevor du anrufst, schau bitte in unsere Häufig gestellten Fragen, um zu sehen, ob deine Frage bereits beantwortet wurde.",
+    "true_positive_sentence_2": "Die Häufig gestellten Fragen (FAQ) enthalten Antworten auf die üblichsten Fragen unserer Kunden."
+  }
+}
+Error: JSON structure is not as expected.
+Rule: rocket - n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: ULPA - = (en)
+Result: {
+    "rule_category": "abbreviation",
+    "rule_specification": {
+        "rule_trigger": "ULPA",
+        "lemma": "ULPA",
+        "word_type": "="
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma":"Gesetz zur einheitlichen Regelung von Kommanditgesellschaften",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        },
+        "alternative_prio_2": {
+            "lemma":"Gesetz zur einheitlichen Regelung von Kommanditgesellschaften (ULPA)",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        },
+        "alternative_prio_3": {
+            "lemma":"",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1":"Das Labor installierte ein neues Luftfiltersystem mit ULPA-Filtern für besseren Schutz gegen Viren.",
+        "true_positive_sentence_2":"ULPA-Filter gelten als effizienter als HEPA-Filter beim Einfangen sehr kleiner Partikel."
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: MBI - = (en)
+Result: {
+    "rule_category": "abbreviation",
+    "rule_specification": {
+        "rule_trigger": "MBI",
+        "lemma": "MBI",
+        "word_type": "="
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "Management-Buy-in",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "Management-Buy-in (MBI)",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Das Unternehmen beschloss, Management-Buy-in als Teil ihrer Diversitätsstrategie zu implementieren.",
+        "true_positive_sentence_2": "Während des Workshops haben wir gelernt, wie Management-Buy-in die Inklusivität am Arbeitsplatz verbessern kann."
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: only - adv (en)
+Result: {
+    "rule_category": "filler",
+    "rule_specification": {
+        "rule_trigger": "nur",
+        "lemma": "nur",
+        "word_type": "adv"
+    },
+    "alternatives": {
+        "alternative_prio_1": "-",
+        "alternative_prio_2": "",
+        "alternative_prio_3": ""
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Sie ist die einzige Person, die weiß, wie man es repariert.",
+        "true_positive_sentence_2": "Ich habe den Fehler erst nach dem Einreichen des Berichts bemerkt."
+    }
+}
+Error: JSON structure is not as expected.
+Rule: white hat - a|n (en)
+Result: {}
+Error: JSON structure is not as expected.
+Rule: DNS - = (en)
+Result: {}
+Error: JSON structure is not as expected.
+Rule: OTP - = (en)
+Result: {}
+Error: JSON structure is not as expected.
+Rule: URM - = (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: boast - v (en)
+Result: {
+  "rule_category": "agentic",
+  "rule_specification": {
+    "rule_trigger": "prahlen",
+    "lemma": "prahlen",
+    "word_type": "v"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "aufweisen",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "zeigen",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "besitzen",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Sie liebt es, bei der Arbeit über ihre Erfolge zu prahlen.",
+    "true_positive_sentence_2": "Er pflegte oft mit seinem Reichtum und seinem luxuriösen Lebensstil zu prahlen."
+  }
+}
+Error: 'true_positive_sentence_2'
+Rule: what your symptom are - ||n|~ (en)
+Result: {
+  "rule_category": "medical_state",
+  "rule_specification": {
+    "rule_trigger": "was sind Ihre Symptome",
+    "lemma": "was Ihre Symptome sind",
+    "word_type": "|n|~"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "wie äußert sich ((Krankheit oder Beeinträchtigung)) bei ((Person))?",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "-",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": true
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Bitte erzählen Sie mir, welche Symptome Sie haben, damit ich Ihnen besser helfen kann."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: BRB - ~ (en)
+Result: {
+    "rule_category": "abbreviation",
+    "rule_specification": {
+        "rule_trigger": "BRB",
+        "lemma": "BRB",
+        "word_type": "~"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "Bin gleich zurück",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "alternative_prio_3": {
+        "lemma": "",
+        "is_collective_noun": false,
+        "is_gendered_noun": false,
+        "is_advanced": false
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Ich bin gleich zurück, hole nur schnell einen Kaffee.",
+        "true_positive_sentence_2": "Tut mir leid, kann jetzt nicht reden, bin gleich zurück!"
+    }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: going the extra mile - ~v||a|~n (en)
+Result: {
+    "rule_category":"agentic",
+    "rule_specification":{
+        "rule_trigger":"sich besonders anstrengen",
+        "lemma":"sich besonders anstrengen",
+        "word_type":"v"
+    },
+    "alternatives":{
+        "alternative_prio_1":{
+            "lemma":"eine besondere Mühe geben",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        },
+        "alternative_prio_2":{
+            "lemma":"Kunden glücklich machen",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":false
+        },
+        "alternative_prio_3":{
+            "lemma":"kreative Lösungen für Kundenwünsche finden",
+            "is_collective_noun":false,
+            "is_gendered_noun":false,
+            "is_advanced":true
+        }
+    },
+    "true_positive_examples":{
+        "true_positive_sentence_1":"Sie gibt sich stets besondere Mühe, um ihre Kunden glücklich zu machen.",
+        "true_positive_sentence_2":"Sich besonders anzustrengen in seiner Arbeit kann zu deutlichen Karrierefortschritten führen."
+    }
+}
+Error: JSON structure is not as expected.
+Rule: payaso - n (en)
+Result: {}
+Error: JSON structure is not as expected.
+Rule: symptom - n (en)
+Result: {}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: older than - ~a| (en)
+Result: {
+  "rule_category": "age",
+  "rule_specification": {
+    "rule_trigger": "älter als X",
+    "lemma": "älter als",
+    "word_type": "~a|"
+  },
+  "alternatives": {
+    "alternative_prio_1": {
+      "lemma": "mit entsprechender Vorerfahrung und Kenntnissen",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_2": {
+      "lemma": "",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    },
+    "alternative_prio_3": {
+      "lemma": "",
+      "is_collective_noun": false,
+      "is_gendered_noun": false,
+      "is_advanced": false
+    }
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "Wir suchen eine engagierte Person, älter als 35 Jahre.",
+    "true_positive_sentence_2": "Er sieht älter als 40 aus, ist aber tatsächlich jünger."
+  }
+}
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: ambitious - a (en)
+Result: {
+    "rule_category": "agentic",
+    "rule_specification": {
+        "rule_trigger": "ehrgeizig",
+        "lemma": "ehrgeizig",
+        "word_type": "a"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "auf Wachstum bedacht",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": true
+        },
+        "alternative_prio_2": {
+            "lemma": "begeistert und leidenschaftlich",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "interessiert an der Übernahme neuer Verantwortlichkeiten",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Sie wurde kritisiert, zu ehrgeizig in ihren Berufszielen zu sein.",
+        "true_positive_sentence_2": "Er ist ein ehrgeiziger junger Mann, der nach der Präsidentschaft strebt."
+    }
+}
+Error: 'NoneType' object has no attribute 'find'
+Rule: spik - n (en)
+Result: None
+Error: {'__all__': ['Rule with this Language, Lemma, Word types, Type and Pluralization already exists.']}
+Rule: IMO - ~ (en)
+Result: {
+  "rule_category": "abbreviation",
+  "rule_specification": {
+    "rule_trigger": "IMO",
+    "lemma": "IMO",
+    "word_type": "~"
+  },
+  "alternatives": {
+    "alternative_prio_1": "-",
+    "alternative_prio_2": "Meiner Meinung nach,",
+    "alternative_prio_3": "Aus meiner Perspektive"
+  },
+  "true_positive_examples": {
+    "true_positive_sentence_1": "IMO ist der beste Ansatz, dieses Problem in kleinere Teile zu zerlegen.",
+    "true_positive_sentence_2": "IMO ist der wichtigste Faktor bei der Entscheidungsfindung, alle verfügbaren Informationen zu berücksichtigen."
+  }
+}
+Error: {'__all__': ["Word in lemma may not end with '~'"]}
+Rule: intern - ~n (en)
+Result: {
+    "rule_category": "function",
+    "rule_specification": {
+        "rule_trigger": "Praktikant",
+        "lemma": "Praktikant",
+        "word_type": "n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "Praktikant~",
+            "is_collective_noun": false,
+            "is_gendered_noun": true,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "Person im Praktikum",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_3": {
+            "lemma": "Person, die ein Praktikum absolviert",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": true
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Der Praktikant war dafür verantwortlich, Kaffee zu holen und Kopien zu machen.",
+        "true_positive_sentence_2": "Sie ist nur eine Praktikantin, also hat sie nicht die Befugnis, diese Entscheidungen zu treffen."
+    }
+}
+Error: {'__all__': ["No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun'"]}
+Rule: real father - ~a|n (en)
+Result: {
+    "rule_category": "gender_identity",
+    "rule_specification": {
+        "rule_trigger": "leiblicher Vater",
+        "lemma": "leiblicher Vater",
+        "word_type": "a|n"
+    },
+    "alternatives": {
+        "alternative_prio_1": {
+            "lemma": "biologische Elternteil",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        },
+        "alternative_prio_2": {
+            "lemma": "genetischer Vater",
+            "is_collective_noun": false,
+            "is_gendered_noun": true,
+            "is_advanced": false
+        },
+        "alternative_prio_3":{
+            "lemma": "Geburtsvater",
+            "is_collective_noun": false,
+            "is_gendered_noun": false,
+            "is_advanced": false
+        }
+    },
+    "true_positive_examples": {
+        "true_positive_sentence_1": "Er traf nach Jahren der Suche endlich seinen leiblichen Vater.",
+        "true_positive_sentence_2": "Sie hat sich immer gefragt, wer ihr leiblicher Vater ist."
+    }
+}

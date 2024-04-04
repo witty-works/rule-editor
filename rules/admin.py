@@ -745,7 +745,17 @@ class LemmaFilter(InputFilter):
 
 
 class RuleForm(forms.ModelForm):
+    remove_from_parent = forms.BooleanField(required=False)
+    text_id_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('text_id_correctness').choices, required=False, label='Text ID Correctness')
+    lemma_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('lemma_correctness').choices, required=False, label='Lemma Correctness')
+    word_types_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('word_types_correctness').choices, required=False, label='Word Types Correctness')
+    type_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('type_correctness').choices, required=False, label='Type Correctness')
+    entity_type_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('entity_type_correctness').choices, required=False, label='Entity Type Correctness')
+    pluralization_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('pluralization_correctness').choices, required=False, label='Pluralization Correctness')
+    notes_from_evaluator_structure = forms.CharField(widget=forms.Textarea, required=False, label='Notes from Evaluator')
     class Meta:
+        model = Rule
+        fields = "__all__"
         widgets = {
             "parent": autocomplete.ModelSelect2(
                 url="rule-autocomplete",
@@ -768,28 +778,6 @@ class RuleForm(forms.ModelForm):
             update_lemma_help_text(
                 instance, instance.language, self.fields["lemma"], "rule"
             )
-            #TODO: figure out how to set initial values for evaluation fields
-            print('instance', instance)
-            if hasattr(instance, 'rulestructureevaluation'):
-                rule_eval = instance.rulestructureevaluation
-                self.fields["text_id_correctness"].initial = rule_eval.text_id_correctness
-                self.fields["lemma_correctness"].initial = rule_eval.lemma_correctness
-                self.fields["word_types_correctness"].initial = rule_eval.word_types_correctness
-                self.fields["type_correctness"].initial = rule_eval.type_correctness
-                self.fields["entity_type_correctness"].initial = rule_eval.entity_type_correctness
-                self.fields["pluralization_correctness"].initial = rule_eval.pluralization_correctness
-                self.fields["notes_from_evaluator_structure"].initial = rule_eval.notes_from_evaluator_structure
-
-
-    remove_from_parent = forms.BooleanField(required=False)
-    #selected should be taken from db
-    text_id_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('text_id_correctness').choices, required=False, label='Text ID Correctness')
-    lemma_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('lemma_correctness').choices, required=False, label='Lemma Correctness')
-    word_types_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('word_types_correctness').choices, required=False, label='Word Types Correctness')
-    type_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('type_correctness').choices, required=False, label='Type Correctness')
-    entity_type_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('entity_type_correctness').choices, required=False, label='Entity Type Correctness')
-    pluralization_correctness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('pluralization_correctness').choices, required=False, label='Pluralization Correctness')
-    notes_from_evaluator_structure = forms.CharField(widget=forms.Textarea, required=False, label='Notes from Evaluator')
 
 
 class ParentRuleInline(nested_admin.NestedStackedInline):
@@ -809,6 +797,7 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",
+                    "is_auto_generated",
                     "is_context_aware",
                     "has_failing_training_sentence",
                     "type",
@@ -891,9 +880,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
             rule_evaluation_obj = RuleStructureEvaluation(rule=rule)
             rule_evaluation_obj.save()
 
-        print('?rule_evaluation_obj', rule_evaluation_obj)
-        print('text_id_correctness' in form.cleaned_data)
-        print(" form.cleaned_data['text_id_correctness']" , form.cleaned_data['text_id_correctness'])
+        #SAVE EVAL DATA
         if 'text_id_correctness' in form.cleaned_data:
             rule_evaluation_obj.text_id_correctness = form.cleaned_data['text_id_correctness']
             print('rule_evaluation_obj.text_id_correctness', rule_evaluation_obj.text_id_correctness)
@@ -914,7 +901,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         # alternative_evaluation_obj = AlternativeEvaluation.objects.filter(rule=rule).first()
         # if not alternative_evaluation_obj:
-        #     alternative_evaluation_obj = AlternativeEvaluation(alternative=rule.alternatives.first())
+        #     alternative_evaluation_obj = AlternativeEvaluation(rule=rule)
         #     alternative_evaluation_obj.save()
         
         # if 'more_inclusive_than_trigger_word' in form.cleaned_data:
@@ -971,6 +958,16 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         form.base_fields["parent"].widget.can_add_related = False
         form.base_fields["parent"].widget.can_delete_related = False
+        rule_eval = RuleStructureEvaluation.objects.filter(rule=obj).first()
+        if(rule_eval):
+            form.base_fields["text_id_correctness"].initial = rule_eval.text_id_correctness
+            form.base_fields["lemma_correctness"].initial = rule_eval.lemma_correctness
+            form.base_fields["word_types_correctness"].initial = rule_eval.word_types_correctness
+            form.base_fields["type_correctness"].initial = rule_eval.type_correctness
+            form.base_fields["entity_type_correctness"].initial = rule_eval.entity_type_correctness
+            form.base_fields["pluralization_correctness"].initial = rule_eval.pluralization_correctness
+            form.base_fields["notes_from_evaluator_structure"].initial = rule_eval.notes_from_evaluator_structure
+
 
         if obj and obj.children.count():
             form.base_fields["parent"].disabled = True
@@ -1040,6 +1037,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",
+                    "is_auto_generated",
                     "is_context_aware",
                     "has_failing_training_sentence",
                     "type",
@@ -1104,6 +1102,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         LemmaFilter,
         "language",
         "is_marked_for_review",
+        "is_auto_generated",
         "tags",
         "is_active",
         "type",

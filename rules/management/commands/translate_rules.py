@@ -4,6 +4,7 @@ from openai import AzureOpenAI
 from os import environ
 import json
 import logging
+from datetime import date
 
 logger = logging.getLogger(__name__)
 
@@ -46,10 +47,10 @@ class Command(BaseCommand):
                 alternatives = Alternative.objects.filter(rule_id=rule.id)
                 example_sentences = TrainingSentence.objects.filter(rule=rule)
 
-                #if no alternatives or example sentences, skip rule
-                # if len(alternatives) == 0 or len(example_sentences) == 0:
-                #     # self.stdout.write(self.style.ERROR(f"Skipping rule {rule} because it has no alternatives or example sentences"))
-                #     continue
+                # if no alternatives skip rule
+                if len(alternatives) == 0:
+                    self.stdout.write(self.style.ERROR(f"Skipping rule {rule} because it has no alternatives"))
+                    continue
 
                 dimension_key = rule.diversity_dimension_json[0]
                 if dimension_key.endswith('_advanced'):
@@ -79,7 +80,6 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f"Translating rule: {rule_formatted_for_translation}"))
 
                 instruction = """Your task is to function as an inclusive rule translator, focusing on translating and adapting language rules from English into German. The translation process must consider the inclusivity and cultural nuances of the German-speaking audience. For each provided rule, ensure the translated rule trigger exists in the German dictionary and retains the original rule's intent without creating new words. If a direct translation of the rule trigger would not be considered problematic in German, do not translate the rule and return an empty JSON object instead. If multiple synonyms exist in German, choose the one with the most offensive connotation to ensure clarity on what needs to be avoided. Provide new, culturally relevant examples in German that include the rule trigger in a natural way. The alternatives suggested should be more inclusive and avoid other offensive terms, adapted to fit the German context. If the alternatives do not apply or make sense in German, it's acceptable to come up with new ones. Each translation must include filled fields in a JSON format, only excluding translations when a direct German equivalent of the rule trigger does not exist.
-
                     Explanation of JSON fields: 
                     - `rule_category`: The inclusivity category the rule belongs to.
                     - `rule_trigger`: The word or phrase that triggers the rule by being non-inclusive.
@@ -376,19 +376,14 @@ class Command(BaseCommand):
                 },
                 ]
                 chat_completion = client.chat.completions.create(
-                model="gpt40125preview",
-                messages = prompt,
-                temperature=1.2,
-                max_tokens=500,
-                top_p=1,
-                frequency_penalty=0,
-                presence_penalty=0
+                    model="gpt40125preview",
+                    messages = prompt,
+                    temperature=1.2,
+                    max_tokens=500,
+                    top_p=1,
+                    frequency_penalty=0,
+                    presence_penalty=0
                 )
-
-                # Append results to file
-                # with open('rules/management/commands/translated_rules.json', 'a') as file:
-                #     file.write(json.dumps(rule_formatted_for_translation) + '\n')
-                #     file.write(json.dumps(chat_completion.choices[0].message.content) + '\n')
 
                 try:
                     # strip away everyting outside {}
@@ -408,7 +403,10 @@ class Command(BaseCommand):
 
                     for i in range(1, 4):
                         alternative_key = f'alternative_prio_{i}'
-                        if alternative_key in result_as_json['alternatives'] and len(result_as_json['alternatives'][alternative_key]['lemma']) > 0:
+                        if alternative_key in result_as_json['alternatives']:
+                            #also check is_collective_noun, is_gendered_noun, is_advanced in the alternatives, if they are not, continue 
+                            if 'lemma' not in result_as_json['alternatives'][alternative_key] or len(result_as_json['alternatives'][alternative_key]['lemma']) == 0 or 'is_collective_noun' not in result_as_json['alternatives'][alternative_key] or 'is_gendered_noun' not in result_as_json['alternatives'][alternative_key] or 'is_advanced' not in result_as_json['alternatives'][alternative_key]:
+                                continue
                             result_alternatives_with_info.append({
                                 "lemma": result_as_json['alternatives'][alternative_key]['lemma'],
                                 "priority": i,
@@ -422,34 +420,29 @@ class Command(BaseCommand):
                         if result_as_json['true_positive_examples'][f'true_positive_sentence_{i}'] != "":
                             result_example_sentences.append(result_as_json['true_positive_examples'][f'true_positive_sentence_{i}'])
 
+                    current_date = date.today()
                     #add new rule to db
                     new_rule = Rule.objects.create(
-                        #todo: only add rule if it doesn't already exist -> anyways gets rejected when trying to add
                         text_id=result_text_id,
                         lemma=result_lemma,
                         word_types=result_word_types,
                         language="de",
                         is_active=False,
                         is_marked_for_review=True,
-                        # all_diversity_dimensions=result_diversity_dimension_json #TODO: how do i add the diversity dimension?
+                        is_auto_generated=True,
+                        generated_at=current_date,
+                        source_rule=rule_formatted_for_translation,
                     )
                     new_rule.save()
 
                     #add RuleDiversityDimension
                     existing_diversity_dimension = DiversityDimension.objects.get(name=dimension_key)
                     new_rule_diversity_dimension = RuleDiversityDimension.objects.create(
-                        rule=new_rule,  # Assuming new_rule is the Rule instance you've created or fetched
+                        rule=new_rule,
                         diversity_dimension=existing_diversity_dimension,
                         order=1
                     )
-                    new_rule_diversity_dimension.save()
-                    self.stdout.write(self.style.SUCCESS(f"Successfully linked RuleDiversityDimension with existing DiversityDimension '{dimension_key}'."))
-                    
-
-                    # new_rule_diversity_dimension = RuleDiversityDimension.objects.create(
-                    #     diversity_dimension=dimension_key
-                    # )
-                    # new_rule_diversity_dimension.save()
+                    new_rule_diversity_dimension.save()                    
 
                     #add new alternatives to db
                     for i, alternative in enumerate(result_alternatives_with_info):
@@ -462,7 +455,7 @@ class Command(BaseCommand):
                             is_advanced=alternative['is_advanced']
                         )
                         new_alternative.save()
-
+                    
                     #add new example sentences to db
                     for i, example_sentence in enumerate(result_example_sentences):
                         #make sure is contains the rule trigger
@@ -477,11 +470,14 @@ class Command(BaseCommand):
                             comment='auto generated'
                         )
                         new_example_sentence.save()
-                    
-
                     self.stdout.write(self.style.SUCCESS(f'added rule: {chat_completion.choices[0].message.content}'))
+
                 except Exception as e:
-                    logger.error(f"Error processing rule: {e}")
+                    logger.error(f"Error processing rule: {e}")   
+                    with open('rules/management/commands/translated_rules_error.json', 'a') as file:
+                        file.write('Error: ' + str(e) + '\n')
+                        file.write('Rule: ' + str(rule) + '\n')  
+                        file.write('Result: ' + str(result) + '\n')        
             except Exception as e:
                 # Log the error and skip to the next rule
                 logger.error(f"Error processing rule {rule.id}: {e}")

@@ -233,7 +233,8 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
         try:
-            self.parsed_word_types = self.parse_word_types()
+            if self.is_active:
+                self.parsed_word_types = self.parse_word_types()
         except ValidationError as exception:
             errors["word_types"] = "Word_types validation failed: " + exception.message
 
@@ -283,11 +284,6 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         blank=True,
         help_text="Additional label to add to the short explanation/alternative",
     )
-
-    # is_auto_generated = models.BooleanField(
-    #     default=False, help_text="If the rule was auto generated"
-    # )
-
 
 
 class Category(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
@@ -384,7 +380,7 @@ class Rule(
         indexes = [
             models.Index(
                 fields=[
-                    # "is_auto_generated",
+                    "is_auto_generated",
                     "is_active",
                     "language",
                     "type",
@@ -507,6 +503,17 @@ class Rule(
     )
     is_marked_for_review = models.BooleanField(
         default=False, help_text="Rule should be reviewed"
+    )
+    is_auto_generated = models.BooleanField(
+        default=False, help_text="Rule was auto generated", null=True
+    )
+    generated_at = models.DateTimeField(
+        null=True, blank=True, help_text="When the rule was auto generated"
+    )
+    source_rule = models.CharField(
+        max_length=1000,
+        blank=True,
+        help_text="Rule that was used to generate this rule",
     )
     has_failing_training_sentence = models.BooleanField(
         default=False,
@@ -648,9 +655,16 @@ class Rule(
         return len(self.lemma)
 
 class RuleStructureEvaluation(models.Model):
+    unique_integer_generator = 0
+    def unique_default():
+        RuleStructureEvaluation.unique_integer_generator += 1
+        return RuleStructureEvaluation.unique_integer_generator
+    
+    #TODO: figure out how to store store lemma, alternatives and training sentences of deleted rule 
     rule = models.OneToOneField(
         Rule, 
-        on_delete=models.CASCADE, 
+        on_delete=models.SET_DEFAULT, 
+        default=unique_default,
         primary_key=True,
         related_name='evaluation'
     )
@@ -824,9 +838,28 @@ class Alternative(
     tags = TaggableManager(blank=True)
 
 class AlternativeEvaluation(models.Model):
-    alternative = models.ForeignKey(Alternative, on_delete=models.CASCADE)
-    rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
-  
+    rule = models.OneToOneField(
+        Rule, 
+        on_delete=models.PROTECT, 
+        primary_key=True,
+        related_name='alternative_evaluation'
+    )
+    # alternative = models.ForeignKey(Alternative, on_delete=models.PROTECT)
+    # id = models.AutoField(primary_key=True, unique=True, editable=False)
+    # rule = models.ForeignKey(
+    #     Rule, 
+    #     related_name="alternative_evaluations",
+    #     on_delete=models.PROTECT
+    #     )
+    # alternative_id = models.ForeignKey(
+    #     Alternative,
+    #     on_delete=models.PROTECT,
+    #     null=True,
+    #     blank=True,
+    #     help_text="Alternative",
+    #     default=0
+    # )
+
     more_inclusive_than_trigger_word = models.CharField(
         max_length=255,
         choices=[
@@ -901,9 +934,18 @@ class TrainingSentence(
     tags = TaggableManager(blank=True)
 
 class TrainingSentenceEvaluation(models.Model):
-    training_sentence = models.ForeignKey(TrainingSentence, on_delete=models.CASCADE)
-    rule = models.ForeignKey(Rule, on_delete=models.CASCADE)
-
+    training_sentence = models.ForeignKey(TrainingSentence, on_delete=models.PROTECT)
+    rule = models.OneToOneField(
+        Rule, 
+        on_delete=models.PROTECT, 
+        primary_key=True,
+        related_name='sentence_evaluation'
+    )
+    # rule = models.ForeignKey(
+    #     Rule, 
+    #     related_name="training_sentence_evaluations",
+    #     on_delete=models.PROTECT)
+    
     gramatically_correct = models.CharField(
         max_length=255,
         choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure")],
