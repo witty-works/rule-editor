@@ -30,15 +30,7 @@ class Command(BaseCommand):
             api_key=environ.get("AZURE_OPENAI_KEY"),
             api_version="2024-02-15-preview"
         )
-        # goldSample = ['eye-opener', 'tranny', 'policeman', 'goal-getter', 'witch', 'slant-eye', 'fat', 'in the front-line', 'illegal immigrant', 'midget', 'boss', 'light in the loafers', 'world-wide', 'man-power', 'fall on deaf ears', 'guys', 'partner', 'housekeeping', 'world leader', 'punctual Germans', 'blacklisting', 'crazy', 'homeless', 'merry christmas', 'going the extra mile', 'young', 'can\'t learn an old dog new tricks', 'tard', 'handicapped']
-        # goldSampleRules = []
-        # for term in goldSample:
-        #     # Find a matching rule
-        #     matching_rule = next((rule for rule in rules if rule.text_id == term), None)
-        #     # If a matching rule is found, add it to goldSampleRules
-        #     if matching_rule:
-        #         goldSampleRules.append(matching_rule)
-
+        rules_generated = 0
         for rule in rules.order_by('?'): # Randomize the order of rules
             try:
                 if rule.language != "en":
@@ -67,9 +59,30 @@ class Command(BaseCommand):
                         "word_type": rule.word_types,
                     },
                     "alternatives":{
-                        "alternative_prio_1": alternatives[0].lemma if len(alternatives) > 0 else "",
-                        "alternative_prio_2": alternatives[1].lemma if len(alternatives) > 1 else "",
-                        "alternative_prio_3": alternatives[2].lemma if len(alternatives) > 2 else ""
+                        "alternative_prio_1":
+                        {
+                            "lemma": alternatives[0].lemma if len(alternatives) > 0 else "",
+                            "is_collective_noun": alternatives[0].is_collective_noun if len(alternatives) > 0 else False,
+                            "is_gendered_noun": alternatives[0].is_gendered_noun if len(alternatives) > 0 else False,
+                            "is_advanced": alternatives[0].is_advanced if len(alternatives) > 0 else False,
+                            "is_remove": alternatives[0].is_remove if len(alternatives) > 0 else False
+                        },
+                        "alternative_prio_2":
+                        {
+                            "lemma": alternatives[1].lemma if len(alternatives) > 1 else "",
+                            "is_collective_noun": alternatives[1].is_collective_noun if len(alternatives) > 1 else False,
+                            "is_gendered_noun": alternatives[1].is_gendered_noun if len(alternatives) > 1 else False,
+                            "is_advanced": alternatives[1].is_advanced if len(alternatives) > 1 else False,
+                            "is_remove": alternatives[1].is_remove if len(alternatives) > 1 else False
+                        },
+                        "alternative_prio_3":
+                        {
+                            "lemma": alternatives[2].lemma if len(alternatives) > 2 else "",
+                            "is_collective_noun": alternatives[2].is_collective_noun if len(alternatives) > 2 else False,
+                            "is_gendered_noun": alternatives[2].is_gendered_noun if len(alternatives) > 2 else False,
+                            "is_advanced": alternatives[2].is_advanced if len(alternatives) > 2 else False,
+                            "is_remove": alternatives[2].is_remove if len(alternatives) > 2 else False
+                        },
                     },
                     "true_positive_examples":{ 
                         "true_positive_sentence_1": example_sentences[0].text if len(example_sentences) > 0 else "",
@@ -89,6 +102,7 @@ class Command(BaseCommand):
                     - `is_collective_noun`: alternative lemma referres to a collection of things taken as a whole. If it is a collective noun, it means do not pluralize.
                     - `is_gendered_noun`: If an alternative lemma contains gendered nouns then non gendered variations should be generated.
                     - `is_advanced`: alternative lemma is not a well understood concept.  
+                    - `is_remove`: If the alternative is to remove the word entirely, set this to true.
                     - `true_positive_examples`: Sentences that contain the rule_trigger in its exact lemma form to test if the rule is triggered.
 
                     Translations must accurately reflect the original rule's intent while being adapted for German cultural and linguistic nuances. Return translations as a JSON object. Make sure every field in the json is present, even if its left empty.
@@ -97,272 +111,296 @@ class Command(BaseCommand):
                     1. Vision Category Example:
                     Original:
                     {
-                    "rule_category":"vision",
-                    "rule_specification":{
-                        "rule_trigger":"blind as a bat",
-                        "lemma":"blind as a bat",
-                        "word_type":"~a|||~n"
-                    },
-                    "alternatives":{
-                        "alternative_prio_1":{
-                            "lemma”:”Blind”,
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "rule_category":"vision",
+                        "rule_specification":{
+                            "rule_trigger":"blind as a bat",
+                            "lemma":"blind as a bat",
+                            "word_type":"~a|||~n"
                         },
-                        "alternative_prio_2":{
-                            "lemma":"((who is)) visually impaired",
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "alternatives":{
+                            "alternative_prio_1":{
+                                "lemma”:”Blind”,
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_2":{
+                                "lemma":"((who is)) visually impaired",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_3":{
+                                "lemma":"vision-impaired ((person))",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                        },
+                        "true_positive_examples":{
+                            "true_positive_sentence_1":"She was as blind as a bat when it came to understanding the complex math problem.",
+                            "true_positive_sentence_2":"He was so blind as a bat that he couldn't even see the sign in front of him."
                         }
-                    },
-                    "alternative_prio_3":{
-                        "lemma":"vision-impaired ((person))",
-                        "is_collective_noun":false,
-                        "is_gendered_noun":false,
-                        "is_advanced":false
-                    },
-                    "true_positive_examples":{
-                        "true_positive_sentence_1":"She was as blind as a bat when it came to understanding the complex math problem.",
-                        "true_positive_sentence_2":"He was so blind as a bat that he couldn't even see the sign in front of him."
-                    }
                     }
                     Translation:
                     {
-                    "rule_category":"vision",
-                    "rule_specification":{
-                        "rule_trigger":"blind wie eine Fledermaus",
-                        "lemma":"blind wie eine Fledermaus",
-                        "word_type":"a||~|n"
-                    },
-                    "alternatives":{
-                        "alternative_prio_1":{
-                            "lemma":"schlecht sehen",
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "rule_category":"vision",
+                        "rule_specification":{
+                            "rule_trigger":"blind wie eine Fledermaus",
+                            "lemma":"blind wie eine Fledermaus",
+                            "word_type":"a||~|n"
                         },
-                        "alternative_prio_2":{
-                            "lemma":"mit schwachem Sehvermögen",
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "alternatives":{
+                            "alternative_prio_1":{
+                                "lemma":"schlecht sehen",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_2":{
+                                "lemma":"mit schwachem Sehvermögen",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_3":{
+                                "lemma":"-",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": true
+                            },
+                        },
+                        "true_positive_examples":{
+                            "true_positive_sentence_1":"Er war so blind wie eine Fledermaus, dass er das Schild vor ihm nicht sehen konnte.",
+                            "true_positive_sentence_2":"Sie ist blind wie eine Fledermaus."
                         }
-                    },
-                    "alternative_prio_3":{
-                        "lemma":"",
-                        "is_collective_noun":false,
-                        "is_gendered_noun":false,
-                        "is_advanced":false
-                    },
-                    "true_positive_examples":{
-                        "true_positive_sentence_1":"Er war so blind wie eine Fledermaus, dass er das Schild vor ihm nicht sehen konnte.",
-                        "true_positive_sentence_2":"Sie ist blind wie eine Fledermaus."
-                    }
                     }
 
                     2. Sexual Orientation Category Example:
                     Original:
                     {
-                    "rule_category":"sexual_orientation",
-                    "rule_specification":{
-                        "rule_trigger":"play for the other team",
-                        "lemma":"play for the other team",
-                        "word_type":"v|||a|n"
-                    },
-                    "alternatives":{
-                        "alternative_prio_1":{
-                            "lemma":"identify as lesbian",
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "rule_category":"sexual_orientation",
+                        "rule_specification":{
+                            "rule_trigger":"play for the other team",
+                            "lemma":"play for the other team",
+                            "word_type":"v|||a|n"
                         },
-                        "alternative_prio_2":{
-                            "lemma":"identify as gay",
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "alternatives":{
+                            "alternative_prio_1":{
+                                "lemma":"identify as lesbian",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_2":{
+                                "lemma":"identify as gay",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_3":{
+                                "lemma":"identify as a member of the LGBT+ community",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                        },
+                        "true_positive_examples":{
+                            "true_positive_sentence_1":"Does he play for the other team?",
+                            "true_positive_sentence_2":",When you play for the other team, it means you are attracted to the same gender",
                         }
-                    },
-                    "alternative_prio_3":{
-                        "lemma":"identify as a member of the LGBT+ community",
-                        "is_collective_noun":false,
-                        "is_gendered_noun":false,
-                        "is_advanced":false
-                    },
-                    "true_positive_examples":{
-                        "true_positive_sentence_1":"Does he play for the other team?",
-                        "true_positive_sentence_2":",When you play for the other team, it means you are attracted to the same gender",
-                    }
                     }
                     Translation: 
                     {
-                    "rule_category":"sexual_orientation",
-                    "rule_specification":{
-                        "rule_trigger":"vom anderen Ufer",
-                        "lemma":"vom anderen Ufer",
-                        "word_type":"|a|n"
-                    },
-                    "alternatives":{
-                        "alternative_prio_1":{
-                            "lemma":"-",
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "rule_category":"sexual_orientation",
+                        "rule_specification":{
+                            "rule_trigger":"vom anderen Ufer",
+                            "lemma":"vom anderen Ufer",
+                            "word_type":"|a|n"
                         },
-                        "alternative_prio_2":{
-                            "lemma":"schwul",
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "alternatives":{
+                            "alternative_prio_1":{
+                                "lemma":"-",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": true
+                            },
+                            "alternative_prio_2":{
+                                "lemma":"schwul",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_3":{
+                                "lemma":"lesbisch",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                        },
+                        "true_positive_examples":{
+                            "true_positive_sentence_1":"Er ist vom anderen Ufer.”,
+                            "true_positive_sentence_2":"Sie hat mir erzählt, dass sie vom anderen Ufer ist.”,
                         }
-                    },
-                    "alternative_prio_3":{
-                        "lemma":"lesbisch",
-                        "is_collective_noun":false,
-                        "is_gendered_noun":false,
-                        "is_advanced":false
-                    },
-                    "true_positive_examples":{
-                        "true_positive_sentence_1":"Er ist vom anderen Ufer.”,
-                        "true_positive_sentence_2":"Sie hat mir erzählt, dass sie vom anderen Ufer ist.”,
-                    }
                     }
 
                     3. Titles Category example:
                     Original: 
                     {
-                    "rule_category":"titles",
-                    "rule_specification":{
-                        "rule_trigger":"policeman",
-                        "lemma":"policeman",
-                        "word_type":"n"
-                    },
-                    "alternatives":{
-                        "alternative_prio_1":{
-                            "lemma”:”they”,
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "rule_category":"titles",
+                        "rule_specification":{
+                            "rule_trigger":"policeman",
+                            "lemma":"policeman",
+                            "word_type":"n"
                         },
-                        "alternative_prio_2":{
-                            "lemma":"someone in the police",
-                            "is_collective_noun":false,
-                            "is_gendered_noun":false,
-                            "is_advanced":false
+                        "alternatives":{
+                            "alternative_prio_1":{
+                                "lemma”:”they”,
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_2":{
+                                "lemma":"someone in the police",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_3":{
+                                "lemma":"someone from the precinct",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                        },
+                        "true_positive_examples":{
+                            "true_positive_sentence_1":"The policeman stopped the car for speeding.",
+                            "true_positive_sentence_2":"A policeman helped the lost child find her parents."
                         }
-                    },
-                    "alternative_prio_3":{
-                        "lemma":"someone from the precinct",
-                        "is_collective_noun":false,
-                        "is_gendered_noun":false,
-                        "is_advanced":false
-                    },
-                    "true_positive_examples":{
-                        "true_positive_sentence_1":"The policeman stopped the car for speeding.",
-                        "true_positive_sentence_2":"A policeman helped the lost child find her parents."
-                    }
                     }
                     Translation: 
                     {
-                    "rule_category":"titles",
-                    "rule_specification":{
-                        "rule_trigger":"Polizist",
-                        "lemma":"Polizist",
-                        "word_type":"n"
-                    },
-                    "alternatives":{
-                        "alternative_prio_1":{
-                            "lemma”:”~Polizist~”,
-                            "is_collective_noun":false,
-                            "is_gendered_noun”:true,
-                            "is_advanced":false
+                        "rule_category":"titles",
+                        "rule_specification":{
+                            "rule_trigger":"Polizist",
+                            "lemma":"Polizist",
+                            "word_type":"n"
                         },
-                        "alternative_prio_2":{
-                            "lemma":"~Polizei",
-                            "is_collective_noun”:true,
-                            "is_gendered_noun":false,
-                            "is_advanced”:true
+                        "alternatives":{
+                            "alternative_prio_1":{
+                                "lemma”:”~Polizist~”,
+                                "is_collective_noun":false,
+                                "is_gendered_noun”:true,
+                                "is_advanced":false,
+                                is_remove": false
+                            },
+                            "alternative_prio_2":{
+                                "lemma":"~Polizei",
+                                "is_collective_noun”:true,
+                                "is_gendered_noun":false,
+                                "is_advanced”:true,
+                                "is_remove": false
+                            },
+                            "alternative_prio_3":{
+                                "lemma":"~Polizeikraft",
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                        },
+                        "true_positive_examples":{
+                            "true_positive_sentence_1”:”Der Polizist hielt den Verkehr an, um den Kindern das sichere Überqueren der Straße zu ermöglichen."
+                            "true_positive_sentence_2":"Im Krimi ermittelte der erfahrene Polizist geschickt und löste den Fall innerhalb von Tagen."
                         }
-                    },
-                    "alternative_prio_3":{
-                        "lemma":"~Polizeikraft",
-                        "is_collective_noun":false,
-                        "is_gendered_noun":false,
-                        "is_advanced":false
-                    },
-                    "true_positive_examples":{
-                        "true_positive_sentence_1”:”Der Polizist hielt den Verkehr an, um den Kindern das sichere Überqueren der Straße zu ermöglichen."
-                        "true_positive_sentence_2":"Im Krimi ermittelte der erfahrene Polizist geschickt und löste den Fall innerhalb von Tagen."
-                    }
                     }
                     4. Gender Identity Category example:
                     Original: 
-                    {
-                    "rule_category":"gender_identity",
-                    "rule_specification":{
-                        "rule_trigger":"guys",
-                        "lemma":"guys",
-                        "word_type":"~n"
-                    },
-                    "alternatives":{
-                        "alternative_prio_1":{
-                            "lemma”:”team”,
-                            "is_collective_noun”:true,
-                            "is_gendered_noun”:false,
-                            "is_advanced”:true
+                        {
+                        "rule_category":"gender_identity",
+                        "rule_specification":{
+                            "rule_trigger":"guys",
+                            "lemma":"guys",
+                            "word_type":"~n"
                         },
-                        "alternative_prio_2":{
-                            "lemma":"everyone",
-                            "is_collective_noun”:true,
-                            "is_gendered_noun":false,
-                            "is_advanced”:false
+                        "alternatives":{
+                            "alternative_prio_1":{
+                                "lemma”:”team”,
+                                "is_collective_noun”:true,
+                                "is_gendered_noun”:false,
+                                "is_advanced”:true,
+                                "is_remove": false
+                            },
+                            "alternative_prio_2":{
+                                "lemma":"everyone",
+                                "is_collective_noun”:true,
+                                "is_gendered_noun":false,
+                                "is_advanced”:false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_3":{
+                                "lemma”:”folks”,
+                                "is_collective_noun":false,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                        },
+                        "true_positive_examples":{
+                            "true_positive_sentence_1”:”Hey guys, are you coming to the party tonight?"
+                            "true_positive_sentence_2":"I told the guys that we need to leave early tomorrow."
                         }
-                    },
-                    "alternative_prio_3":{
-                        "lemma”:”folks”,
-                        "is_collective_noun":false,
-                        "is_gendered_noun":false,
-                        "is_advanced":false
-                    },
-                    "true_positive_examples":{
-                        "true_positive_sentence_1”:”Hey guys, are you coming to the party tonight?"
-                        "true_positive_sentence_2":"I told the guys that we need to leave early tomorrow."
-                    }
                     }
                     Translation
                     {
-                    "rule_category":"gender_identity",
-                    "rule_specification":{
-                        "rule_trigger”:”jungs”,
-                        "lemma":"jungs",
-                        "word_type":"~n"
-                    },
-                    "alternatives":{
-                        "alternative_prio_1":{
-                            "lemma”:”Leute”,
-                            "is_collective_noun”:true,
-                            "is_gendered_noun”:false,
-                            "is_advanced”:true
+                        "rule_category":"gender_identity",
+                        "rule_specification":{
+                            "rule_trigger”:”jungs”,
+                            "lemma":"jungs",
+                            "word_type":"~n"
                         },
-                        "alternative_prio_2":{
-                            "lemma”:”Alle”,
-                            "is_collective_noun”:false,
-                            "is_gendered_noun":false,
-                            "is_advanced”:false
+                        "alternatives":{
+                            "alternative_prio_1":{
+                                "lemma”:”Leute”,
+                                "is_collective_noun”:true,
+                                "is_gendered_noun”:false,
+                                "is_advanced”:true,
+                                "is_remove": false
+                            },
+                            "alternative_prio_2":{
+                                "lemma”:”Alle”,
+                                "is_collective_noun”:false,
+                                "is_gendered_noun":false,
+                                "is_advanced”:false,
+                                "is_remove": false
+                            },
+                            "alternative_prio_3":{
+                                "lemma”:”Freunde”,
+                                "is_collective_noun”:true,
+                                "is_gendered_noun":false,
+                                "is_advanced":false,
+                                "is_remove": false
+                            },
+                        },
+                        "true_positive_examples":{
+                            "true_positive_sentence_1”:”Hey Jungs, kommt ihr heute Abend zur Party?”,
+                            "true_positive_sentence_2":"Ich habe den Jungs gesagt, dass wir morgen früh früh raus müssen."
                         }
-                    },
-                    "alternative_prio_3":{
-                        "lemma”:”Freunde”,
-                        "is_collective_noun”:true,
-                        "is_gendered_noun":false,
-                        "is_advanced":false
-                    },
-                    "true_positive_examples":{
-                        "true_positive_sentence_1”:”Hey Jungs, kommt ihr heute Abend zur Party?”,
-                        "true_positive_sentence_2":"Ich habe den Jungs gesagt, dass wir morgen früh früh raus müssen."
-                    }
                     }"""
         
                 prompt=[        
@@ -379,7 +417,7 @@ class Command(BaseCommand):
                     model="gpt40125preview",
                     messages = prompt,
                     temperature=1.2,
-                    max_tokens=500,
+                    max_tokens=800,
                     top_p=1,
                     frequency_penalty=0,
                     presence_penalty=0
@@ -405,14 +443,15 @@ class Command(BaseCommand):
                         alternative_key = f'alternative_prio_{i}'
                         if alternative_key in result_as_json['alternatives']:
                             #also check is_collective_noun, is_gendered_noun, is_advanced in the alternatives, if they are not, continue 
-                            if 'lemma' not in result_as_json['alternatives'][alternative_key] or len(result_as_json['alternatives'][alternative_key]['lemma']) == 0 or 'is_collective_noun' not in result_as_json['alternatives'][alternative_key] or 'is_gendered_noun' not in result_as_json['alternatives'][alternative_key] or 'is_advanced' not in result_as_json['alternatives'][alternative_key]:
+                            if 'lemma' not in result_as_json['alternatives'][alternative_key] or len(result_as_json['alternatives'][alternative_key]['lemma']) == 0 or 'is_collective_noun' not in result_as_json['alternatives'][alternative_key] or 'is_gendered_noun' not in result_as_json['alternatives'][alternative_key] or 'is_advanced' not in result_as_json['alternatives'][alternative_key] or 'is_remove' not in result_as_json['alternatives'][alternative_key]:
                                 continue
                             result_alternatives_with_info.append({
                                 "lemma": result_as_json['alternatives'][alternative_key]['lemma'],
                                 "priority": i,
                                 "is_collective_noun": result_as_json['alternatives'][alternative_key]['is_collective_noun'],
                                 "is_gendered_noun": result_as_json['alternatives'][alternative_key]['is_gendered_noun'],
-                                "is_advanced": result_as_json['alternatives'][alternative_key]['is_advanced']
+                                "is_advanced": result_as_json['alternatives'][alternative_key]['is_advanced'],
+                                "is_remove": result_as_json['alternatives'][alternative_key]['is_remove']
                             })
                                                     
                     result_example_sentences = []
@@ -434,6 +473,7 @@ class Command(BaseCommand):
                         source_rule=rule_formatted_for_translation,
                     )
                     new_rule.save()
+                    rules_generated += 1
 
                     #add RuleDiversityDimension
                     existing_diversity_dimension = DiversityDimension.objects.get(name=dimension_key)
@@ -452,7 +492,8 @@ class Command(BaseCommand):
                             order=alternative['priority'],
                             is_collective_noun=alternative['is_collective_noun'],
                             is_gendered_noun=alternative['is_gendered_noun'],
-                            is_advanced=alternative['is_advanced']
+                            is_advanced=alternative['is_advanced'],
+                            is_remove=alternative['is_remove']
                         )
                         new_alternative.save()
                     
@@ -470,8 +511,9 @@ class Command(BaseCommand):
                             comment='auto generated'
                         )
                         new_example_sentence.save()
-                    self.stdout.write(self.style.SUCCESS(f'added rule: {chat_completion.choices[0].message.content}'))
-
+                    self.stdout.write(self.style.SUCCESS(f'added rule (nr): {rules_generated, chat_completion.choices[0].message.content}'))
+                    if rules_generated >= 100:
+                        break
                 except Exception as e:
                     logger.error(f"Error processing rule: {e}")   
                     with open('rules/management/commands/translated_rules_error.json', 'a') as file:

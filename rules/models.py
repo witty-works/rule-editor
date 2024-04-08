@@ -660,7 +660,9 @@ class RuleStructureEvaluation(models.Model):
         RuleStructureEvaluation.unique_integer_generator += 1
         return RuleStructureEvaluation.unique_integer_generator
     
-    #TODO: figure out how to store store lemma, alternatives and training sentences of deleted rule 
+    # def get_default_rule_source_rule():
+    #     # fetch this value dynamically from a related model instance if available
+    
     rule = models.OneToOneField(
         Rule, 
         on_delete=models.SET_DEFAULT, 
@@ -668,40 +670,112 @@ class RuleStructureEvaluation(models.Model):
         primary_key=True,
         related_name='evaluation'
     )
-    #structure evaluation fields
-    text_id_correctness = models.IntegerField(
-        choices=[(0, "Don't know"), (1, "Incorrect"), (2, "Somewhat correct"), (3, "Correct")],
-        default=0,
-        help_text="Correctness of the text_id field."
+    # #get source rule from rule
+    rule_source_rule = models.CharField(
+        max_length=5000,
+        blank=True,
+        help_text="Rule that was used to generate this rule",
     )
-    lemma_correctness = models.IntegerField(
-        choices=[(0, "Don't know"), (1, "Incorrect"), (2, "Somewhat correct"), (3, "Correct")],
+
+    rule_inclusiveness = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure")],
         default=0,
-        help_text="Correctness of the lemma field."
+        help_text="Is this rule trigger uninclusive"
     )
-    word_types_correctness = models.IntegerField(
-        choices=[(0, "Don't know"), (1, "Incorrect"), (2, "Somewhat correct"), (3, "Correct")],
+
+    rule_carries_same_meaning = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure")],
         default=0,
-        help_text="Correctness of the word_types field."
+        help_text="Does this rule carry the same meaning as the source rule? "
     )
-    type_correctness = models.IntegerField(
-        choices=[(0, "Don't know"), (1, "Incorrect"), (2, "Somewhat correct"), (3, "Correct")],
+
+    rule_fits_diversity_dimension = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure")],
         default=0,
-        help_text="Correctness of the type field."
+        help_text="Does this rule fit the diversity dimension? "
     )
-    entity_type_correctness = models.IntegerField(
-        choices=[(0, "Don't know"), (1, "Incorrect"), (2, "Somewhat correct"), (3, "Correct")],
-        default=0,
-        help_text="Correctness of the entity_type field."
+
+    rule_importance = models.IntegerField(
+        choices=[(1, "not important"), (2, "less important"), (3, "important"), (4, "very important"), (5, "extremely important")],
+        default=3,
+        help_text="How important is it that we have this rule?"
     )
-    pluralization_correctness = models.IntegerField(
-        choices=[(0, "Don't know"), (1, "Incorrect"), (2, "Somewhat correct"), (3, "Correct")],
-        default=0,
-        help_text="Correctness of the pluralization field."
+
+    rule_inspiration = models.IntegerField(
+        choices=[(0, "yes"), (1, "no")],
+        default=1,
+        help_text="Does this rule inspire the creation of another rule (if yes, write it in notes)?"
     )
-    notes_from_evaluator_structure = models.TextField(
+    
+    rule_notes = models.TextField(
         null=True, blank=True,
-        help_text="General notes from the evaluator."
+        help_text="Interesting notes/observations on rule"
+    )
+
+    alternative_1_inclusiveness = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
+        default=0,
+        help_text="Is alternative 1 more inclusive than rule trigger"
+    )
+
+    alternative_2_inclusiveness = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
+        default=0,
+        help_text="Is alternative 2 m0re inclusive than rule trigger"
+    )
+
+    alternative_3_inclusiveness = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
+        default=0,
+        help_text="Is alternative 3 more inclusive than rule trigger"
+    )
+
+    alternative_1_quality = models.IntegerField(
+        choices=[(1, "Poor"), (2, "Fair"), (3, "Good"), (4, "Very Good"), (5, "Excellent"), (6, "Not applicable")],
+        default=3,
+        help_text="Rate the quality of alternative 1"
+    )
+
+    alternative_2_quality = models.IntegerField(
+        choices=[(1, "Poor"), (2, "Fair"), (3, "Good"), (4, "Very Good"), (5, "Excellent"), (6, "Not applicable")],
+        default=3,
+        help_text="Rate the quality of alternative 2"
+    )
+
+    alternative_3_quality = models.IntegerField(
+        choices=[(1, "Poor"), (2, "Fair"), (3, "Good"), (4, "Very Good"), (5, "Excellent"), (6, "Not applicable")],
+        default=3,
+        help_text="Rate the quality of alternative 3"
+    )
+    alternative_notes = models.TextField(
+        null=True, blank=True,
+        help_text="Interesting notes/observations on alternatives"
+    )
+
+    training_sentence_1_fits_context = models.CharField(
+        max_length=255,
+        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure"), ("not applicable", "Not Applicable")],
+        default="unsure",
+        help_text="Does training sentence 1 make sense in context of the rule?"
+    )
+
+    training_sentence_2_fits_context = models.CharField(
+        max_length=255,
+        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure"), ("not applicable", "Not Applicable")],
+        default="unsure",
+        help_text="Does training sentence 2 make sense in context of the rule?"
+    )
+
+    written_by_human = models.CharField(
+        max_length=255,
+        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure")],
+        default="unsure",
+        help_text="Would you believe that the sentences were written by a human?"
+    )
+
+    notes_training_sentences = models.TextField(
+        null=True, blank=True,
+        help_text="Interesting notes/observations on training sentences"
     )
 
     class Meta:
@@ -837,66 +911,6 @@ class Alternative(
 
     tags = TaggableManager(blank=True)
 
-class AlternativeEvaluation(models.Model):
-    rule = models.OneToOneField(
-        Rule, 
-        on_delete=models.PROTECT, 
-        primary_key=True,
-        related_name='alternative_evaluation'
-    )
-    # alternative = models.ForeignKey(Alternative, on_delete=models.PROTECT)
-    # id = models.AutoField(primary_key=True, unique=True, editable=False)
-    # rule = models.ForeignKey(
-    #     Rule, 
-    #     related_name="alternative_evaluations",
-    #     on_delete=models.PROTECT
-    #     )
-    # alternative_id = models.ForeignKey(
-    #     Alternative,
-    #     on_delete=models.PROTECT,
-    #     null=True,
-    #     blank=True,
-    #     help_text="Alternative",
-    #     default=0
-    # )
-
-    more_inclusive_than_trigger_word = models.CharField(
-        max_length=255,
-        choices=[
-            ("yes", "Yes"),
-            ("no", "No"),
-            ("unsure", "Unsure")
-        ],
-        default="unsure",
-        help_text="Is the alternative more inclusive than the trigger word?"
-    )
-    same_meaning_as_trigger_word = models.CharField(
-        max_length=255,
-        choices=[
-            ("yes", "Yes"),
-            ("no", "No"),
-            ("unsure", "Unsure")
-        ],
-        default="unsure",
-        help_text="Does the alternative have the same meaning as the trigger word?"
-    )
-    how_good_is_alternative = models.IntegerField(
-        choices=[(1, "Poor"), (2, "Fair"), (3, "Good"), (4, "Very Good"), (5, "Excellent")],
-        default=3,
-        help_text="Rate the quality of the alternative."
-    )
-    notes_from_evaluator_alternatives = models.TextField(
-        null=True,
-        blank=True,
-        help_text="Observations or notes from the evaluator."
-    )
-
-    class Meta:
-        verbose_name = 'Alternative Evaluation'
-        verbose_name_plural = 'Alternative Evaluations'
-
-    def __str__(self):
-        return f"Evaluation for {self.alternative.lemma}"
 
 class TrainingSentence(
     ComputedFieldsModel,
@@ -933,58 +947,6 @@ class TrainingSentence(
 
     tags = TaggableManager(blank=True)
 
-class TrainingSentenceEvaluation(models.Model):
-    training_sentence = models.ForeignKey(TrainingSentence, on_delete=models.PROTECT)
-    rule = models.OneToOneField(
-        Rule, 
-        on_delete=models.PROTECT, 
-        primary_key=True,
-        related_name='sentence_evaluation'
-    )
-    # rule = models.ForeignKey(
-    #     Rule, 
-    #     related_name="training_sentence_evaluations",
-    #     on_delete=models.PROTECT)
-    
-    gramatically_correct = models.CharField(
-        max_length=255,
-        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure")],
-        default="unsure",
-        help_text="Is the sentence grammatically correct?"
-    )
-
-    fits_context = models.CharField(
-        max_length=255,
-        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure")],
-        default="unsure",
-        help_text="Does the sentence make sense in context of the rule?"
-    )
-
-    written_by_human = models.CharField(
-        max_length=255,
-        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure")],
-        default="unsure",
-        help_text="Would you believe that the sentence was written by a human?"
-    )
-
-    should_trigger_rule = models.CharField(
-        max_length=255,
-        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure")],
-        default="unsure",
-        help_text="Should the sentence trigger the rule?"
-    )
-
-    notes_from_evaluator_training_sentences = models.TextField(
-            null=True, blank=True,
-            help_text="Any interesing observations or notes from the evaluator."
-        )
-    
-    class Meta:
-        verbose_name = 'Training Sentence Evaluation'
-        verbose_name_plural = 'Training Sentence Evaluations'
-
-    def __str__(self):
-        return f"Evaluation for {self.training_sentence.text}"
 
 class FalsePositive(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
     def __str__(self):
