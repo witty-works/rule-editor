@@ -448,11 +448,6 @@ class CreatedByAdmin(admin.ModelAdmin):
         obj.save()
 
 
-class AlternativeAdmin(CreatedByAdmin):
-    class Meta:
-        model = Alternative
-
-
 class AlternativeForm(forms.ModelForm):
     class Meta:
         widgets = {
