@@ -448,11 +448,6 @@ class CreatedByAdmin(admin.ModelAdmin):
         obj.save()
 
 
-class AlternativeAdmin(CreatedByAdmin):
-    class Meta:
-        model = Alternative
-
-
 class AlternativeForm(forms.ModelForm):
     class Meta:
         widgets = {
@@ -543,6 +538,7 @@ def apply_rule(values):
             "is_remove": alternative.is_remove,
             "is_collective_noun": alternative.is_collective_noun,
             "is_gendered_noun": alternative.is_gendered_noun,
+            "is_placeholder": alternative.is_placeholder,
         }
         alternatives.append(alternative)
 
@@ -567,6 +563,7 @@ def apply_rule(values):
         "lemma": rule.lemma,
         "type": rule.type,
         "word_types": rule.word_types_json,
+        "actual_word_types": rule.actual_word_types,
         "subcategories": rule.diversity_dimension_json,
         "alternatives": alternatives,
         "false_positives": false_positives,
@@ -767,6 +764,7 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "text_id",
                     "lemma",
                     "word_types",
+                    "actual_word_types",
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",
@@ -954,6 +952,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "text_id",
                     "lemma",
                     "word_types",
+                    "actual_word_types",
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",

@@ -19,6 +19,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
+allowed_word_types = ["n", "pron", "a", "adv", "v", "conj", "emoji", "num", "card"]
+
 def fetch_json(path, data=None):
     url = settings.NLP_API + path
 
@@ -264,7 +266,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         max_length=255,
         null=True,
         blank=True,
-        help_text="'|' separated list of word types (n, pron, a, adv, v, conj, emoji, num, card) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
+        help_text="'|' separated list of word types used for matching the rule (n, pron, a, adv, v, conj, emoji, num, card) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
     )
 
     @computed(
@@ -422,9 +424,24 @@ class Rule(
                     "URL must either be empty or a valid URL: " + exception.message
                 )
 
-        if self.type != "default":
-            if self.tokenized is not None and len(self.tokenized) > 1:
+        if self.tokenized is not None:
+            if self.type != "default" and len(self.tokenized) > 1:
                 errors["type"] = "Rules with a non default type can only have one token"
+
+            if self.actual_word_types is not None and self.actual_word_types != "":
+                actual_word_types = self.actual_word_types.split("|")
+                if len(self.tokenized) != len(actual_word_types):
+                    errors["actual_word_types"] = (
+                        f"Number of word types does not match token count {len(self.tokenized)}"
+                    )
+                else:
+                    word_type_delta = list(set(actual_word_types) - set(allowed_word_types))
+                    if len(word_type_delta):
+                        word_type_delta = ", ".join(word_type_delta)
+                        errors["actual_word_types"] = (
+                            f"Unsupported word types: {word_type_delta}"
+                        )
+
 
         if len(errors):
             raise ValidationError(errors)
@@ -521,6 +538,13 @@ class Rule(
         null=True,
         blank=True,
         help_text="Override the diversity dimension URL with a custom URL",
+    )
+
+    actual_word_types = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Optional '|' separated list of word types matching the actual word types",
     )
 
     sanctions = models.ManyToManyField(
