@@ -710,17 +710,17 @@ class Alternative(
             for word in words:
                 if word.endswith("~"):
                     if not word.startswith("~"):
-                        raise ValidationError("Word in lemma may not end with '~'")
+                        raise ValidationError(f"Word in lemma may not end with '~' for '{self.lemma}'")
 
                     gendered_noun_found = True
                     if not self.is_gendered_noun:
                         raise ValidationError(
-                            "Gendered noun markers detected (noun with '~' prefix+suffix) but alternative not marked as 'gendered noun'"
+                            f"Gendered noun markers detected (noun with '~' prefix+suffix) but alternative not marked as 'gendered noun' for '{self.lemma}'"
                         )
 
         if self.is_gendered_noun and not gendered_noun_found:
             raise ValidationError(
-                "No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun'"
+                f"No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun' for '{self.lemma}'"
             )
 
         return super().clean()
