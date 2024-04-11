@@ -19,6 +19,8 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 
+allowed_word_types = ["n", "pron", "a", "adv", "v", "conj", "emoji", "num", "card"]
+
 def fetch_json(path, data=None):
     url = settings.NLP_API + path
 
@@ -265,7 +267,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         max_length=255,
         null=True,
         blank=True,
-        help_text="'|' separated list of word types (n, pron, a, adv, v, conj, emoji, num, card) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
+        help_text="'|' separated list of word types used for matching the rule (n, pron, a, adv, v, conj, emoji, num, card) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
     )
 
     @computed(
@@ -424,27 +426,27 @@ class Rule(
                     "URL must either be empty or a valid URL: " + exception.message
                 )
 
-        if self.type != "default":
-            if self.tokenized is not None and len(self.tokenized) > 1:
+        if self.tokenized is not None:
+            if self.type != "default" and len(self.tokenized) > 1:
                 errors["type"] = "Rules with a non default type can only have one token"
+
+            if self.actual_word_types is not None and self.actual_word_types != "":
+                actual_word_types = self.actual_word_types.split("|")
+                if len(self.tokenized) != len(actual_word_types):
+                    errors["actual_word_types"] = (
+                        f"Number of word types does not match token count {len(self.tokenized)}"
+                    )
+                else:
+                    word_type_delta = list(set(actual_word_types) - set(allowed_word_types))
+                    if len(word_type_delta):
+                        word_type_delta = ", ".join(word_type_delta)
+                        errors["actual_word_types"] = (
+                            f"Unsupported word types: {word_type_delta}"
+                        )
+
 
         if len(errors):
             raise ValidationError(errors)
-
-    def save_model(self, request, obj, form, change):
-        super.save_model(request, obj, form, change)
-        if self.is_active:
-            diversity_dimensions = self.diversity_dimensions.all()
-
-            failed = diversity_dimensions.count() == 0
-
-            if self.alternatives.count() == 0:
-                for diversity_dimension in diversity_dimensions:
-                    if diversity_dimension.proficiency_level != "inclusive":
-                        failed = True
-
-            if failed:
-                messages.add_message(request, messages.INFO, "Hello world.")
 
     def __str__(self):
         return f"{self.lemma[0:40]} - {self.word_types} ({self.language})"
@@ -519,6 +521,10 @@ class Rule(
         default=False,
         help_text="If one of the training sentences is not triggering the given rule as expected",
     )
+    is_hr_rule = models.BooleanField(
+        default=False,
+        help_text="If this rule is enabled only for the HR-addon",
+    )
 
     diversity_dimensions = models.ManyToManyField(
         DiversityDimension, through="RuleDiversityDimension"
@@ -545,6 +551,13 @@ class Rule(
         null=True,
         blank=True,
         help_text="Override the diversity dimension URL with a custom URL",
+    )
+
+    actual_word_types = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="Optional '|' separated list of word types matching the actual word types",
     )
 
     sanctions = models.ManyToManyField(
@@ -837,17 +850,17 @@ class Alternative(
             for word in words:
                 if word.endswith("~"):
                     if not word.startswith("~"):
-                        raise ValidationError("Word in lemma may not end with '~'")
+                        raise ValidationError(f"Word in lemma may not end with '~' for '{self.lemma}'")
 
                     gendered_noun_found = True
                     if not self.is_gendered_noun:
                         raise ValidationError(
-                            "Gendered noun markers detected (noun with '~' prefix+suffix) but alternative not marked as 'gendered noun'"
+                            f"Gendered noun markers detected (noun with '~' prefix+suffix) but alternative not marked as 'gendered noun' for '{self.lemma}'"
                         )
 
         if self.is_gendered_noun and not gendered_noun_found:
             raise ValidationError(
-                "No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun'"
+                f"No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun' for '{self.lemma}'"
             )
 
         return super().clean()
@@ -2357,6 +2370,7 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     sg_gen_2 = models.CharField(max_length=255, null=True, blank=True)
     sg_acc = models.CharField(max_length=255, null=True, blank=True)
     pl_nom = models.CharField(max_length=255, null=True, blank=True)
+    pl_nom_2 = models.CharField(max_length=255, null=True, blank=True)
     pl_gen = models.CharField(max_length=255, null=True, blank=True)
     pl_dat = models.CharField(max_length=255, null=True, blank=True)
     pl_acc = models.CharField(max_length=255, null=True, blank=True)
