@@ -92,9 +92,8 @@ class Command(BaseCommand):
                 rule_formatted_for_translation = str(rule_formatted_for_translation).replace("'", '"')
                 self.stdout.write(self.style.SUCCESS(f"Translating rule: {rule_formatted_for_translation}"))
 
-                #get translation_prompt from txt file in same folde
                 instruction = ""
-                with open('rules/management/commands/translation_prompt_en_de.txt', 'r') as file:
+                with open('rules/management/commands/translation_prompt_en_fr.txt', 'r') as file: #CHANGE THIS TO WITCH BETWEEN LANGUAGES
                     instruction = file.read()
 
                 prompt=[        

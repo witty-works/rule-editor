@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('rules', '0076_remove_rule_rules_rule_is_acti_3e9519_idx_and_more'),
+        ('rules', '0079_remove_rule_rules_rule_is_acti_3e9519_idx_and_more'),
     ]
 
     operations = [

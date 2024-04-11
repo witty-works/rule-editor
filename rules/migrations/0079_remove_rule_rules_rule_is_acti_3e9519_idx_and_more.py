@@ -8,7 +8,7 @@ import rules.models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('rules', '0075_alternativeevaluation_rulestructureevaluation_and_more'),
+        ('rules', '0078_alternativeevaluation_rulestructureevaluation_and_more'),
     ]
 
     operations = [

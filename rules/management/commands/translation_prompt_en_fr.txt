@@ -1,0 +1,283 @@
+Your task is to function as an inclusive rule translator, focusing on translating and adapting language rules from English into French. The translation process must consider the inclusivity and cultural nuances of the French-speaking audience. For each provided rule, ensure the translated rule trigger exists in the French dictionary and retains the original rule's intent without creating new words. If a direct translation of the rule trigger would not be considered problematic in French, do not translate the rule and return an empty JSON object instead. If multiple synonyms exist in French, choose the one with the most offensive connotation to ensure clarity on what needs to be avoided. Provide new, culturally relevant examples in French that include the rule trigger in a natural way. The alternatives suggested should be more inclusive and avoid other offensive terms, adapted to fit the French context. If the alternatives do not apply or make sense in French, it's acceptable to come up with new ones. Each translation must include filled fields in a JSON format, only excluding translations when a direct French equivalent of the rule trigger does not exist.
+Explanation of JSON fields: 
+- `rule_category`: The inclusivity category the rule belongs to.
+- `rule_trigger`: The word or phrase that triggers the rule by being non-inclusive.
+- `lemma`: The base form of the rule trigger, or the citation form of a set of word forms.
+- `word_type`: Lists of word types (e.g., `n` for noun, `pron` for pronoun) separated by '|' with optional modifiers for case sensitivity and lemmatization.
+- `alternatives`: More inclusive alternatives to the rule trigger, ranked from best to worst. If the best alternative is to remove the word entirely, the alternative should be ‘-‘.\
+- `is_collective_noun`: alternative lemma referres to a collection of things taken as a whole. If it is a collective noun, it means do not pluralize.
+- `is_gendered_noun`: If an alternative lemma contains gendered nouns then non gendered variations should be generated.
+- `is_advanced`: alternative lemma is not a well understood concept.  
+- `true_positive_examples`: Sentences that contain the rule trigger in its exact lemma form to test if the rule is triggered.
+Translations must accurately reflect the original rule's intent while being adapted for French cultural and linguistic nuances. Return translations as a JSON object. Make sure every field in the json is present, even if its left empty.
+
+Examples of correct translations
+1. Vision Category Example:
+Original:
+{
+   "rule_category":"vision",
+   "rule_specification":{
+      "rule_trigger":"blind as a bat",
+      "lemma":"blind as a bat",
+      "word_type":"~a|||~n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"Blind",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_2":{
+         "lemma":"((who is)) visually impaired",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_3":{
+         "lemma":"vision-impaired ((person))",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"She was as blind as a bat when it came to understanding the complex math problem.",
+      "true_positive_sentence_2":"He was so blind as a bat that he couldn't even see the sign in front of him."
+   }
+}
+
+Translation:
+{
+   "rule_category":"vision",
+   "rule_specification":{
+      "rule_trigger":"aveugle comme une taupe",
+      "lemma":"aveugle comme une taupe",
+      "word_type":"a||~|n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"ne pas voir à trois pas",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_2":{
+         "lemma":"avoir une vue de taupe",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_3":{
+         "lemma":"ne rien voir",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Elle était aveugle comme une taupe lorsqu'il s'agissait de comprendre le problème de mathématiques complexe.",
+      "true_positive_sentence_2":"Il était tellement aveugle comme une taupe qu'il ne pouvait même pas voir le panneau devant lui."
+   }
+}
+
+2. Sexual Orientation Category Example:
+{
+   "rule_category":"sexual_orientation",
+   "rule_specification":{
+      "rule_trigger":"play for the other team",
+      "lemma":"play for the other team",
+      "word_type":"v|||a|n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"identify as lesbian",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_2":{
+         "lemma":"identify as gay",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_3":{
+         "lemma":"identify as a member of the LGBT+ community",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Does he play for the other team?",
+      "true_positive_sentence_2":",When you play for the other team, it means you are attracted to the same gender"
+   }
+}
+
+Translation: 
+{
+   "rule_category":"sexual_orientation",
+   "rule_specification":{
+      "rule_trigger":"jouer pour l'autre équipe",
+      "lemma":"jouer pour l'autre équipe",
+      "word_type":"v|||a|n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"s'identifier comme lesbienne",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_2":{
+         "lemma":"s'identifier comme gay",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_3":{
+         "lemma":"s'identifier comme membre de la communauté LGBT+",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Jouer pour l'autre équipe peut parfois être difficile dans une société qui n'est pas totalement ouverte.",
+      "true_positive_sentence_2":"Savoir si quelqu'un va jouer pour l'autre équipe demande souvent de la délicatesse et du respect."
+   }
+}
+
+3. Titles Category example:
+Original: 
+{
+   "rule_category":"titles",
+   "rule_specification":{
+      "rule_trigger":"policeman",
+      "lemma":"policeman",
+      "word_type":"n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"they",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_2":{
+         "lemma":"someone in the police",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_3":{
+         "lemma":"someone from the precinct",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"The policeman stopped the car for speeding.",
+      "true_positive_sentence_2":"A policeman helped the lost child find her parents."
+   }
+}
+
+Translation: 
+{
+   "rule_category":"titles",
+   "rule_specification":{
+      "rule_trigger":"policier",
+      "lemma":"policier",
+      "word_type":"n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"”policier·ère”",
+         "is_collective_noun":false,
+         "is_gendered_noun":true,
+         "is_advanced":false
+      },
+      "alternative_prio_2":{
+         "lemma":"~police",
+         "is_collective_noun":true,
+         "is_gendered_noun":false,
+         "is_advanced":true
+      },
+      "alternative_prio_3":{
+         "lemma":"~force de police",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Le policier a arrêté la circulation pour permettre aux enfants de traverser la rue en toute sécurité.",
+      "true_positive_sentence_2":"Le policier a arrêté le conducteur pour excès de vitesse."
+   }
+}
+
+
+4. Gender Identity Category example:
+Original: 
+{
+   "rule_category":"gender_identity",
+   "rule_specification":{
+      "rule_trigger":"guys",
+      "lemma":"guys",
+      "word_type":"~n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"team",
+         "is_collective_noun":true,
+         "is_gendered_noun":false,
+         "is_advanced":true
+      },
+      "alternative_prio_2":{
+         "lemma":"everyone",
+         "is_collective_noun":true,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      },
+      "alternative_prio_3":{
+         "lemma":"folks",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Hey guys, are you coming to the party tonight?",
+      "true_positive_sentence_2":"I told the guys that we need to leave early tomorrow."
+   }
+}
+
+Translation
+{
+   "rule_category":"gender_identity",
+   "rule_specification":{
+      "rule_trigger":"les gars",
+      "lemma":"les gars",
+      "word_type":"~n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"’l’équipe",
+         "is_collective_noun":true,
+         "is_gendered_noun":false,
+         "is_advanced":true
+      },
+      "alternative_prio_2":{
+         "lemma":"tout le monde",
+         "is_collective_noun":true,
+         "is_gendered_noun":false,
+         "is_advanced":false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Salut les gars, vous venez à la fête ce soir?",
+      "true_positive_sentence_2":"Les gars, vous êtes prêts à partir?"
+   }
+}

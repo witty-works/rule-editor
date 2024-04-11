@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('rules', '0074_rule_has_failing_training_sentence'),
+        ('rules', '0077_rule_actual_word_types_alter_alternative_word_types_and_more'),
     ]
 
     operations = [
