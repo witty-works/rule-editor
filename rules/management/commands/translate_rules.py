@@ -13,7 +13,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            rules = Rule.objects.all()
+            rules = Rule.objects.all().filter(language="en")
         except Exception as e:
             logger.error(f"Failed to fetch rules: {e}")
             return
@@ -26,76 +26,69 @@ class Command(BaseCommand):
             return
 
         client = AzureOpenAI(
-            azure_endpoint="https://openai-test-solveig-helland.openai.azure.com/",
+            azure_endpoint=environ.get("AZURE_OPENAI_ENDPOINT"),
             api_key=environ.get("AZURE_OPENAI_KEY"),
             api_version="2024-02-15-preview"
         )
         rules_generated = 0
+        instruction = ""
+        with open('rules/management/commands/translation_prompt_en_fr.txt', 'r') as file: #CHANGE THIS TO WITCH BETWEEN LANGUAGES
+            instruction = file.read()
         for rule in rules.order_by('?'): # Randomize the order of rules
             try:
-                if rule.language != "en":
-                    continue
-
-                alternatives = Alternative.objects.filter(rule_id=rule.id)
-                example_sentences = TrainingSentence.objects.filter(rule=rule)
+                alternatives = rule.alternatives.all()
+                example_sentences = rule.training_sentences.all()
 
                 # if no alternatives skip rule
                 if len(alternatives) == 0:
                     self.stdout.write(self.style.ERROR(f"Skipping rule {rule} because it has no alternatives"))
                     continue
 
-                dimension_key = rule.diversity_dimension_json[0]
-                if dimension_key.endswith('_advanced'):
-                    dimension_key = dimension_key[:-9]
+                dimension_key = rule.diversity_dimension_json[0].removesuffix('_advanced')
 
                 dimension_info = all_diversity_dimensions[dimension_key]
                 dimension_info = str(dimension_info).replace("'", '"')
-
                 rule_formatted_for_translation = {
                     "rule_category": dimension_key,
-                    "rule_specification":{
+                    "rule_specification": {
                         "rule_trigger": rule.text_id,
                         "lemma": rule.lemma,
                         "word_type": rule.word_types,
                     },
-                    "alternatives":{
-                        "alternative_prio_1":
-                        {
-                            "lemma": alternatives[0].lemma if len(alternatives) > 0 else "",
-                            "is_collective_noun": alternatives[0].is_collective_noun if len(alternatives) > 0 else False,
-                            "is_gendered_noun": alternatives[0].is_gendered_noun if len(alternatives) > 0 else False,
-                            "is_advanced": alternatives[0].is_advanced if len(alternatives) > 0 else False,
-                            "is_remove": alternatives[0].is_remove if len(alternatives) > 0 else False
-                        },
-                        "alternative_prio_2":
-                        {
-                            "lemma": alternatives[1].lemma if len(alternatives) > 1 else "",
-                            "is_collective_noun": alternatives[1].is_collective_noun if len(alternatives) > 1 else False,
-                            "is_gendered_noun": alternatives[1].is_gendered_noun if len(alternatives) > 1 else False,
-                            "is_advanced": alternatives[1].is_advanced if len(alternatives) > 1 else False,
-                            "is_remove": alternatives[1].is_remove if len(alternatives) > 1 else False
-                        },
-                        "alternative_prio_3":
-                        {
-                            "lemma": alternatives[2].lemma if len(alternatives) > 2 else "",
-                            "is_collective_noun": alternatives[2].is_collective_noun if len(alternatives) > 2 else False,
-                            "is_gendered_noun": alternatives[2].is_gendered_noun if len(alternatives) > 2 else False,
-                            "is_advanced": alternatives[2].is_advanced if len(alternatives) > 2 else False,
-                            "is_remove": alternatives[2].is_remove if len(alternatives) > 2 else False
-                        },
-                    },
-                    "true_positive_examples":{ 
-                        "true_positive_sentence_1": example_sentences[0].text if len(example_sentences) > 0 else "",
-                        "true_positive_sentence_2": example_sentences[1].text if len(example_sentences) > 1 else ""
-                    },
+                    "alternatives": {},
+                    "true_positive_examples": {}
                 }
+
+                for i in range(1, 4): 
+                    key = f"alternative_prio_{i}"
+                    if len(alternatives) >= i:
+                        alt = alternatives[i-1]
+                        rule_formatted_for_translation["alternatives"][key] = {
+                            "lemma": alt.lemma,
+                            "is_collective_noun": alt.is_collective_noun,
+                            "is_gendered_noun": alt.is_gendered_noun,
+                            "is_advanced": alt.is_advanced,
+                            "is_remove": alt.is_remove
+                        }
+                    else:
+                        rule_formatted_for_translation["alternatives"][key] = {
+                            "lemma": "",
+                            "is_collective_noun": False,
+                            "is_gendered_noun": False,
+                            "is_advanced": False,
+                            "is_remove": False
+                        }
+
+                # Dynamically fill the true_positive_examples section
+                for i in range(1, 3):  # Assuming we need up to 2 true positive examples
+                    key = f"true_positive_sentence_{i}"
+                    if len(example_sentences) >= i:
+                        rule_formatted_for_translation["true_positive_examples"][key] = example_sentences[i-1].text
+                    else:
+                        rule_formatted_for_translation["true_positive_examples"][key] = ""
+
                 rule_formatted_for_translation = str(rule_formatted_for_translation).replace("'", '"')
                 self.stdout.write(self.style.SUCCESS(f"Translating rule: {rule_formatted_for_translation}"))
-
-                instruction = ""
-                with open('rules/management/commands/translation_prompt_en_fr.txt', 'r') as file: #CHANGE THIS TO WITCH BETWEEN LANGUAGES
-                    instruction = file.read()
-
                 prompt=[        
                     {
                     "role": "system",
@@ -120,7 +113,6 @@ class Command(BaseCommand):
                     # strip away everyting outside {}
                     result = chat_completion.choices[0].message.content
                     result = result[result.find("{"):result.rfind("}")+1]
-                    print(f'result: {result}')
 
                     result_as_json = json.loads(result)
                     if 'rule_specification' not in result_as_json or 'alternatives' not in result_as_json:
@@ -133,10 +125,13 @@ class Command(BaseCommand):
 
                     for i in range(1, 4):
                         alternative_key = f'alternative_prio_{i}'
-                        if alternative_key in result_as_json['alternatives']:
-                            #also check is_collective_noun, is_gendered_noun, is_advanced in the alternatives, if they are not, continue 
-                            if 'lemma' not in result_as_json['alternatives'][alternative_key] or len(result_as_json['alternatives'][alternative_key]['lemma']) == 0 or 'is_collective_noun' not in result_as_json['alternatives'][alternative_key] or 'is_gendered_noun' not in result_as_json['alternatives'][alternative_key] or 'is_advanced' not in result_as_json['alternatives'][alternative_key] or 'is_remove' not in result_as_json['alternatives'][alternative_key]:
-                                continue
+                        if (alternative_key in result_as_json['alternatives'] 
+                            and 'lemma' in result_as_json['alternatives'][alternative_key] 
+                            and len(result_as_json['alternatives'][alternative_key]['lemma']) > 0 
+                            and 'is_collective_noun' in result_as_json['alternatives'][alternative_key] 
+                            and 'is_gendered_noun' in result_as_json['alternatives'][alternative_key] 
+                            and 'is_advanced' in result_as_json['alternatives'][alternative_key] 
+                            and 'is_remove' in result_as_json['alternatives'][alternative_key]):
                             result_alternatives_with_info.append({
                                 "lemma": result_as_json['alternatives'][alternative_key]['lemma'],
                                 "priority": i,
@@ -175,7 +170,6 @@ class Command(BaseCommand):
                         order=1
                     )
                     new_rule_diversity_dimension.save()                    
-
                     #add new alternatives to db
                     for i, alternative in enumerate(result_alternatives_with_info):
                         new_alternative = Alternative.objects.create(
@@ -191,7 +185,6 @@ class Command(BaseCommand):
                     
                     #add new example sentences to db
                     for i, example_sentence in enumerate(result_example_sentences):
-                        #make sure is contains the rule trigger
                         if result_text_id not in example_sentence:
                             print(f"Skipping example sentence {example_sentence} because it doesn't contain the rule trigger")
                             continue

@@ -8,6 +8,7 @@ Explanation of JSON fields:
 - `is_collective_noun`: alternative lemma referres to a collection of things taken as a whole. If it is a collective noun, it means do not pluralize.
 - `is_gendered_noun`: If an alternative lemma contains gendered nouns then non gendered variations should be generated.
 - `is_advanced`: alternative lemma is not a well understood concept.  
+- `is_remove`: If the alternative is to remove the word entirely, set this to true.
 - `true_positive_examples`: Sentences that contain the rule trigger in its exact lemma form to test if the rule is triggered.
 Translations must accurately reflect the original rule's intent while being adapted for French cultural and linguistic nuances. Return translations as a JSON object. Make sure every field in the json is present, even if its left empty.
 
@@ -26,19 +27,22 @@ Original:
          "lemma":"Blind",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"((who is)) visually impaired",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"vision-impaired ((person))",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       }
    },
    "true_positive_examples":{
@@ -60,19 +64,22 @@ Translation:
          "lemma":"ne pas voir à trois pas",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"avoir une vue de taupe",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"ne rien voir",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       }
    },
    "true_positive_examples":{
@@ -94,19 +101,22 @@ Translation:
          "lemma":"identify as lesbian",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"identify as gay",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"identify as a member of the LGBT+ community",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       }
    },
    "true_positive_examples":{
@@ -128,19 +138,22 @@ Translation:
          "lemma":"s'identifier comme lesbienne",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"s'identifier comme gay",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_3":{
-         "lemma":"s'identifier comme membre de la communauté LGBT+",
+         "lemma":"-",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": true
       }
    },
    "true_positive_examples":{
@@ -163,19 +176,22 @@ Original:
          "lemma":"they",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"someone in the police",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"someone from the precinct",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       }
    },
    "true_positive_examples":{
@@ -197,19 +213,22 @@ Translation:
          "lemma":"”policier·ère”",
          "is_collective_noun":false,
          "is_gendered_noun":true,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"~police",
          "is_collective_noun":true,
          "is_gendered_noun":false,
-         "is_advanced":true
+         "is_advanced":true,
+         "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"~force de police",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       }
    },
    "true_positive_examples":{
@@ -233,19 +252,22 @@ Original:
          "lemma":"team",
          "is_collective_noun":true,
          "is_gendered_noun":false,
-         "is_advanced":true
+         "is_advanced":true,
+         "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"everyone",
          "is_collective_noun":true,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"folks",
          "is_collective_noun":false,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       }
    },
    "true_positive_examples":{
@@ -267,13 +289,15 @@ Translation
          "lemma":"’l’équipe",
          "is_collective_noun":true,
          "is_gendered_noun":false,
-         "is_advanced":true
+         "is_advanced":true,
+         "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"tout le monde",
          "is_collective_noun":true,
          "is_gendered_noun":false,
-         "is_advanced":false
+         "is_advanced":false,
+         "is_remove": false
       }
    },
    "true_positive_examples":{
