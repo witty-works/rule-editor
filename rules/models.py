@@ -55,6 +55,7 @@ def strip_non_alpha(text):
 class LanguageEnum(models.TextChoices):
     EN = "en", "English"
     DE = "de", "German"
+    FR = "fr", "French"
 
 
 class GenderTypeEnum(models.TextChoices):
