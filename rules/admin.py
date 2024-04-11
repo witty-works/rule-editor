@@ -472,7 +472,7 @@ class AlternativeForm(forms.ModelForm):
 
 
 
-class AlternativeInline(nested_admin.NestedStackedInline, GrappelliSortableHiddenMixin, admin.StackedInline):
+class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative
     form = AlternativeForm
     fieldsets = (
@@ -527,9 +527,7 @@ class FalsePositiveInline(nested_admin.NestedStackedInline):
 def apply_rule(values):
     if values is None or "rule" not in values or "text" not in values:
         return None
-    else: 
-        return None #TODO: figure out whats the issue with this
-
+    
     rule = Rule.objects.get(pk=values["rule"])
 
     rule_alternatives = rule.parent.alternatives if rule.parent else rule.alternatives
@@ -646,6 +644,8 @@ class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
         encoder=lambda form: PrettyJSONEncoder,
         help_text=lambda form: visualize_sentence(form.initial),
     )
+
+
 class TrainingSentenceInline(nested_admin.NestedStackedInline):
     model = TrainingSentence
     form = TrainingSentenceForm
@@ -746,8 +746,6 @@ class RuleForm(forms.ModelForm):
     written_by_human = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('written_by_human').choices, required=False, label='Would you believe that the sentences were written by a human?')
     notes_training_sentences = forms.CharField(widget=forms.Textarea, required=False, label='Interesting notes/observations on training sentences')
     class Meta:
-        model = Rule
-        fields = "__all__"
         widgets = {
             "parent": autocomplete.ModelSelect2(
                 url="rule-autocomplete",
@@ -864,14 +862,12 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         rule = formset.instance
 
-        #also save evaluation data
         rule_evaluation_obj = RuleStructureEvaluation.objects.filter(rule=rule).first()
         #if no evaluation object exists, create one
         if not rule_evaluation_obj:
             rule_evaluation_obj = RuleStructureEvaluation(rule=rule)
             rule_evaluation_obj.save()
-
-        #SAVE EVAL DATA
+        #save evaluation data
         if 'rule_source_rule' in form.cleaned_data:
             rule_evaluation_obj.rule_source_rule = form.cleaned_data['rule_source_rule']
         if 'rule_inclusiveness' in form.cleaned_data:
@@ -911,8 +907,6 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
        
         rule_evaluation_obj.save()
 
-
-
         for data in formset.cleaned_data:
             if "remove_from_parent" in data and data["remove_from_parent"]:
                 data["id"].parent = None
@@ -937,10 +931,9 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         form.base_fields["parent"].widget.can_add_related = False
         form.base_fields["parent"].widget.can_delete_related = False
-        rule_eval = RuleStructureEvaluation.objects.filter(rule=obj).first()
-        form.base_fields["rule_source_rule"].initial = obj.source_rule if obj.source_rule else 'could not find source rule'
+        form.base_fields["rule_source_rule"].initial = obj.source_rule if obj and obj.source_rule else 'could not find source rule'
 
-        #if no rule_eval make one
+        rule_eval = RuleStructureEvaluation.objects.filter(rule=obj).first()
         if not rule_eval:
             rule_eval = RuleStructureEvaluation(rule=obj)
             rule_eval.save()

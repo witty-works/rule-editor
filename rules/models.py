@@ -659,10 +659,7 @@ class RuleStructureEvaluation(models.Model):
     def unique_default():
         RuleStructureEvaluation.unique_integer_generator += 1
         return RuleStructureEvaluation.unique_integer_generator
-    
-    # def get_default_rule_source_rule():
-    #     # fetch this value dynamically from a related model instance if available
-    
+
     rule = models.OneToOneField(
         Rule, 
         on_delete=models.SET_DEFAULT, 
