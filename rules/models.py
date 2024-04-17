@@ -21,6 +21,7 @@ from requests.auth import HTTPBasicAuth
 
 allowed_word_types = ["n", "pron", "a", "adv", "v", "conj", "emoji", "num", "card"]
 
+
 def fetch_json(path, data=None):
     url = settings.NLP_API + path
 
@@ -435,13 +436,14 @@ class Rule(
                         f"Number of word types does not match token count {len(self.tokenized)}"
                     )
                 else:
-                    word_type_delta = list(set(actual_word_types) - set(allowed_word_types))
+                    word_type_delta = list(
+                        set(actual_word_types) - set(allowed_word_types)
+                    )
                     if len(word_type_delta):
                         word_type_delta = ", ".join(word_type_delta)
                         errors["actual_word_types"] = (
                             f"Unsupported word types: {word_type_delta}"
                         )
-
 
         if len(errors):
             raise ValidationError(errors)
@@ -710,7 +712,9 @@ class Alternative(
             for word in words:
                 if word.endswith("~"):
                     if not word.startswith("~"):
-                        raise ValidationError(f"Word in lemma may not end with '~' for '{self.lemma}'")
+                        raise ValidationError(
+                            f"Word in lemma may not end with '~' for '{self.lemma}'"
+                        )
 
                     gendered_noun_found = True
                     if not self.is_gendered_noun:
