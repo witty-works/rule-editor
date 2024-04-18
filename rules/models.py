@@ -57,6 +57,7 @@ def strip_non_alpha(text):
 class LanguageEnum(models.TextChoices):
     EN = "en", "English"
     DE = "de", "German"
+    FR = "fr", "French"
 
 
 class GenderTypeEnum(models.TextChoices):
@@ -236,10 +237,11 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
-        try:
-            self.parsed_word_types = self.parse_word_types()
-        except ValidationError as exception:
-            errors["word_types"] = "Word_types validation failed: " + exception.message
+        if self.is_active:
+            try:
+                self.parsed_word_types = self.parse_word_types()
+            except ValidationError as exception:
+                errors["word_types"] = "Word_types validation failed: " + exception.message
 
         if len(errors):
             raise ValidationError(errors)
