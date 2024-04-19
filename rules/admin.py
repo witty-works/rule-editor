@@ -872,51 +872,82 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         super(RuleAdmin, self).save_formset(request, form, formset, change)
 
         rule = formset.instance
+        latest_evaluation = RuleStructureEvaluation.objects.filter(rule=rule).order_by('-id').first()
 
-        rule_evaluation_obj = RuleStructureEvaluation.objects.filter(rule=rule).first()
-        #if no evaluation object exists, create one
-        if not rule_evaluation_obj:
-            rule_evaluation_obj = RuleStructureEvaluation(rule=rule)
-            rule_evaluation_obj.save()
-        #save evaluation data
-        if 'rule_source_rule' in form.cleaned_data:
-            rule_evaluation_obj.rule_source_rule = form.cleaned_data['rule_source_rule']
-        if 'rule_inclusiveness' in form.cleaned_data:
-            rule_evaluation_obj.rule_inclusiveness = form.cleaned_data['rule_inclusiveness']
-        if 'rule_carries_same_meaning' in form.cleaned_data:
-            rule_evaluation_obj.rule_carries_same_meaning = form.cleaned_data['rule_carries_same_meaning']
-        if 'rule_fits_diversity_dimension' in form.cleaned_data:
-            rule_evaluation_obj.rule_fits_diversity_dimension = form.cleaned_data['rule_fits_diversity_dimension']
-        if 'rule_importance' in form.cleaned_data:
-            rule_evaluation_obj.rule_importance = form.cleaned_data['rule_importance']
-        if 'rule_inspiration' in form.cleaned_data:
-            rule_evaluation_obj.rule_inspiration = form.cleaned_data['rule_inspiration']
-        if 'rule_notes' in form.cleaned_data:
-            rule_evaluation_obj.rule_notes = form.cleaned_data['rule_notes']
-        if 'alternative_1_inclusiveness' in form.cleaned_data:
-            rule_evaluation_obj.alternative_1_inclusiveness = form.cleaned_data['alternative_1_inclusiveness']  
-        if 'alternative_2_inclusiveness' in form.cleaned_data:
-            rule_evaluation_obj.alternative_2_inclusiveness = form.cleaned_data['alternative_2_inclusiveness']
-        if 'alternative_3_inclusiveness' in form.cleaned_data:
-            rule_evaluation_obj.alternative_3_inclusiveness = form.cleaned_data['alternative_3_inclusiveness']
-        if 'alternative_1_quality' in form.cleaned_data:
-            rule_evaluation_obj.alternative_1_quality = form.cleaned_data['alternative_1_quality']
-        if 'alternative_2_quality' in form.cleaned_data:
-            rule_evaluation_obj.alternative_2_quality = form.cleaned_data['alternative_2_quality']
-        if 'alternative_3_quality' in form.cleaned_data:
-            rule_evaluation_obj.alternative_3_quality = form.cleaned_data['alternative_3_quality']
-        if 'alternative_notes' in form.cleaned_data:
-            rule_evaluation_obj.alternative_notes = form.cleaned_data['alternative_notes']
-        if 'training_sentence_1_fits_context' in form.cleaned_data:
-            rule_evaluation_obj.training_sentence_1_fits_context = form.cleaned_data['training_sentence_1_fits_context']
-        if 'training_sentence_2_fits_context' in form.cleaned_data:
-            rule_evaluation_obj.training_sentence_2_fits_context = form.cleaned_data['training_sentence_2_fits_context']
-        if 'written_by_human' in form.cleaned_data:
-            rule_evaluation_obj.written_by_human = form.cleaned_data['written_by_human']
-        if 'notes_training_sentences' in form.cleaned_data:
-            rule_evaluation_obj.notes_training_sentences = form.cleaned_data['notes_training_sentences']
-       
-        rule_evaluation_obj.save()
+        # Check if a new evaluation is needed based on field changes
+        fields_to_check = [
+            'rule_inclusiveness', 'rule_carries_same_meaning', 
+            'rule_fits_diversity_dimension', 'rule_importance', 'rule_inspiration', 
+            'rule_notes', 'alternative_1_inclusiveness', 'alternative_2_inclusiveness', 
+            'alternative_3_inclusiveness', 'alternative_1_quality', 'alternative_2_quality', 
+            'alternative_3_quality', 'alternative_notes', 'training_sentence_1_fits_context', 
+            'training_sentence_2_fits_context', 'written_by_human', 'notes_training_sentences'
+        ]
+
+        new_evaluation_needed = False
+        if not latest_evaluation:
+            new_evaluation_needed = True
+
+        for field in fields_to_check:
+            old_value = getattr(latest_evaluation, field, None)
+            new_value = form.cleaned_data.get(field)
+            if isinstance(old_value, str):
+                old_value = old_value.strip()
+            if isinstance(new_value, str):
+                new_value = new_value.strip()
+
+            if old_value is not None and new_value is not None:
+                if type(old_value) != type(new_value):
+                    try:
+                        new_value = type(old_value)(new_value)
+                    except ValueError:
+                        pass
+
+            if old_value != new_value:
+                print(f"Field {field} changed from {old_value} to {new_value}")
+                new_evaluation_needed = True
+    
+        if new_evaluation_needed:
+            new_evaluation = RuleStructureEvaluation(rule=rule)
+    
+            if 'rule_source_rule' in form.cleaned_data:
+                new_evaluation.rule_source_rule = form.cleaned_data['rule_source_rule']
+            if 'rule_inclusiveness' in form.cleaned_data:
+                new_evaluation.rule_inclusiveness = form.cleaned_data['rule_inclusiveness']
+            if 'rule_carries_same_meaning' in form.cleaned_data:
+                new_evaluation.rule_carries_same_meaning = form.cleaned_data['rule_carries_same_meaning']
+            if 'rule_fits_diversity_dimension' in form.cleaned_data:
+                new_evaluation.rule_fits_diversity_dimension = form.cleaned_data['rule_fits_diversity_dimension']
+            if 'rule_importance' in form.cleaned_data:
+                new_evaluation.rule_importance = form.cleaned_data['rule_importance']
+            if 'rule_inspiration' in form.cleaned_data:
+                new_evaluation.rule_inspiration = form.cleaned_data['rule_inspiration']
+            if 'rule_notes' in form.cleaned_data:
+                new_evaluation.rule_notes = form.cleaned_data['rule_notes']
+            if 'alternative_1_inclusiveness' in form.cleaned_data:
+                new_evaluation.alternative_1_inclusiveness = form.cleaned_data['alternative_1_inclusiveness']  
+            if 'alternative_2_inclusiveness' in form.cleaned_data:
+                new_evaluation.alternative_2_inclusiveness = form.cleaned_data['alternative_2_inclusiveness']
+            if 'alternative_3_inclusiveness' in form.cleaned_data:
+                new_evaluation.alternative_3_inclusiveness = form.cleaned_data['alternative_3_inclusiveness']
+            if 'alternative_1_quality' in form.cleaned_data:
+                new_evaluation.alternative_1_quality = form.cleaned_data['alternative_1_quality']
+            if 'alternative_2_quality' in form.cleaned_data:
+                new_evaluation.alternative_2_quality = form.cleaned_data['alternative_2_quality']
+            if 'alternative_3_quality' in form.cleaned_data:
+                new_evaluation.alternative_3_quality = form.cleaned_data['alternative_3_quality']
+            if 'alternative_notes' in form.cleaned_data:
+                new_evaluation.alternative_notes = form.cleaned_data['alternative_notes']
+            if 'training_sentence_1_fits_context' in form.cleaned_data:
+                new_evaluation.training_sentence_1_fits_context = form.cleaned_data['training_sentence_1_fits_context']
+            if 'training_sentence_2_fits_context' in form.cleaned_data:
+                new_evaluation.training_sentence_2_fits_context = form.cleaned_data['training_sentence_2_fits_context']
+            if 'written_by_human' in form.cleaned_data:
+                new_evaluation.written_by_human = form.cleaned_data['written_by_human']
+            if 'notes_training_sentences' in form.cleaned_data:
+                new_evaluation.notes_training_sentences = form.cleaned_data['notes_training_sentences']
+        
+            new_evaluation.save()
 
         for data in formset.cleaned_data:
             if "remove_from_parent" in data and data["remove_from_parent"]:

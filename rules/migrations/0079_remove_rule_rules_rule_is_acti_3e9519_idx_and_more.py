@@ -60,7 +60,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='rulestructureevaluation',
             name='rule',
-            field=models.OneToOneField(default=rules.models.RuleStructureEvaluation.unique_default, on_delete=django.db.models.deletion.SET_DEFAULT, primary_key=True, related_name='evaluation', serialize=False, to='rules.rule'),
+            field=models.OneToOneField(on_delete=django.db.models.deletion.SET_DEFAULT, primary_key=True, related_name='evaluation', serialize=False, to='rules.rule'),
         ),
         migrations.AlterField(
             model_name='trainingsentenceevaluation',

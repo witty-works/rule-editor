@@ -673,17 +673,11 @@ class Rule(
 
 class RuleStructureEvaluation(models.Model):
     unique_integer_generator = 0
-    def unique_default():
-        RuleStructureEvaluation.unique_integer_generator += 1
-        return RuleStructureEvaluation.unique_integer_generator
-
-    rule = models.OneToOneField(
+    rule = models.ForeignKey(
         Rule, 
-        on_delete=models.SET_DEFAULT, 
-        default=unique_default,
-        primary_key=True,
-        related_name='evaluation'
-    )
+        on_delete=models.CASCADE, 
+        related_name='evaluations'
+        )
     # #get source rule from rule
     rule_source_rule = models.CharField(
         max_length=5000,
