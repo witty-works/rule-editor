@@ -32,7 +32,7 @@ class Command(BaseCommand):
         )
         rules_generated = 0
         instruction = ""
-        with open('rules/management/commands/translation_prompt_en_fr.txt', 'r') as file: #CHANGE THIS TO WITCH BETWEEN LANGUAGES
+        with open('rules/management/commands/translation_prompt_en_de.txt', 'r') as file: #CHANGE THIS TO WITCH BETWEEN LANGUAGES
             instruction = file.read()
         for rule in rules.order_by('?'): # Randomize the order of rules
             try:
@@ -152,7 +152,7 @@ class Command(BaseCommand):
                         text_id=result_text_id,
                         lemma=result_lemma,
                         word_types=result_word_types,
-                        language="fr", #REMEMBER TO CHANGE THIS WHEN CHANGING LANGUAGE
+                        language="de", #REMEMBER TO CHANGE THIS WHEN CHANGING LANGUAGE
                         is_active=False,
                         is_marked_for_review=True,
                         is_auto_generated=True,
@@ -201,7 +201,7 @@ class Command(BaseCommand):
                         break
                 except Exception as e:
                     logger.error(f"Error processing rule: {e}")   
-                    with open('rules/management/commands/translated_rules_error_fr.json', 'a') as file: #REMOVE THIS AFTER INITIAL RULE GENERATION
+                    with open('rules/management/commands/translated_rules_error_de.json', 'a') as file: #REMOVE THIS AFTER INITIAL RULE GENERATION
                         file.write('Error: ' + str(e) + '\n')
                         file.write('Rule: ' + str(rule) + '\n')  
                         file.write('Result: ' + str(result) + '\n')        
