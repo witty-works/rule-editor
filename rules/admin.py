@@ -217,6 +217,9 @@ stopwords = {
         "with",
         "the",
     ],
+    "fr": [
+
+    ],
 }
 
 
@@ -409,7 +412,13 @@ def update_base_form_help_text(obj, field):
         language = "de"
         link = f'Open <a href="https://www.verbformen.de/konjugation/?w={obj.base_form}" target="_new">{obj.base_form}</a> on Verbformen'
     else:
-        language = "de" if type(obj).__name__.startswith("German") else "en"
+        if type(obj).__name__.startswith("German"):
+            language = "de"
+        elif type(obj).__name__.startswith("French"):
+            language = "fr"
+        else:
+            language = "en"
+
         link = f'Open <a href="https://{language}.wiktionary.org/wiki/{obj.base_form}" target="_new">{obj.base_form}</a> on Wikitionary'
 
     help_texts.append(link)

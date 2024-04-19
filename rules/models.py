@@ -21,6 +21,7 @@ from requests.auth import HTTPBasicAuth
 
 allowed_word_types = ["n", "pron", "a", "adv", "v", "conj", "emoji", "num", "card"]
 
+
 def fetch_json(path, data=None):
     url = settings.NLP_API + path
 
@@ -30,12 +31,13 @@ def fetch_json(path, data=None):
         else None
     )
 
-    verify = bool(settings.NLP_API_USER)
+    if not bool(settings.NLP_API_USER):
+        requests.packages.urllib3.disable_warnings()
 
     if data is None:
-        r = requests.get(url, auth=auth, timeout=5, verify=verify)
+        r = requests.get(url, auth=auth, timeout=5)
     else:
-        r = requests.post(url, json=data, auth=auth, timeout=5, verify=verify)
+        r = requests.post(url, json=data, auth=auth, timeout=5)
 
     try:
         if r.status_code != 200:
@@ -235,11 +237,11 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
-        try:
-            if self.is_active:
+        if self.is_active:
+            try:
                 self.parsed_word_types = self.parse_word_types()
-        except ValidationError as exception:
-            errors["word_types"] = "Word_types validation failed: " + exception.message
+            except ValidationError as exception:
+                errors["word_types"] = "Word_types validation failed: " + exception.message
 
         if len(errors):
             raise ValidationError(errors)
@@ -438,13 +440,14 @@ class Rule(
                         f"Number of word types does not match token count {len(self.tokenized)}"
                     )
                 else:
-                    word_type_delta = list(set(actual_word_types) - set(allowed_word_types))
+                    word_type_delta = list(
+                        set(actual_word_types) - set(allowed_word_types)
+                    )
                     if len(word_type_delta):
                         word_type_delta = ", ".join(word_type_delta)
                         errors["actual_word_types"] = (
                             f"Unsupported word types: {word_type_delta}"
                         )
-
 
         if len(errors):
             raise ValidationError(errors)
@@ -851,7 +854,9 @@ class Alternative(
             for word in words:
                 if word.endswith("~"):
                     if not word.startswith("~"):
-                        raise ValidationError(f"Word in lemma may not end with '~' for '{self.lemma}'")
+                        raise ValidationError(
+                            f"Word in lemma may not end with '~' for '{self.lemma}'"
+                        )
 
                     gendered_noun_found = True
                     if not self.is_gendered_noun:
