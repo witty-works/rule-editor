@@ -23,36 +23,47 @@ class Command(BaseCommand):
 
             training_sentences = TrainingSentence.objects.filter(rule=rule)
             if len(training_sentences):
+                failing = False
+
                 for sentence in training_sentences:
                     if sentence.is_false_positive:  # dont expect this to work yet
                         continue
+
                     try:
                         response = apply_rule({"rule": rule.id, "text": sentence.text})
                     except:
                         continue
 
                     failing = False
+                    result_prefix = "=" if rule.has_failing_training_sentence else ">"
                     if len(response) == 0:
                         if not sentence.is_false_positive:
                             results.append(
-                                f"Response is empty for rule {rule} and sentence {sentence}"
+                                f"{result_prefix} Response is empty for rule {rule} and sentence {sentence}"
                             )
                             self.stdout.write(self.style.ERROR(results[-1]))
                             failing = True
                     elif sentence.is_false_positive:
                         results.append(
-                            f"Response is not for rule {rule} and sentence {sentence} for a false positive"
+                            f"{result_prefix} Response is not for rule {rule} and sentence {sentence} for a false positive"
                         )
                         self.stdout.write(self.style.ERROR(results[-1]))
                         failing = True
 
                 if failing:
                     failing_rules += 1
-                    new_failing_rules += self.mark_as_failing(rule)
-
-                    break
+                    new_failing_rule = self.mark_as_failing(rule)
+                    new_failing_rules += new_failing_rule
                 else:
-                    new_passing_rules += self.mark_as_passing(rule)
+                    new_passing_rule = self.mark_as_passing(rule)
+                    new_passing_rules += new_passing_rule
+
+                    if new_passing_rule:
+                        results.append(
+                            f"> Newly passing rule {rule} and sentence {sentence}"
+                        )
+                        self.stdout.write(self.style.SUCCESS(results[-1]))
+
             else:
                 self.stdout.write(
                     self.style.ERROR(f"No training sentences for rule {rule}")
