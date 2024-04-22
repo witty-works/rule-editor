@@ -28,6 +28,8 @@ env = environ.Env(
     NLP_API=(str, ""),
     NLP_API_USER=(str, None),
     NLP_API_PASSWORD=(str, None),
+    PLATFORM_SMTP_HOST=(str, None),
+    PLATFORM_SMTP_PORT=(int, 25),
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -39,7 +41,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 if env("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
-        release="1.1.21",
+        release="1.1.22",
         send_default_pii=True,
         integrations=[
             DjangoIntegration(
@@ -187,6 +189,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 INTERNAL_IPS = [
     "127.0.0.1",
 ]
+
+# Email
+
+EMAIL_HOST = env("PLATFORM_SMTP_HOST")
+EMAIL_PORT = env("PLATFORM_SMTP_PORT")
 
 
 def get_app_list(self, request, app_label=None):
