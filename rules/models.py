@@ -241,7 +241,9 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
             try:
                 self.parsed_word_types = self.parse_word_types()
             except ValidationError as exception:
-                errors["word_types"] = "Word_types validation failed: " + exception.message
+                errors["word_types"] = (
+                    "Word_types validation failed: " + exception.message
+                )
 
         if len(errors):
             raise ValidationError(errors)
@@ -671,13 +673,16 @@ class Rule(
 
         return len(self.lemma)
 
-class RuleStructureEvaluation(models.Model):
+
+class RuleStructureEvaluation(BaseCreatedByModel):
     unique_integer_generator = 0
+
     rule = models.ForeignKey(
-        Rule, 
-        on_delete=models.CASCADE, 
-        related_name='evaluations'
-        )
+        Rule,
+        on_delete=models.CASCADE,
+        related_name="evaluations",
+    )
+
     # #get source rule from rule
     rule_source_rule = models.CharField(
         max_length=5000,
@@ -688,110 +693,153 @@ class RuleStructureEvaluation(models.Model):
     rule_inclusiveness = models.IntegerField(
         choices=[(0, "yes"), (1, "no"), (2, "unsure")],
         default=0,
-        help_text="Is this rule trigger uninclusive"
+        help_text="Is this rule trigger uninclusive",
     )
 
     rule_carries_same_meaning = models.IntegerField(
         choices=[(0, "yes"), (1, "no"), (2, "unsure")],
         default=0,
-        help_text="Does this rule carry the same meaning as the source rule? "
+        help_text="Does this rule carry the same meaning as the source rule? ",
     )
 
     rule_fits_diversity_dimension = models.IntegerField(
         choices=[(0, "yes"), (1, "no"), (2, "unsure")],
         default=0,
-        help_text="Does this rule fit the diversity dimension? "
+        help_text="Does this rule fit the diversity dimension? ",
     )
 
     rule_importance = models.IntegerField(
-        choices=[(1, "not important"), (2, "less important"), (3, "important"), (4, "very important"), (5, "extremely important")],
+        choices=[
+            (1, "not important"),
+            (2, "less important"),
+            (3, "important"),
+            (4, "very important"),
+            (5, "extremely important"),
+        ],
         default=3,
-        help_text="How important is it that we have this rule?"
+        help_text="How important is it that we have this rule?",
     )
 
     rule_inspiration = models.IntegerField(
         choices=[(0, "yes"), (1, "no")],
         default=1,
-        help_text="Does this rule inspire the creation of another rule (if yes, write it in notes)?"
+        help_text="Does this rule inspire the creation of another rule (if yes, write it in notes)?",
     )
-    
+
     rule_notes = models.TextField(
-        null=True, blank=True,
-        help_text="Interesting notes/observations on rule"
+        null=True, blank=True, help_text="Interesting notes/observations on rule"
     )
 
     alternative_1_inclusiveness = models.IntegerField(
         choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
         default=0,
-        help_text="Is alternative 1 more inclusive than rule trigger"
+        help_text="Is alternative 1 more inclusive than rule trigger",
     )
 
     alternative_2_inclusiveness = models.IntegerField(
         choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
         default=0,
-        help_text="Is alternative 2 m0re inclusive than rule trigger"
+        help_text="Is alternative 2 m0re inclusive than rule trigger",
     )
 
     alternative_3_inclusiveness = models.IntegerField(
         choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
         default=0,
-        help_text="Is alternative 3 more inclusive than rule trigger"
+        help_text="Is alternative 3 more inclusive than rule trigger",
     )
 
     alternative_1_quality = models.IntegerField(
-        choices=[(1, "Poor"), (2, "Fair"), (3, "Good"), (4, "Very Good"), (5, "Excellent"), (6, "Not applicable")],
+        choices=[
+            (1, "Poor"),
+            (2, "Fair"),
+            (3, "Good"),
+            (4, "Very Good"),
+            (5, "Excellent"),
+            (6, "Not applicable"),
+        ],
         default=3,
-        help_text="Rate the quality of alternative 1"
+        help_text="Rate the quality of alternative 1",
     )
 
     alternative_2_quality = models.IntegerField(
-        choices=[(1, "Poor"), (2, "Fair"), (3, "Good"), (4, "Very Good"), (5, "Excellent"), (6, "Not applicable")],
+        choices=[
+            (1, "Poor"),
+            (2, "Fair"),
+            (3, "Good"),
+            (4, "Very Good"),
+            (5, "Excellent"),
+            (6, "Not applicable"),
+        ],
         default=3,
-        help_text="Rate the quality of alternative 2"
+        help_text="Rate the quality of alternative 2",
     )
 
     alternative_3_quality = models.IntegerField(
-        choices=[(1, "Poor"), (2, "Fair"), (3, "Good"), (4, "Very Good"), (5, "Excellent"), (6, "Not applicable")],
+        choices=[
+            (1, "Poor"),
+            (2, "Fair"),
+            (3, "Good"),
+            (4, "Very Good"),
+            (5, "Excellent"),
+            (6, "Not applicable"),
+        ],
         default=3,
-        help_text="Rate the quality of alternative 3"
+        help_text="Rate the quality of alternative 3",
     )
     alternative_notes = models.TextField(
-        null=True, blank=True,
-        help_text="Interesting notes/observations on alternatives"
+        null=True,
+        blank=True,
+        help_text="Interesting notes/observations on alternatives",
     )
 
     training_sentence_1_fits_context = models.CharField(
         max_length=255,
-        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure"), ("not applicable", "Not Applicable")],
+        choices=[
+            ("yes", "Yes"),
+            ("no", "No"),
+            ("unsure", "Unsure"),
+            ("not applicable", "Not Applicable"),
+        ],
         default="unsure",
-        help_text="Does training sentence 1 make sense in context of the rule?"
+        help_text="Does training sentence 1 make sense in context of the rule?",
     )
 
     training_sentence_2_fits_context = models.CharField(
         max_length=255,
-        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure"), ("not applicable", "Not Applicable")],
+        choices=[
+            ("yes", "Yes"),
+            ("no", "No"),
+            ("unsure", "Unsure"),
+            ("not applicable", "Not Applicable"),
+        ],
         default="unsure",
-        help_text="Does training sentence 2 make sense in context of the rule?"
+        help_text="Does training sentence 2 make sense in context of the rule?",
     )
 
     written_by_human = models.CharField(
         max_length=255,
         choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure")],
         default="unsure",
-        help_text="Would you believe that the sentences were written by a human?"
+        help_text="Would you believe that the sentences were written by a human?",
     )
 
     notes_training_sentences = models.TextField(
-        null=True, blank=True,
-        help_text="Interesting notes/observations on training sentences"
+        null=True,
+        blank=True,
+        help_text="Interesting notes/observations on training sentences",
     )
 
     class Meta:
-        verbose_name = 'Rule Evaluation'
-        verbose_name_plural = 'Rule Evaluations'
+        verbose_name = "Rule Evaluation"
+        verbose_name_plural = "Rule Evaluations"
 
     def __str__(self):
-        return f"Evaluation for {self.rule.lemma}"
+        text = f"Rule {self.rule}"
+        if self.createdby is not None:
+            text += f" evaluated by {self.createdby.username}"
+
+        return text
+
 
 class RuleDiversityDimension(BaseTimestampedModel):
     class Meta:

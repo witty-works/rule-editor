@@ -35,6 +35,7 @@ import nested_admin
 from breame.spelling import get_american_spelling, get_british_spelling
 
 from .models import (
+    BaseCreatedByModel,
     Rule,
     Alternative,
     DiversityDimension,
@@ -217,9 +218,7 @@ stopwords = {
         "with",
         "the",
     ],
-    "fr": [
-
-    ],
+    "fr": [],
 }
 
 
@@ -476,6 +475,33 @@ class AlternativeForm(forms.ModelForm):
             )
 
 
+class RuleStructureEvaluationInline(admin.StackedInline):
+    model = RuleStructureEvaluation
+    readonly_fields = (
+        "createdby",
+    )
+    fields = (
+        "createdby",
+        "rule_source_rule",
+        "rule_inclusiveness",
+        "rule_carries_same_meaning",
+        "rule_fits_diversity_dimension",
+        "rule_importance",
+        "rule_inspiration",
+        "rule_notes",
+        "alternative_1_inclusiveness",
+        "alternative_2_inclusiveness",
+        "alternative_3_inclusiveness",
+        "alternative_1_quality",
+        "alternative_2_quality",
+        "alternative_3_quality",
+        "alternative_notes",
+        "training_sentence_1_fits_context",
+        "training_sentence_2_fits_context",
+        "written_by_human",
+        "notes_training_sentences",
+    )
+    extra = 0
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative
@@ -532,7 +558,7 @@ class FalsePositiveInline(nested_admin.NestedStackedInline):
 def apply_rule(values):
     if values is None or "rule" not in values or "text" not in values:
         return None
-    
+
     rule = Rule.objects.get(pk=values["rule"])
 
     rule_alternatives = rule.parent.alternatives if rule.parent else rule.alternatives
@@ -735,25 +761,6 @@ class LemmaFilter(InputFilter):
 
 
 class RuleForm(forms.ModelForm):
-    remove_from_parent = forms.BooleanField(required=False)
-    rule_source_rule = forms.CharField(widget=forms.Textarea, required=False, label='Source rule (rule used to generate this rule)')
-    rule_inclusiveness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('rule_inclusiveness').choices, required=False, label='Is this rule trigger uninclusive?')
-    rule_carries_same_meaning = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('rule_carries_same_meaning').choices, required=False, label='Does this rule carry the same meaning as the source rule?')  
-    rule_fits_diversity_dimension = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('rule_fits_diversity_dimension').choices, required=False, label='Does this rule fit the diversity dimension?')
-    rule_importance = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('rule_importance').choices, required=False, label='How important is it that we have this rule?')
-    rule_inspiration = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('rule_inspiration').choices, required=False, label='Does this rule inspire the creation of another rule? (if yes, write it in rule notes)')
-    rule_notes = forms.CharField(widget=forms.Textarea, required=False, label='Interesting notes/observations on rule')
-    alternative_1_inclusiveness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('alternative_1_inclusiveness').choices, required=False, label='Is alternative 1 more inclusive than rule trigger?')
-    alternative_2_inclusiveness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('alternative_2_inclusiveness').choices, required=False, label='Is alternative 2 more inclusive than rule trigger?')
-    alternative_3_inclusiveness = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('alternative_3_inclusiveness').choices, required=False, label='Is alternative 3 more inclusive than rule trigger?')
-    alternative_1_quality = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('alternative_1_quality').choices, required=False, label='Rate the quality of alternative 1')
-    alternative_2_quality = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('alternative_2_quality').choices, required=False, label='Rate the quality of alternative 2')
-    alternative_3_quality = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('alternative_3_quality').choices, required=False, label='Rate the quality of alternative 3')
-    alternative_notes = forms.CharField(widget=forms.Textarea, required=False, label='Interesting notes/observations on alternatives')
-    training_sentence_1_fits_context = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('training_sentence_1_fits_context').choices, required=False, label='Does training sentence 1 make sense in context of the rule?')
-    training_sentence_2_fits_context = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('training_sentence_2_fits_context').choices, required=False, label='Does training sentence 2 make sense in context of the rule?')
-    written_by_human = forms.ChoiceField(choices=RuleStructureEvaluation._meta.get_field('written_by_human').choices, required=False, label='Would you believe that the sentences were written by a human?')
-    notes_training_sentences = forms.CharField(widget=forms.Textarea, required=False, label='Interesting notes/observations on training sentences')
     class Meta:
         widgets = {
             "parent": autocomplete.ModelSelect2(
@@ -769,6 +776,8 @@ class RuleForm(forms.ModelForm):
                 },
             )
         }
+
+    remove_from_parent = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
         super(RuleForm, self).__init__(*args, **kwargs)
@@ -869,90 +878,12 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         )
 
     def save_formset(self, request, form, formset, change):
+        for f in formset.forms:
+            obj = f.instance
+            if obj.pk is None and issubclass(type(obj), BaseCreatedByModel):
+                obj.createdby = request.user
+
         super(RuleAdmin, self).save_formset(request, form, formset, change)
-
-        rule = formset.instance
-        latest_evaluation = RuleStructureEvaluation.objects.filter(rule=rule).order_by('-id').first()
-
-        # Check if a new evaluation is needed based on field changes
-        fields_to_check = [
-            'rule_inclusiveness', 'rule_carries_same_meaning', 
-            'rule_fits_diversity_dimension', 'rule_importance', 'rule_inspiration', 
-            'rule_notes', 'alternative_1_inclusiveness', 'alternative_2_inclusiveness', 
-            'alternative_3_inclusiveness', 'alternative_1_quality', 'alternative_2_quality', 
-            'alternative_3_quality', 'alternative_notes', 'training_sentence_1_fits_context', 
-            'training_sentence_2_fits_context', 'written_by_human', 'notes_training_sentences'
-        ]
-
-        new_evaluation_needed = False
-        if not latest_evaluation:
-            new_evaluation_needed = True
-
-        for field in fields_to_check:
-            old_value = getattr(latest_evaluation, field, None)
-            new_value = form.cleaned_data.get(field)
-            if isinstance(old_value, str):
-                old_value = old_value.strip()
-            if isinstance(new_value, str):
-                new_value = new_value.strip()
-
-            if old_value is not None and new_value is not None:
-                if type(old_value) != type(new_value):
-                    try:
-                        new_value = type(old_value)(new_value)
-                    except ValueError:
-                        pass
-
-            if old_value != new_value:
-                print(f"Field {field} changed from {old_value} to {new_value}")
-                new_evaluation_needed = True
-    
-        if new_evaluation_needed:
-            new_evaluation = RuleStructureEvaluation(rule=rule)
-    
-            if 'rule_source_rule' in form.cleaned_data:
-                new_evaluation.rule_source_rule = form.cleaned_data['rule_source_rule']
-            if 'rule_inclusiveness' in form.cleaned_data:
-                new_evaluation.rule_inclusiveness = form.cleaned_data['rule_inclusiveness']
-            if 'rule_carries_same_meaning' in form.cleaned_data:
-                new_evaluation.rule_carries_same_meaning = form.cleaned_data['rule_carries_same_meaning']
-            if 'rule_fits_diversity_dimension' in form.cleaned_data:
-                new_evaluation.rule_fits_diversity_dimension = form.cleaned_data['rule_fits_diversity_dimension']
-            if 'rule_importance' in form.cleaned_data:
-                new_evaluation.rule_importance = form.cleaned_data['rule_importance']
-            if 'rule_inspiration' in form.cleaned_data:
-                new_evaluation.rule_inspiration = form.cleaned_data['rule_inspiration']
-            if 'rule_notes' in form.cleaned_data:
-                new_evaluation.rule_notes = form.cleaned_data['rule_notes']
-            if 'alternative_1_inclusiveness' in form.cleaned_data:
-                new_evaluation.alternative_1_inclusiveness = form.cleaned_data['alternative_1_inclusiveness']  
-            if 'alternative_2_inclusiveness' in form.cleaned_data:
-                new_evaluation.alternative_2_inclusiveness = form.cleaned_data['alternative_2_inclusiveness']
-            if 'alternative_3_inclusiveness' in form.cleaned_data:
-                new_evaluation.alternative_3_inclusiveness = form.cleaned_data['alternative_3_inclusiveness']
-            if 'alternative_1_quality' in form.cleaned_data:
-                new_evaluation.alternative_1_quality = form.cleaned_data['alternative_1_quality']
-            if 'alternative_2_quality' in form.cleaned_data:
-                new_evaluation.alternative_2_quality = form.cleaned_data['alternative_2_quality']
-            if 'alternative_3_quality' in form.cleaned_data:
-                new_evaluation.alternative_3_quality = form.cleaned_data['alternative_3_quality']
-            if 'alternative_notes' in form.cleaned_data:
-                new_evaluation.alternative_notes = form.cleaned_data['alternative_notes']
-            if 'training_sentence_1_fits_context' in form.cleaned_data:
-                new_evaluation.training_sentence_1_fits_context = form.cleaned_data['training_sentence_1_fits_context']
-            if 'training_sentence_2_fits_context' in form.cleaned_data:
-                new_evaluation.training_sentence_2_fits_context = form.cleaned_data['training_sentence_2_fits_context']
-            if 'written_by_human' in form.cleaned_data:
-                new_evaluation.written_by_human = form.cleaned_data['written_by_human']
-            if 'notes_training_sentences' in form.cleaned_data:
-                new_evaluation.notes_training_sentences = form.cleaned_data['notes_training_sentences']
-        
-            new_evaluation.save()
-
-        for data in formset.cleaned_data:
-            if "remove_from_parent" in data and data["remove_from_parent"]:
-                data["id"].parent = None
-                data["id"].save()
 
     def all_diversity_dimensions(self, obj):
         return ", ".join(obj.diversity_dimension_json)
@@ -962,32 +893,6 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         form.base_fields["parent"].widget.can_add_related = False
         form.base_fields["parent"].widget.can_delete_related = False
-        form.base_fields["rule_source_rule"].initial = obj.source_rule if obj and obj.source_rule else 'could not find source rule'
-
-        rule_eval = RuleStructureEvaluation.objects.filter(rule=obj).first()
-        if not rule_eval:
-            rule_eval = RuleStructureEvaluation(rule=obj)
-            rule_eval.save()
-
-        if(rule_eval):
-            form.base_fields["rule_inclusiveness"].initial = rule_eval.rule_inclusiveness
-            form.base_fields["rule_carries_same_meaning"].initial = rule_eval.rule_carries_same_meaning
-            form.base_fields["rule_fits_diversity_dimension"].initial = rule_eval.rule_fits_diversity_dimension
-            form.base_fields["rule_importance"].initial = rule_eval.rule_importance
-            form.base_fields["rule_inspiration"].initial = rule_eval.rule_inspiration
-            form.base_fields["rule_notes"].initial = rule_eval.rule_notes
-            form.base_fields["alternative_1_inclusiveness"].initial = rule_eval.alternative_1_inclusiveness
-            form.base_fields["alternative_2_inclusiveness"].initial = rule_eval.alternative_2_inclusiveness
-            form.base_fields["alternative_3_inclusiveness"].initial = rule_eval.alternative_3_inclusiveness
-            form.base_fields["alternative_1_quality"].initial = rule_eval.alternative_1_quality
-            form.base_fields["alternative_2_quality"].initial = rule_eval.alternative_2_quality
-            form.base_fields["alternative_3_quality"].initial = rule_eval.alternative_3_quality
-            form.base_fields["alternative_notes"].initial = rule_eval.alternative_notes
-            form.base_fields["training_sentence_1_fits_context"].initial = rule_eval.training_sentence_1_fits_context
-            form.base_fields["training_sentence_2_fits_context"].initial = rule_eval.training_sentence_2_fits_context
-            form.base_fields["written_by_human"].initial = rule_eval.written_by_human
-            form.base_fields["notes_training_sentences"].initial = rule_eval.notes_training_sentences
-
 
         if obj and obj.children.count():
             form.base_fields["parent"].disabled = True
@@ -1102,32 +1007,6 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
             },
         ),
         (
-            "Evaluation",
-            {
-                "classes": ("grp-collapse grp-closed",),
-                "fields": (
-                    "rule_source_rule",
-                    "rule_inclusiveness",
-                    "rule_carries_same_meaning",
-                    "rule_fits_diversity_dimension",
-                    "rule_importance",
-                    "rule_inspiration",
-                    "rule_notes",
-                    "alternative_1_inclusiveness",
-                    "alternative_2_inclusiveness",
-                    "alternative_3_inclusiveness",
-                    "alternative_1_quality",
-                    "alternative_2_quality",
-                    "alternative_3_quality",
-                    "alternative_notes",
-                    "training_sentence_1_fits_context",
-                    "training_sentence_2_fits_context",
-                    "written_by_human",
-                    "notes_training_sentences",
-                ),
-            },
-        ),
-        (
             "Custom Label",
             {
                 "classes": ("grp-collapse grp-closed",),
@@ -1205,6 +1084,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     )
 
     inlines = [
+        RuleStructureEvaluationInline,
         ParentRuleInline,
         RuleDiversityDimensionInline,
         AlternativeInline,
