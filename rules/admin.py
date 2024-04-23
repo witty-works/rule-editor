@@ -216,9 +216,7 @@ stopwords = {
         "with",
         "the",
     ],
-    "fr": [
-
-    ],
+    "fr": [],
 }
 
 

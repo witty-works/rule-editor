@@ -241,7 +241,9 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
             try:
                 self.parsed_word_types = self.parse_word_types()
             except ValidationError as exception:
-                errors["word_types"] = "Word_types validation failed: " + exception.message
+                errors["word_types"] = (
+                    "Word_types validation failed: " + exception.message
+                )
 
         if len(errors):
             raise ValidationError(errors)
