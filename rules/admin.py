@@ -476,6 +476,16 @@ class AlternativeForm(forms.ModelForm):
 
 
 class RuleStructureEvaluationInline(admin.StackedInline):
+    def get_formset(self, request, obj=None, **kwargs):
+        formset = super().get_formset(request, obj, **kwargs)
+
+        if isinstance(obj, Rule):
+            rule_source_rule = formset.form.base_fields["rule_source_rule"]
+            if rule_source_rule.initial is None:
+                formset.form.base_fields["rule_source_rule"].initial = obj.source_rule
+
+        return formset
+
     model = RuleStructureEvaluation
     readonly_fields = (
         "createdby",
@@ -502,6 +512,7 @@ class RuleStructureEvaluationInline(admin.StackedInline):
         "notes_training_sentences",
     )
     extra = 0
+
 
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative

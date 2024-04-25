@@ -683,10 +683,8 @@ class RuleStructureEvaluation(BaseCreatedByModel):
         related_name="evaluations",
     )
 
-    rule_source_rule = models.CharField(
-        max_length=5000,
-        blank=True,
-        help_text="Rule that was used to generate this rule",
+    rule_source_rule = models.TextField(
+        null=True, blank=True, help_text="Rule that was used to generate this rule"
     )
 
     rule_inclusiveness = models.IntegerField(
@@ -831,13 +829,6 @@ class RuleStructureEvaluation(BaseCreatedByModel):
     class Meta:
         verbose_name = "Rule Evaluation"
         verbose_name_plural = "Rule Evaluations"
-
-    def save(self, *args, **kwargs):
-        if self.rule and self.rule.source_rule:
-            self.rule_source_rule = self.rule.source_rule
-        else:
-            self.rule_source_rule = "could not get source rule"
-        super(RuleStructureEvaluation, self).save(*args, **kwargs)
 
     def __str__(self):
         text = f"Rule {self.rule}"
