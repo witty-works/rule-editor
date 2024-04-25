@@ -35,10 +35,12 @@ import nested_admin
 from breame.spelling import get_american_spelling, get_british_spelling
 
 from .models import (
+    BaseCreatedByModel,
     Rule,
     Alternative,
     DiversityDimension,
     RuleDiversityDimension,
+    RuleStructureEvaluation,
     Source,
     FalsePositive,
     TrainingSentence,
@@ -216,9 +218,7 @@ stopwords = {
         "with",
         "the",
     ],
-    "fr": [
-
-    ],
+    "fr": [],
 }
 
 
@@ -475,6 +475,34 @@ class AlternativeForm(forms.ModelForm):
             )
 
 
+class RuleStructureEvaluationInline(admin.StackedInline):
+    model = RuleStructureEvaluation
+    readonly_fields = (
+        "createdby",
+    )
+    fields = (
+        "createdby",
+        "rule_source_rule",
+        "rule_inclusiveness",
+        "rule_carries_same_meaning",
+        "rule_fits_diversity_dimension",
+        "rule_importance",
+        "rule_inspiration",
+        "rule_notes",
+        "alternative_1_inclusiveness",
+        "alternative_2_inclusiveness",
+        "alternative_3_inclusiveness",
+        "alternative_1_quality",
+        "alternative_2_quality",
+        "alternative_3_quality",
+        "alternative_notes",
+        "training_sentence_1_fits_context",
+        "training_sentence_2_fits_context",
+        "written_by_human",
+        "notes_training_sentences",
+    )
+    extra = 0
+
 class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     model = Alternative
     form = AlternativeForm
@@ -585,6 +613,7 @@ def apply_rule(values):
     }
 
     path = "/debug/rule"
+
     return fetch_json(path, data)
 
 
@@ -748,6 +777,8 @@ class RuleForm(forms.ModelForm):
             )
         }
 
+    remove_from_parent = forms.BooleanField(required=False)
+
     def __init__(self, *args, **kwargs):
         super(RuleForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
@@ -755,8 +786,6 @@ class RuleForm(forms.ModelForm):
             update_lemma_help_text(
                 instance, instance.language, self.fields["lemma"], "rule"
             )
-
-    remove_from_parent = forms.BooleanField(required=False)
 
 
 class ParentRuleInline(nested_admin.NestedStackedInline):
@@ -777,6 +806,7 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",
+                    "is_auto_generated",
                     "is_context_aware",
                     "is_hr_rule",
                     "has_failing_training_sentence",
@@ -848,12 +878,12 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         )
 
     def save_formset(self, request, form, formset, change):
-        super(RuleAdmin, self).save_formset(request, form, formset, change)
+        for f in formset.forms:
+            obj = f.instance
+            if obj.pk is None and issubclass(type(obj), BaseCreatedByModel):
+                obj.createdby = request.user
 
-        for data in formset.cleaned_data:
-            if "remove_from_parent" in data and data["remove_from_parent"]:
-                data["id"].parent = None
-                data["id"].save()
+        super(RuleAdmin, self).save_formset(request, form, formset, change)
 
     def all_diversity_dimensions(self, obj):
         return ", ".join(obj.diversity_dimension_json)
@@ -965,6 +995,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",
+                    "is_auto_generated",
                     "is_context_aware",
                     "is_hr_rule",
                     "has_failing_training_sentence",
@@ -1026,6 +1057,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         LemmaFilter,
         "language",
         "is_marked_for_review",
+        "is_auto_generated",
         "is_hr_rule",
         "tags",
         "is_active",
@@ -1052,6 +1084,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     )
 
     inlines = [
+        RuleStructureEvaluationInline,
         ParentRuleInline,
         RuleDiversityDimensionInline,
         AlternativeInline,
