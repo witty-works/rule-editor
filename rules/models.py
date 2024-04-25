@@ -387,6 +387,7 @@ class Rule(
         indexes = [
             models.Index(
                 fields=[
+                    "is_auto_generated",
                     "is_active",
                     "language",
                     "type",
@@ -510,6 +511,17 @@ class Rule(
     )
     is_marked_for_review = models.BooleanField(
         default=False, help_text="Rule should be reviewed"
+    )
+    is_auto_generated = models.BooleanField(
+        default=False, help_text="Rule was auto generated", null=True
+    )
+    generated_at = models.DateTimeField(
+        null=True, blank=True, help_text="When the rule was auto generated"
+    )
+    source_rule = models.CharField(
+        max_length=1000,
+        blank=True,
+        help_text="Rule that was used to generate this rule",
     )
     has_failing_training_sentence = models.BooleanField(
         default=False,
@@ -660,6 +672,179 @@ class Rule(
             return 0
 
         return len(self.lemma)
+
+
+class RuleStructureEvaluation(BaseCreatedByModel):
+    unique_integer_generator = 0
+
+    rule = models.ForeignKey(
+        Rule,
+        on_delete=models.CASCADE,
+        related_name="evaluations",
+    )
+
+    rule_source_rule = models.CharField(
+        max_length=5000,
+        blank=True,
+        help_text="Rule that was used to generate this rule",
+    )
+
+    rule_inclusiveness = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure")],
+        default=0,
+        help_text="Is this rule trigger uninclusive",
+    )
+
+    rule_carries_same_meaning = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure")],
+        default=0,
+        help_text="Does this rule carry the same meaning as the source rule? ",
+    )
+
+    rule_fits_diversity_dimension = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure")],
+        default=0,
+        help_text="Does this rule fit the diversity dimension? ",
+    )
+
+    rule_importance = models.IntegerField(
+        choices=[
+            (1, "not important"),
+            (2, "less important"),
+            (3, "important"),
+            (4, "very important"),
+            (5, "extremely important"),
+        ],
+        default=3,
+        help_text="How important is it that we have this rule?",
+    )
+
+    rule_inspiration = models.IntegerField(
+        choices=[(0, "yes"), (1, "no")],
+        default=1,
+        help_text="Does this rule inspire the creation of another rule (if yes, write it in notes)?",
+    )
+
+    rule_notes = models.TextField(
+        null=True, blank=True, help_text="Interesting notes/observations on rule"
+    )
+
+    alternative_1_inclusiveness = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
+        default=0,
+        help_text="Is alternative 1 more inclusive than rule trigger",
+    )
+
+    alternative_2_inclusiveness = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
+        default=0,
+        help_text="Is alternative 2 m0re inclusive than rule trigger",
+    )
+
+    alternative_3_inclusiveness = models.IntegerField(
+        choices=[(0, "yes"), (1, "no"), (2, "unsure"), (3, "not applicable")],
+        default=0,
+        help_text="Is alternative 3 more inclusive than rule trigger",
+    )
+
+    alternative_1_quality = models.IntegerField(
+        choices=[
+            (1, "Poor"),
+            (2, "Fair"),
+            (3, "Good"),
+            (4, "Very Good"),
+            (5, "Excellent"),
+            (6, "Not applicable"),
+        ],
+        default=3,
+        help_text="Rate the quality of alternative 1",
+    )
+
+    alternative_2_quality = models.IntegerField(
+        choices=[
+            (1, "Poor"),
+            (2, "Fair"),
+            (3, "Good"),
+            (4, "Very Good"),
+            (5, "Excellent"),
+            (6, "Not applicable"),
+        ],
+        default=3,
+        help_text="Rate the quality of alternative 2",
+    )
+
+    alternative_3_quality = models.IntegerField(
+        choices=[
+            (1, "Poor"),
+            (2, "Fair"),
+            (3, "Good"),
+            (4, "Very Good"),
+            (5, "Excellent"),
+            (6, "Not applicable"),
+        ],
+        default=3,
+        help_text="Rate the quality of alternative 3",
+    )
+    alternative_notes = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Interesting notes/observations on alternatives",
+    )
+
+    training_sentence_1_fits_context = models.CharField(
+        max_length=255,
+        choices=[
+            ("yes", "Yes"),
+            ("no", "No"),
+            ("unsure", "Unsure"),
+            ("not applicable", "Not Applicable"),
+        ],
+        default="unsure",
+        help_text="Does training sentence 1 make sense in context of the rule?",
+    )
+
+    training_sentence_2_fits_context = models.CharField(
+        max_length=255,
+        choices=[
+            ("yes", "Yes"),
+            ("no", "No"),
+            ("unsure", "Unsure"),
+            ("not applicable", "Not Applicable"),
+        ],
+        default="unsure",
+        help_text="Does training sentence 2 make sense in context of the rule?",
+    )
+
+    written_by_human = models.CharField(
+        max_length=255,
+        choices=[("yes", "Yes"), ("no", "No"), ("unsure", "Unsure")],
+        default="unsure",
+        help_text="Would you believe that the sentences were written by a human?",
+    )
+
+    notes_training_sentences = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Interesting notes/observations on training sentences",
+    )
+
+    class Meta:
+        verbose_name = "Rule Evaluation"
+        verbose_name_plural = "Rule Evaluations"
+
+    def save(self, *args, **kwargs):
+        if self.rule and self.rule.source_rule:
+            self.rule_source_rule = self.rule.source_rule
+        else:
+            self.rule_source_rule = "could not get source rule"
+        super(RuleStructureEvaluation, self).save(*args, **kwargs)
+
+    def __str__(self):
+        text = f"Rule {self.rule}"
+        if self.createdby is not None:
+            text += f" evaluated by {self.createdby.username}"
+
+        return text
 
 
 class RuleDiversityDimension(BaseTimestampedModel):
