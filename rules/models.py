@@ -1532,19 +1532,35 @@ class GermanVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
         return False, message
 
     base_form = models.CharField(max_length=255, unique=True)
-    present_ich = models.CharField(max_length=255, null=True, blank=True)
-    present_du = models.CharField(max_length=255, null=True, blank=True)
-    present_pronoun = models.CharField(max_length=255, null=True, blank=True)
-    past_tense_ich = models.CharField(max_length=255, null=True, blank=True)
-    past_participle = models.CharField(
-        max_length=255, null=True, blank=True, db_index=True
+    present_ich = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Present Ich"
     )
-    conjunctive_ich = models.CharField(max_length=255, null=True, blank=True)
-    imperativ_singular = models.CharField(max_length=255, null=True, blank=True)
-    imperativ_plural = models.CharField(max_length=255, null=True, blank=True)
-    helping_verb = models.CharField(max_length=255, null=True, blank=True)
+    present_du = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Present Du"
+    )
+    present_pronoun = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Present Er/Sie"
+    )
+    past_tense_ich = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Past Ich"
+    )
+    past_participle = models.CharField(
+        max_length=255, null=True, blank=True, db_index=True, help_text="Past Perfekt"
+    )
+    conjunctive_ich = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Konjunktiv II Ich"
+    )
+    imperativ_singular = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Imperative Singular"
+    )
+    imperativ_plural = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Imperative Plural"
+    )
+    helping_verb = models.CharField(
+        max_length=255, null=True, blank=True, help_text="Hilfsverb"
+    )
     infinitiv_zu = models.CharField(
-        max_length=255, null=True, blank=True, db_index=True
+        max_length=255, null=True, blank=True, db_index=True, help_text="Infinitiv Zu"
     )
 
 
