@@ -1,7 +1,7 @@
 from django.core.management.base import BaseCommand
 from rules.admin import apply_rule
 from rules.models import Rule, TrainingSentence
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 
 
 class Command(BaseCommand):
@@ -76,13 +76,11 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(results[-1]))
 
         if options["email"]:
-            send_mail(
-                "Rule Editor: Nightly checks",
-                "\n".join(results),
-                "engineering@witty.works",
-                [options["email"]],
-                fail_silently=False,
+            msg = EmailMessage(
+                "Rule Editor: Nightly checks", "\n".join(results), to=[options["email"]]
             )
+            result = msg.send(False)
+            print("Email send: " + str(result))
 
     def mark_as_failing(self, rule: Rule):
         if rule.has_failing_training_sentence:
