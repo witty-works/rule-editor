@@ -35,17 +35,17 @@ class Command(BaseCommand):
                         continue
 
                     failing = False
-                    result_prefix = "=" if rule.has_failing_training_sentence else ">"
+                    result_prefix = "=" if rule.has_failing_training_sentence else "<"
                     if len(response) == 0:
                         if not sentence.is_false_positive:
                             results.append(
-                                f"{result_prefix} Response is empty for rule {rule} and sentence {sentence}"
+                                f"{result_prefix} Response is empty for rule {rule} and sentence '{sentence}'"
                             )
                             self.stdout.write(self.style.ERROR(results[-1]))
                             failing = True
                     elif sentence.is_false_positive:
                         results.append(
-                            f"{result_prefix} Response is not for rule {rule} and sentence {sentence} for a false positive"
+                            f"{result_prefix} Response is not for rule {rule} and sentence '{sentence}' for a false positive"
                         )
                         self.stdout.write(self.style.ERROR(results[-1]))
                         failing = True
@@ -69,6 +69,9 @@ class Command(BaseCommand):
                     self.style.ERROR(f"No training sentences for rule {rule}")
                 )
 
+            if len(results) and not results[-1].startswith("="):
+                break
+
         if failing_rules:
             results.append(
                 f"Checked {len(rules)} rules. There are {failing_rules} failing rules with {new_failing_rules} newly failing rules and {new_passing_rules} newly passing rules"
@@ -76,6 +79,8 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(results[-1]))
 
         if options["email"]:
+            results = filter(self.filter_unchanged, results)
+
             msg = EmailMessage(
                 "Rule Editor: Nightly checks", "\n".join(results), to=[options["email"]]
             )
@@ -97,3 +102,6 @@ class Command(BaseCommand):
         rule.has_failing_training_sentence = False
         rule.save()
         return 1
+
+    def filter_unchanged(self, variable):
+        return not variable.startswith("=")
