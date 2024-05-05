@@ -899,6 +899,12 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     def all_diversity_dimensions(self, obj):
         return ", ".join(obj.diversity_dimension_json)
 
+    def all_reviewers(self, obj):
+        reviewers = []
+        for reviews in obj.evaluations.all():
+            reviewers.append(reviews.createdby.first_name)
+        return ", ".join(reviewers)
+
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
 
@@ -1092,6 +1098,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "all_diversity_dimensions",
         "tag_list",
         "has_failing_training_sentence",
+        "all_reviewers",
     )
 
     inlines = [
