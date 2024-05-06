@@ -525,7 +525,7 @@ class Rule(
         null=True, blank=True, help_text="When the rule was auto generated"
     )
     source_rule = models.CharField(
-        max_length=1000,
+        max_length=2000,
         blank=True,
         help_text="Rule that was used to generate this rule",
     )

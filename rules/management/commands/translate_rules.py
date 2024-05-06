@@ -110,9 +110,9 @@ class Command(BaseCommand):
                             key
                         ] = ""
 
-                rule_formatted_for_translation = str(
-                    rule_formatted_for_translation
-                ).replace("'", '"')
+                rule_formatted_for_translation = json.dumps(
+                    rule_formatted_for_translation, indent=2
+                )
                 self.stdout.write(
                     self.style.SUCCESS(
                         f"Translating rule: {rule_formatted_for_translation}"
@@ -228,6 +228,7 @@ class Command(BaseCommand):
                         is_auto_generated=True,
                         generated_at=current_date,
                         source_rule=rule_formatted_for_translation,
+                        rule_translation_source=rule,
                     )
                     new_rule.save()
                     rules_generated += 1
