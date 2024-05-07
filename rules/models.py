@@ -459,6 +459,12 @@ class Rule(
 
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
     tags = TaggableManager(blank=True, related_name="RuleTags")
+    rule_translation_source = models.ForeignKey(
+        "self",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
 
     parent = models.ForeignKey(
         "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
@@ -519,7 +525,7 @@ class Rule(
         null=True, blank=True, help_text="When the rule was auto generated"
     )
     source_rule = models.CharField(
-        max_length=1000,
+        max_length=2000,
         blank=True,
         help_text="Rule that was used to generate this rule",
     )

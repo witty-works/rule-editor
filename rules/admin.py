@@ -487,9 +487,7 @@ class RuleStructureEvaluationInline(admin.StackedInline):
         return formset
 
     model = RuleStructureEvaluation
-    readonly_fields = (
-        "createdby",
-    )
+    readonly_fields = ("createdby",)
     fields = (
         "createdby",
         "rule_source_rule",
@@ -800,9 +798,11 @@ class RuleForm(forms.ModelForm):
 
 
 class ParentRuleInline(nested_admin.NestedStackedInline):
+
     def remove_from_parent(self, obj):
         return False
 
+    fk_name = "parent"
     model = Rule
     form = RuleForm
     fieldsets = (
@@ -825,6 +825,7 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "entity_type",
                     "pluralization",
                     "is_active",
+                    "rule_translation_source",
                     "remove_from_parent",
                 ),
             },
@@ -898,6 +899,12 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
     def all_diversity_dimensions(self, obj):
         return ", ".join(obj.diversity_dimension_json)
+
+    def all_reviewers(self, obj):
+        reviewers = []
+        for reviews in obj.evaluations.all():
+            reviewers.append(reviews.createdby.first_name)
+        return ", ".join(reviewers)
 
     def get_form(self, request, obj=None, change=False, **kwargs):
         form = super().get_form(request, obj=obj, change=change, **kwargs)
@@ -1014,6 +1021,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "entity_type",
                     "pluralization",
                     "is_active",
+                    "rule_translation_source",
                 ),
             },
         ),
@@ -1046,7 +1054,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
             },
         ),
     )
-
+    readonly_fields = ("rule_translation_source",)
     radio_fields = {
         "type": admin.HORIZONTAL,
         "entity_type": admin.HORIZONTAL,
@@ -1092,6 +1100,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "all_diversity_dimensions",
         "tag_list",
         "has_failing_training_sentence",
+        "all_reviewers",
     )
 
     inlines = [
