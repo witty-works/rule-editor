@@ -34,7 +34,6 @@ class Command(BaseCommand):
                     except:
                         continue
 
-                    failing = False
                     result_prefix = "=" if rule.has_failing_training_sentence else "<"
                     if len(response) == 0:
                         if not sentence.is_false_positive:
@@ -69,9 +68,6 @@ class Command(BaseCommand):
                     self.style.ERROR(f"No training sentences for rule {rule}")
                 )
 
-            if len(results) and not results[-1].startswith("="):
-                break
-
         if failing_rules:
             results.append(
                 f"Checked {len(rules)} rules. There are {failing_rules} failing rules with {new_failing_rules} newly failing rules and {new_passing_rules} newly passing rules"
@@ -81,9 +77,8 @@ class Command(BaseCommand):
         if options["email"]:
             results = filter(self.filter_unchanged, results)
 
-            msg = EmailMessage(
-                "Rule Editor: Nightly checks", "\n".join(results), to=[options["email"]]
-            )
+            msg = "Rule Editor: Nightly checks", "\n".join(results)
+            msg = EmailMessage(msg, to=[options["email"]])
             result = msg.send(False)
             print("Email send: " + str(result))
 
