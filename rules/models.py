@@ -67,6 +67,16 @@ class GenderTypeEnum(models.TextChoices):
     MASCULINE = "masculine"
 
 
+class NerTypeEnum(models.TextChoices):
+    NONE = ""
+    PERSON = "person"
+    GROUP = "group"
+    ORGANIZATION = "organization"
+    LOCATION = "location"
+    THING = "thing"
+    MISC = "misc"
+
+
 class PluralizationEnum(models.TextChoices):
     DEFAULT = "default"
     SINGULAR_ONLY = "singular_only"
@@ -1153,6 +1163,7 @@ class EnglishNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel
     base_form = models.CharField(max_length=255, unique=True)
     plural = models.CharField(max_length=255, null=True, blank=True)
     plural_2 = models.CharField(max_length=255, null=True, blank=True)
+    ner = EnumField(NerTypeEnum, null=True, blank=True)
 
 
 def get_soup(base_form, source="wikitionary", flexion=False):
@@ -2443,3 +2454,4 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     pl_acc = models.CharField(max_length=255, null=True, blank=True)
     collective_noun = models.CharField(max_length=255, null=True, blank=True)
     collective_noun_2 = models.CharField(max_length=255, null=True, blank=True)
+    ner = EnumField(NerTypeEnum, null=True, blank=True)
