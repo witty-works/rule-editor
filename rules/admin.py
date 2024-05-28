@@ -824,6 +824,8 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "type",
                     "entity_type",
                     "pluralization",
+                    "label_type",
+                    "label",
                     "is_active",
                     "rule_translation_source",
                     "remove_from_parent",
@@ -835,8 +837,6 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
             {
                 "classes": ("grp-collapse grp-closed",),
                 "fields": (
-                    "label_type",
-                    "label",
                     "explanation",
                     "emoji",
                     "url",
@@ -1020,6 +1020,8 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "type",
                     "entity_type",
                     "pluralization",
+                    "label_type",
+                    "label",
                     "is_active",
                     "rule_translation_source",
                 ),
@@ -1030,8 +1032,6 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
             {
                 "classes": ("grp-collapse grp-closed",),
                 "fields": (
-                    "label_type",
-                    "label",
                     "explanation",
                     "emoji",
                     "url",
@@ -1395,7 +1395,8 @@ class EnglishNounAdmin(DeclensionAdmin):
 
     resource_class = EnglishNounResource
     search_fields = ("base_form", "plural", "plural_2")
-    fields = ("base_form", "plural", "plural_2", "comment")
+    fields = ("base_form", "plural", "plural_2", "ner", "comment")
+    list_filter = ("ner",)
     list_display = (
         "base_form",
         "plural",
@@ -1526,6 +1527,7 @@ class GermanNounAdmin(DeclensionAdmin):
         "pl_acc",
         "collective_noun",
         "collective_noun_2",
+        "ner",
         "comment",
     )
     list_filter = (
@@ -1540,6 +1542,7 @@ class GermanNounAdmin(DeclensionAdmin):
         "gender_2",
         "singular_only",
         "plural_only",
+        "ner",
     )
     list_display = ("base_form", "female_form", "male_form", "gender_1")
 
