@@ -861,6 +861,12 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
         TrainingSentenceInline,
         FalsePositiveInline,
     ]
+    radio_fields = {
+        "type": admin.HORIZONTAL,
+        "entity_type": admin.HORIZONTAL,
+        "label_type": admin.HORIZONTAL,
+        "pluralization": admin.HORIZONTAL,
+    }
 
 
 @admin.register(Rule)
