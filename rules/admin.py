@@ -1401,6 +1401,7 @@ class EnglishNounAdmin(DeclensionAdmin):
         "base_form",
         "plural",
         "plural_2",
+        "ner",
     )
 
 
@@ -1544,7 +1545,13 @@ class GermanNounAdmin(DeclensionAdmin):
         "plural_only",
         "ner",
     )
-    list_display = ("base_form", "female_form", "male_form", "gender_1")
+    list_display = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "gender_1",
+        "ner",
+    )
 
 
 action_names = {
