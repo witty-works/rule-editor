@@ -895,6 +895,11 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
         super(RuleAdmin, self).save_formset(request, form, formset, change)
 
+        for data in formset.cleaned_data:
+            if "remove_from_parent" in data and data["remove_from_parent"]:
+                data["id"].parent = None
+                data["id"].save()
+
     def all_diversity_dimensions(self, obj):
         return ", ".join(obj.diversity_dimension_json)
 
