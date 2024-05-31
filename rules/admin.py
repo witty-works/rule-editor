@@ -597,8 +597,6 @@ def apply_rule(values):
         token_lemmatizations = Lemmatization.objects.filter(
             lemma=token, language=rule.language
         )
-        if token_lemmatizations is None:
-            continue
 
         for token_lemmatization in token_lemmatizations:
             lemmatizations[token_lemmatization.text] = token_lemmatization.lemma
@@ -863,6 +861,12 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
         TrainingSentenceInline,
         FalsePositiveInline,
     ]
+    radio_fields = {
+        "type": admin.HORIZONTAL,
+        "entity_type": admin.HORIZONTAL,
+        "label_type": admin.HORIZONTAL,
+        "pluralization": admin.HORIZONTAL,
+    }
 
 
 @admin.register(Rule)
@@ -896,6 +900,11 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                 obj.createdby = request.user
 
         super(RuleAdmin, self).save_formset(request, form, formset, change)
+
+        for data in formset.cleaned_data:
+            if "remove_from_parent" in data and data["remove_from_parent"]:
+                data["id"].parent = None
+                data["id"].save()
 
     def all_diversity_dimensions(self, obj):
         return ", ".join(obj.diversity_dimension_json)
@@ -1401,6 +1410,7 @@ class EnglishNounAdmin(DeclensionAdmin):
         "base_form",
         "plural",
         "plural_2",
+        "ner",
     )
 
 
@@ -1544,7 +1554,13 @@ class GermanNounAdmin(DeclensionAdmin):
         "plural_only",
         "ner",
     )
-    list_display = ("base_form", "female_form", "male_form", "gender_1")
+    list_display = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "gender_1",
+        "ner",
+    )
 
 
 action_names = {

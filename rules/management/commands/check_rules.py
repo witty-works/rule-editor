@@ -77,8 +77,11 @@ class Command(BaseCommand):
         if options["email"]:
             results = filter(self.filter_unchanged, results)
 
-            msg = "Rule Editor: Nightly checks", "\n".join(results)
-            msg = EmailMessage(msg, to=[options["email"]])
+            msg = EmailMessage(
+                subject="Rule Editor: Nightly checks",
+                body="\n".join(results),
+                to=[options["email"]],
+            )
             result = msg.send(False)
             print("Email send: " + str(result))
 
