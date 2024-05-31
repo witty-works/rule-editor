@@ -597,8 +597,6 @@ def apply_rule(values):
         token_lemmatizations = Lemmatization.objects.filter(
             lemma=token, language=rule.language
         )
-        if token_lemmatizations is None:
-            continue
 
         for token_lemmatization in token_lemmatizations:
             lemmatizations[token_lemmatization.text] = token_lemmatization.lemma
