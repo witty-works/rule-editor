@@ -28,6 +28,7 @@ german-nouns = "*"
 beautifulsoup4 = "*"
 django-nested-admin = "*"
 breame = "*"
+openai = "*"
 
 [dev-packages]
 

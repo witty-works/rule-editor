@@ -39,7 +39,7 @@ class Command(BaseCommand):
         client = AzureOpenAI(
             azure_endpoint=environ.get("AZURE_OPENAI_ENDPOINT"),
             api_key=environ.get("AZURE_OPENAI_KEY"),
-            api_version="2024-02-15-preview",
+            api_version=environ.get("AZURE_OPENAI_VERSION"),
         )
         rules_generated = 0
         instruction = ""
