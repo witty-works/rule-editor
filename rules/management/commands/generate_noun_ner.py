@@ -75,9 +75,15 @@ Example Inputs and Outputs:
   - Output: "thing"
 - Input: "house"
   - Output: "thing"
-- Input: "iron"
+- Input: "fork"
   - Output: "thing"
 - Input: "Luft" (German for "air")
+  - Output: "misc"
+- Input: "Aufgabe" (German for "task")
+  - Output: "misc"
+- Input: "action"
+  - Output: "misc"
+- Input: "grief"
   - Output: "misc"
 - Input: "element"
   - Output: "misc"'''
@@ -123,13 +129,13 @@ Example Inputs and Outputs:
                         )
                         continue
 
-                    self.stdout.write(
-                        self.style.SUCCESS(f"Found entity: {found_entity_value}")
-                    )
-
                     # update the noun with the entity
                     noun.ner = found_entity_value
                     noun.save()
+
+                    self.stdout.write(
+                        self.style.SUCCESS(f"Updated ner: {found_entity_value}")
+                    )
                 except Exception as e:
                     logger.error(f"Error processing noun: {e}")
 
