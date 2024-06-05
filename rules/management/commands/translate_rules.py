@@ -132,7 +132,7 @@ class Command(BaseCommand):
                     },
                 ]
                 chat_completion = client.chat.completions.create(
-                    model="gpt40125preview",
+                    model=environ.get("AZURE_OPENAI_MODEL"),
                     messages=prompt,
                     temperature=1.2,
                     max_tokens=800,

@@ -96,7 +96,7 @@ Example Inputs and Outputs:
                     {"role": "user", "content": "Noun to classify: " + noun.base_form},
                 ]
                 chat_completion = client.chat.completions.create(
-                    model="gpt40125preview",
+                    model=environ.get("AZURE_OPENAI_MODEL"),
                     messages=prompt,
                     temperature=0.7,
                     max_tokens=200,
