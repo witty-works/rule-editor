@@ -21,6 +21,8 @@ class Command(BaseCommand):
         for rule in rules:
             self.stdout.write(self.style.WARNING(f"Checking rule {rule}"))
 
+            rule_url = f"https://rule-editor.witty.works/admin/rules/rule/{rule.id}/change/"
+
             training_sentences = TrainingSentence.objects.filter(rule=rule)
             if len(training_sentences):
                 failing = False
@@ -38,13 +40,13 @@ class Command(BaseCommand):
                     if len(response) == 0:
                         if not sentence.is_false_positive:
                             results.append(
-                                f"{result_prefix} Response is empty for rule {rule} and sentence '{sentence}'"
+                                f"{result_prefix} Response is empty for rule {rule} ({rule_url}) and sentence '{sentence}'"
                             )
                             self.stdout.write(self.style.ERROR(results[-1]))
                             failing = True
                     elif sentence.is_false_positive:
                         results.append(
-                            f"{result_prefix} Response is not for rule {rule} and sentence '{sentence}' for a false positive"
+                            f"{result_prefix} Response is not for rule {rule} ({rule_url}) and sentence '{sentence}' for a false positive"
                         )
                         self.stdout.write(self.style.ERROR(results[-1]))
                         failing = True
@@ -59,7 +61,7 @@ class Command(BaseCommand):
 
                     if new_passing_rule:
                         results.append(
-                            f"> Newly passing rule {rule} and sentence {sentence}"
+                            f"> Newly passing rule {rule} ({rule_url}) and sentence {sentence}"
                         )
                         self.stdout.write(self.style.SUCCESS(results[-1]))
 
