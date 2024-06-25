@@ -9,14 +9,20 @@ Explanation of JSON fields:
 - `is_gendered_noun`: If an alternative lemma contains gendered nouns then non gendered variations should be generated.
 - `is_advanced`: alternative lemma is not a well understood concept.  
 - `is_remove`: If the alternative is to remove the word entirely, set this to true.
-- `true_positive_examples`: Sentences that contain the rule trigger in its exact lemma form to test if the rule is triggered.
+- `true_positive_examples`: Sentences that contain the rule_trigger in its exact lemma form in a business context to test if the rule is triggered.
+
 Translations must accurately reflect the original rule's intent while being adapted for French cultural and linguistic nuances. Return translations as a JSON object. Make sure every field in the json is present, even if its left empty.
+- For "rule_category" equal to "abbreviation" or "abbreviation_advanced" make sure that the translated "rule_trigger" in "rule_specification" is still an abbreviation or acronym which based on the the French translation if commonly used.
+- For "rule_type" equal to "openly_discriminating" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an openly discriminating way.
+- For "rule_type" equal to "inclusive" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an inclusive way.
+- For "rule_type" equal to "unconscious_bias" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an way exibiting unconscious bias.
 
 Examples of correct translations
 1. Vision Category Example:
 Original:
 {
    "rule_category":"vision",
+   "rule_type:"unconscious_bias",
    "rule_specification":{
       "rule_trigger":"blind as a bat",
       "lemma":"blind as a bat",
@@ -54,6 +60,7 @@ Original:
 Translation:
 {
    "rule_category":"vision",
+   "rule_type:"unconscious_bias",
    "rule_specification":{
       "rule_trigger":"aveugle comme une taupe",
       "lemma":"aveugle comme une taupe",
@@ -75,11 +82,11 @@ Translation:
          "is_remove": false
       },
       "alternative_prio_3":{
-         "lemma":"ne rien voir",
+         "lemma":"-",
          "is_collective_noun":false,
          "is_gendered_noun":false,
          "is_advanced":false,
-         "is_remove": false
+         "is_remove": true
       }
    },
    "true_positive_examples":{
@@ -89,8 +96,10 @@ Translation:
 }
 
 2. Sexual Orientation Category Example:
+Original:
 {
    "rule_category":"sexual_orientation",
+   "rule_type:"unconscious_bias",
    "rule_specification":{
       "rule_trigger":"play for the other team",
       "lemma":"play for the other team",
@@ -128,6 +137,7 @@ Translation:
 Translation: 
 {
    "rule_category":"sexual_orientation",
+   "rule_type:"unconscious_bias",
    "rule_specification":{
       "rule_trigger":"jouer pour l'autre équipe",
       "lemma":"jouer pour l'autre équipe",
@@ -135,11 +145,11 @@ Translation:
    },
    "alternatives":{
       "alternative_prio_1":{
-         "lemma":"s'identifier comme lesbienne",
+         "lemma":"-",
          "is_collective_noun":false,
          "is_gendered_noun":false,
          "is_advanced":false,
-         "is_remove": false
+         "is_remove": true
       },
       "alternative_prio_2":{
          "lemma":"s'identifier comme gay",
@@ -149,11 +159,11 @@ Translation:
          "is_remove": false
       },
       "alternative_prio_3":{
-         "lemma":"-",
+         "lemma":"s'identifier comme lesbienne",
          "is_collective_noun":false,
          "is_gendered_noun":false,
          "is_advanced":false,
-         "is_remove": true
+         "is_remove": false
       }
    },
    "true_positive_examples":{
@@ -166,6 +176,7 @@ Translation:
 Original: 
 {
    "rule_category":"titles",
+   "rule_type:"unconscious_bias",
    "rule_specification":{
       "rule_trigger":"policeman",
       "lemma":"policeman",
@@ -203,6 +214,7 @@ Original:
 Translation: 
 {
    "rule_category":"titles",
+   "rule_type:"unconscious_bias",
    "rule_specification":{
       "rule_trigger":"policier",
       "lemma":"policier",
@@ -210,7 +222,7 @@ Translation:
    },
    "alternatives":{
       "alternative_prio_1":{
-         "lemma":"”policier·ère”",
+         "lemma":"~policier~",
          "is_collective_noun":false,
          "is_gendered_noun":true,
          "is_advanced":false,
@@ -237,11 +249,11 @@ Translation:
    }
 }
 
-
 4. Gender Identity Category example:
 Original: 
 {
    "rule_category":"gender_identity",
+   "rule_type:"unconscious_bias",
    "rule_specification":{
       "rule_trigger":"guys",
       "lemma":"guys",
@@ -279,6 +291,7 @@ Original:
 Translation
 {
    "rule_category":"gender_identity",
+   "rule_type:"unconscious_bias",
    "rule_specification":{
       "rule_trigger":"les gars",
       "lemma":"les gars",
@@ -298,10 +311,162 @@ Translation
          "is_gendered_noun":false,
          "is_advanced":false,
          "is_remove": false
+     },
+     "alternative_prio_3":{
+         "lemma":"ami",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false,
+         "is_remove": false
       }
    },
    "true_positive_examples":{
       "true_positive_sentence_1":"Salut les gars, vous venez à la fête ce soir?",
       "true_positive_sentence_2":"Les gars, vous êtes prêts à partir?"
+   }
+}
+
+5. Offensive language example:
+Original: 
+{
+   "rule_category":"offensive_language",
+   "rule_type:"openly_discriminating",
+   "rule_specification":{
+      "rule_trigger":"rat",
+      "lemma":"rat",
+      "word_type":"n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"-",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false,
+         "is_remove": true
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"He is such a knob, never gets what is being talked about",
+      "true_positive_sentence_2":"I hope nobody things I am a a clueless knob like him."
+   }
+}
+
+Translation:
+{
+   "rule_category":"offensive_language",
+   "rule_type:"openly_discriminating",
+   "rule_specification":{
+      "rule_trigger":"rat",
+      "lemma":"rat",
+      "word_type":"n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"-",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false,
+         "is_remove": true
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Ne fais pas confiance à Pierre, c'est un vrai rat qui ne pense qu'à lui-même",
+      "true_positive_sentence_2":"Après tout ce que nous avons fait pour lui, il nous a trahis comme un rat."
+   }
+}
+
+6. Inclusive example:
+Original: 
+{
+   "rule_category":"communal",
+   "rule_type:"inclusive",
+   "rule_specification":{
+      "rule_trigger":"team",
+      "lemma":"team",
+      "word_type":"n"
+   },
+   "alternatives":{},
+   "true_positive_examples":{
+      "true_positive_sentence_1":"We work closely together in our team.",
+      "true_positive_sentence_2":"This is the great team."
+   }
+}
+
+Translation:
+{
+   "rule_category":"communal",
+   "rule_type:"inclusive",
+   "rule_specification":{
+      "rule_trigger":"équipe",
+      "lemma":"équipe",
+      "word_type":"n"
+   },
+   "alternatives":{},
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Notre équipe a gagné le tournoi grâce à un excellent travail d'équipe.",
+      "true_positive_sentence_2":"Chaque membre de l'équipe doit contribuer pour atteindre nos objectifs."
+   }
+}
+
+7. Abbreviation example:
+Original: 
+{
+   "rule_category":"abbreviation",
+   "rule_type:"unconscious_bias",
+   "rule_specification":{
+      "rule_trigger":"FTE",
+      "lemma":"FTE",
+      "word_type":"n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"full-time employee (FTE)",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false,
+         "is_remove": false
+      },
+      "alternative_prio_2":{
+         "lemma":"full-time employee",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false,
+         "is_remove": false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"The company plans to increase its FTE by 10% next year.",
+      "true_positive_sentence_2":"Our department currently has 35 FTE, which includes both full-time and part-time employees."
+   }
+}
+
+Translation:
+{
+   "rule_category":"abbreviation",
+   "rule_type:"unconscious_bias",
+   "rule_specification":{
+      "rule_trigger":"ETP",
+      "lemma":"ETP",
+      "word_type":"n"
+   },
+   "alternatives":{
+      "alternative_prio_1":{
+         "lemma":"Équivalent Temps Plein (ETP)",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false,
+         "is_remove": false
+      },
+      "alternative_prio_2":{
+         "lemma":"Équivalent Temps Plein",
+         "is_collective_noun":false,
+         "is_gendered_noun":false,
+         "is_advanced":false,
+         "is_remove": false
+      }
+   },
+   "true_positive_examples":{
+      "true_positive_sentence_1":"Nous avons besoin d'augmenter notre personnel de deux ETP pour gérer la nouvelle charge de travail.",
+      "true_positive_sentence_2":"Le budget pour l'année prochaine prévoit une réduction de trois ETP dans le département marketing."
    }
 }

@@ -27,7 +27,13 @@ class Command(BaseCommand):
             logger.error(f"Failed to fetch rules: {e}")
             return
 
+        data = DiversityDimension.objects.filter()
+        diversity_dimensions = {}
+        for diversity_dimension in data:
+            diversity_dimensions[diversity_dimension.name] = diversity_dimension
+
         try:
+            # TODO migrate to HubSpot and then import into the DB
             with open(
                 "rules/management/commands/diversity_dimensions.json", "r"
             ) as file:
@@ -67,8 +73,17 @@ class Command(BaseCommand):
 
                 dimension_info = all_diversity_dimensions[dimension_key]
                 dimension_info = str(dimension_info).replace("'", '"')
+
+                rule_type = (
+                    "unconscious_bias"
+                    if diversity_dimensions[dimension_key].proficiency_level
+                    not in ["inclusive", "openly_discriminating"]
+                    else diversity_dimensions[dimension_key].proficiency_level
+                )
+
                 rule_formatted_for_translation = {
                     "rule_category": dimension_key,
+                    "rule_type": rule_type,
                     "rule_specification": {
                         "rule_trigger": rule.text_id,
                         "lemma": rule.lemma,
