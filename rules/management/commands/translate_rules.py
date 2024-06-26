@@ -11,6 +11,7 @@ from os import environ
 import json
 import logging
 from datetime import date
+from django.db.models import F, Q
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +21,19 @@ class Command(BaseCommand):
         "Translates english rules into german or french and saves them in the database."
     )
 
-    def handle(self, *args, **options):
-        try:
-            rules = Rule.objects.all().filter(language="en")
-        except Exception as e:
-            logger.error(f"Failed to fetch rules: {e}")
-            return
+    def add_arguments(self, parser):
+        parser.add_argument("--target-lang", type=str)
+        parser.add_argument("--limit", type=int)
+        parser.add_argument("--dry-run", type=bool, default=False)
 
-        data = DiversityDimension.objects.filter()
+    def handle(self, *args, **options):
+        target_lang = options["target_lang"]
+        limit = options["limit"]
+        dry_run = options["dry_run"]
+        if dry_run:
+            limit = 1
+
+        data = DiversityDimension.objects.filter(Q(parent_name=F("name")))
         diversity_dimensions = {}
         for diversity_dimension in data:
             diversity_dimensions[diversity_dimension.name] = diversity_dimension
@@ -50,27 +56,40 @@ class Command(BaseCommand):
         rules_generated = 0
         instruction = ""
         with open(
-            "rules/management/commands/translation_prompt_en_de.txt", "r"
-        ) as file:  # CHANGE THIS TO WITCH BETWEEN LANGUAGES
+            f"rules/management/commands/translation_prompt_en_{target_lang}.txt", "r"
+        ) as file:
             instruction = file.read()
-        for rule in rules.order_by("?"):  # Randomize the order of rules
+
+        try:
+            rules = Rule.objects.all().filter(language="en")
+        except Exception as e:
+            logger.error(f"Failed to fetch rules: {e}")
+            return
+
+        limit = len(rules) if limit is None else limit
+        for rule in rules[0:limit]:
+            # check if rule was already translated
+            try:
+                rule_translation = Rule.objects.get(
+                    language=target_lang, rule_translation_source=rule.id
+                )
+                self.stdout.write(
+                    self.style.ERROR(
+                        f"Skipping rule {rule} because it was already translated {rule_translation}"
+                    )
+                )
+
+                continue
+            except Rule.DoesNotExist as e:
+                pass
+
             try:
                 alternatives = rule.alternatives.all()
                 example_sentences = rule.training_sentences.all()
 
-                # if no alternatives skip rule
-                if len(alternatives) == 0:
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"Skipping rule {rule} because it has no alternatives"
-                        )
-                    )
-                    continue
-
                 dimension_key = rule.diversity_dimension_json[0].removesuffix(
                     "_advanced"
                 )
-
                 dimension_info = all_diversity_dimensions[dimension_key]
                 dimension_info = str(dimension_info).replace("'", '"')
 
@@ -104,7 +123,10 @@ class Command(BaseCommand):
                             "is_advanced": alt.is_advanced,
                             "is_remove": alt.is_remove,
                         }
-                    else:
+                    elif (
+                        diversity_dimensions[dimension_key].proficiency_level
+                        != "inclusive"
+                    ):
                         rule_formatted_for_translation["alternatives"][key] = {
                             "lemma": "",
                             "is_collective_noun": False,
@@ -128,11 +150,13 @@ class Command(BaseCommand):
                 rule_formatted_for_translation = json.dumps(
                     rule_formatted_for_translation, indent=2
                 )
+
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"Translating rule: {rule_formatted_for_translation}"
+                    self.style.WARNING(
+                        f"Translating rule:\n{rule_formatted_for_translation}"
                     )
                 )
+
                 prompt = [
                     {
                         "role": "system",
@@ -146,6 +170,12 @@ class Command(BaseCommand):
                         + rule_formatted_for_translation,
                     },
                 ]
+
+                if dry_run:
+                    self.stdout.write(self.style.WARNING(f"Dry run, prompt:\n{prompt}"))
+
+                    continue
+
                 chat_completion = client.chat.completions.create(
                     model=environ.get("AZURE_OPENAI_MODEL"),
                     messages=prompt,
@@ -237,7 +267,7 @@ class Command(BaseCommand):
                         text_id=result_text_id,
                         lemma=result_lemma,
                         word_types=result_word_types,
-                        language="de",  # REMEMBER TO CHANGE THIS WHEN CHANGING LANGUAGE
+                        language=target_lang,
                         is_active=False,
                         is_marked_for_review=True,
                         is_auto_generated=True,
@@ -305,5 +335,5 @@ class Command(BaseCommand):
                         file.write("Result: " + str(result) + "\n")
             except Exception as e:
                 # Log the error and skip to the next rule
-                logger.error(f"Error processing rule {rule.id}: {e}")
+                logger.error(f"Error processing rule '{rule}': {e}")
                 continue  # Move to the next iteration
