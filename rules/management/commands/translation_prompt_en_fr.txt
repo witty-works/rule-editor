@@ -11,11 +11,14 @@ Explanation of JSON fields:
 - `is_remove`: If the alternative is to remove the word entirely, set this to true.
 - `true_positive_examples`: Sentences that contain the rule_trigger in its exact lemma form in a business context to test if the rule is triggered.
 
-Translations must accurately reflect the original rule's intent while being adapted for French cultural and linguistic nuances. Return translations as a JSON object. Make sure every field in the json is present, even if its left empty.
+Translations must accurately reflect the original rule's intent while being adapted for French cultural and linguistic nuances but alternatives should prioritize culture fit to France over literal translation from the source rule.
+
 - For "rule_category" equal to "abbreviation" or "abbreviation_advanced" make sure that the translated "rule_trigger" in "rule_specification" is still an abbreviation or acronym which based on the the French translation if commonly used.
 - For "rule_type" equal to "openly_discriminating" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an openly discriminating way.
 - For "rule_type" equal to "inclusive" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an inclusive way.
 - For "rule_type" equal to "unconscious_bias" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an way exibiting unconscious bias.
+
+Return translations as a JSON object. Make sure every field in the json is present, even if its left empty.
 
 Examples of correct translations
 1. Vision Category Example:
