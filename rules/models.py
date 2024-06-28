@@ -392,7 +392,7 @@ class Rule(
 ):
     class Meta:
         unique_together = (
-            ("language", "lemma", "word_types", "type", "pluralization"),
+            ("language", "lemma", "word_types", "type", "pluralization", "pattern"),
         )
         indexes = [
             models.Index(
