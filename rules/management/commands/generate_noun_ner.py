@@ -25,7 +25,7 @@ class Command(BaseCommand):
 
         try:
             objects = GermanNoun.objects if language == "de" else EnglishNoun.objects
-            nouns = objects.exclude(ner__isnull=False)
+            nouns = objects.filter(ner__isnull=True)
             if limit is not None and limit > 0:
                 nouns = nouns[0:limit]
         except Exception as e:
