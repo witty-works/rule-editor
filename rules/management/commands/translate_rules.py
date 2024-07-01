@@ -10,7 +10,7 @@ from openai import AzureOpenAI
 from os import environ
 import json
 import logging
-from datetime import date
+from django.utils import timezone
 from django.db.models import F, Q
 
 logger = logging.getLogger(__name__)
@@ -261,7 +261,6 @@ class Command(BaseCommand):
                                 ]
                             )
 
-                    current_date = date.today()
                     # add new rule to db
                     new_rule = Rule.objects.create(
                         text_id=result_text_id,
@@ -271,7 +270,7 @@ class Command(BaseCommand):
                         is_active=False,
                         is_marked_for_review=True,
                         is_auto_generated=True,
-                        generated_at=current_date,
+                        generated_at=timezone.now(),
                         source_rule=rule_formatted_for_translation,
                         rule_translation_source=rule,
                     )
