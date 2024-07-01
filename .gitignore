@@ -91,3 +91,4 @@ local_settings.py
 .env
 database/*
 data/*
+rules/management/commands/translated_rules_error_de.json
