@@ -24,8 +24,12 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--target-lang", type=str)
-        parser.add_argument("--limit", type=int)
+        parser.add_argument("--limit", type=int, default=None)
         parser.add_argument("--dry-run", type=bool, default=False)
+        parser.add_argument("--lemma", type=str, default=None)
+        parser.add_argument("--diversity-dimension", type=str, default=None)
+        parser.add_argument("--level", type=str, default=None)
+        parser.add_argument("--randomize-order", type=bool, default=False)
 
     def handle(self, *args, **options):
         target_lang = options["target_lang"]
@@ -70,12 +74,41 @@ class Command(BaseCommand):
                 ),
                 language="en",
             )
+
+            if options["lemma"] is not None:
+                rules = rules.filter(lemma=options["lemma"])
+
+            if options["level"] is not None:
+                if options["level"] == "basic":
+                    rules = rules.exclude(
+                        diversity_dimension_json__0__icontains="advanced"
+                    )
+                elif options["level"] == "advanced":
+                    rules = rules.filter(
+                        diversity_dimension_json__0__icontains="advanced"
+                    )
+                else:
+                    self.stdout.write(
+                        self.style.ERROR(
+                            "Level needs to be 'basic' or 'advanced', got: "
+                            + options["level"]
+                        )
+                    )
+
+            if options["randomize_order"]:
+                rules = rules.order_by("?")
+
         except Exception as e:
             logger.error(f"Failed to fetch rules: {e}")
             return
 
-        limit = len(rules) if limit is None else limit
-        for rule in rules[0:limit]:
+        print(rules.query, len(rules))
+        return
+
+        if limit is not None:
+            rules = rules[0:limit]
+
+        for rule in rules:
             try:
                 alternatives = rule.alternatives.all()
                 example_sentences = rule.training_sentences.all()
