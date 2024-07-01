@@ -12,6 +12,7 @@ import json
 import logging
 from django.utils import timezone
 from django.db.models import F, Q
+from django.db.models import Exists, OuterRef
 
 logger = logging.getLogger(__name__)
 
@@ -61,28 +62,20 @@ class Command(BaseCommand):
             instruction = file.read()
 
         try:
-            rules = Rule.objects.all().filter(language="en")
+            rules = Rule.objects.filter(
+                ~Exists(
+                    Rule.objects.filter(
+                        language=target_lang, rule_translation_source=OuterRef("pk")
+                    )
+                ),
+                language="en",
+            )
         except Exception as e:
             logger.error(f"Failed to fetch rules: {e}")
             return
 
         limit = len(rules) if limit is None else limit
         for rule in rules[0:limit]:
-            # check if rule was already translated
-            try:
-                rule_translation = Rule.objects.get(
-                    language=target_lang, rule_translation_source=rule.id
-                )
-                self.stdout.write(
-                    self.style.ERROR(
-                        f"Skipping rule {rule} because it was already translated {rule_translation}"
-                    )
-                )
-
-                continue
-            except Rule.DoesNotExist as e:
-                pass
-
             try:
                 alternatives = rule.alternatives.all()
                 example_sentences = rule.training_sentences.all()
