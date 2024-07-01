@@ -20,6 +20,9 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 from django.contrib import admin
 
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 env = environ.Env(
     DEBUG=(bool, False),
