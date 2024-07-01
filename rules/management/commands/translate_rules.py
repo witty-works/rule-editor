@@ -7,11 +7,11 @@ from rules.models import (
     Alternative,
 )
 from openai import AzureOpenAI
-from os import environ
 import json
 import logging
 from django.utils import timezone
 from django.db.models import F, Q
+from django.conf import settings
 from django.db.models import Exists, OuterRef
 
 logger = logging.getLogger(__name__)
@@ -50,9 +50,9 @@ class Command(BaseCommand):
             return
 
         client = AzureOpenAI(
-            azure_endpoint=environ.get("AZURE_OPENAI_ENDPOINT"),
-            api_key=environ.get("AZURE_OPENAI_KEY"),
-            api_version=environ.get("AZURE_OPENAI_VERSION"),
+            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+            api_key=settings.AZURE_OPENAI_KEY,
+            api_version=settings.AZURE_OPENAI_VERSION,
         )
         rules_generated = 0
         instruction = ""
@@ -170,7 +170,7 @@ class Command(BaseCommand):
                     continue
 
                 chat_completion = client.chat.completions.create(
-                    model=environ.get("AZURE_OPENAI_MODEL"),
+                    model=settings.AZURE_OPENAI_MODEL,
                     messages=prompt,
                     temperature=1.2,
                     max_tokens=800,

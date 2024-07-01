@@ -5,7 +5,7 @@ from rules.models import (
     NerTypeEnum,
 )
 from openai import AzureOpenAI
-from os import environ
+from django.conf import settings
 import logging
 
 logger = logging.getLogger(__name__)
@@ -33,9 +33,9 @@ class Command(BaseCommand):
             return
 
         client = AzureOpenAI(
-            azure_endpoint=environ.get("AZURE_OPENAI_ENDPOINT"),
-            api_key=environ.get("AZURE_OPENAI_KEY"),
-            api_version=environ.get("AZURE_OPENAI_VERSION"),
+            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+            api_key=settings.AZURE_OPENAI_KEY,
+            api_version=settings.AZURE_OPENAI_VERSION,
         )
 
         instruction = '''You are an advanced Named Entity Recognition (NER) system. Your task is to classify a given noun, which will be either in English or German, into one of the following categories:
@@ -96,7 +96,7 @@ Example Inputs and Outputs:
                     {"role": "user", "content": "Noun to classify: " + noun.base_form},
                 ]
                 chat_completion = client.chat.completions.create(
-                    model=environ.get("AZURE_OPENAI_MODEL"),
+                    model=settings.AZURE_OPENAI_MODEL,
                     messages=prompt,
                     temperature=0.7,
                     max_tokens=200,
