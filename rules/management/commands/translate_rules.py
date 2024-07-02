@@ -331,12 +331,6 @@ class Command(BaseCommand):
 
                     # add new example sentences to db
                     for i, example_sentence in enumerate(result_example_sentences):
-                        if result_text_id not in example_sentence:
-                            print(
-                                f"Skipping example sentence {example_sentence} because it doesn't contain the rule trigger"
-                            )
-                            continue
-
                         new_example_sentence = TrainingSentence.objects.create(
                             rule=new_rule,
                             text=example_sentence,
