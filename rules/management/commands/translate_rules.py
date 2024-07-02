@@ -215,6 +215,25 @@ class Command(BaseCommand):
                 try:
                     # strip away everyting outside {}
                     result = chat_completion.choices[0].message.content
+
+                    # no cultural equivalent translation
+                    if result == "{}":
+                        new_rule = Rule.objects.create(
+                            text_id=rule.text_id,
+                            lemma=rule.lemma,
+                            word_types=rule.word_types,
+                            language=target_lang,
+                            is_active=False,
+                            is_marked_for_review=True,
+                            is_not_translatable=True,
+                            is_auto_generated=True,
+                            generated_at=timezone.now(),
+                            source_rule=rule_formatted_for_translation,
+                            rule_translation_source=rule,
+                        )
+                        new_rule.save()
+                        continue
+
                     result = result[result.find("{") : result.rfind("}") + 1]
 
                     result_as_json = json.loads(result)

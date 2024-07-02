@@ -547,6 +547,10 @@ class Rule(
         default=False,
         help_text="If this rule is enabled only for the HR-addon",
     )
+    is_not_translatable = models.BooleanField(
+        default=False,
+        help_text="If this rule cannot be translated from the source language",
+    )
 
     diversity_dimensions = models.ManyToManyField(
         DiversityDimension, through="RuleDiversityDimension"
