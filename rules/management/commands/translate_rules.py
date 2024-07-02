@@ -198,6 +198,7 @@ class Command(BaseCommand):
                 try:
                     # strip away everyting outside {}
                     result = chat_completion.choices[0].message.content
+                    result = result[result.find("{") : result.rfind("}") + 1]
 
                     # no cultural equivalent translation
                     if result == "{}":
@@ -216,8 +217,6 @@ class Command(BaseCommand):
                         )
                         new_rule.save()
                         continue
-
-                    result = result[result.find("{") : result.rfind("}") + 1]
 
                     result_as_json = json.loads(result)
                     if (
