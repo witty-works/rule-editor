@@ -7,10 +7,12 @@ from rules.models import (
     Alternative,
 )
 from openai import AzureOpenAI
-from os import environ
 import json
 import logging
-from datetime import date
+from django.utils import timezone
+from django.db.models import F, Q
+from django.conf import settings
+from django.db.models import Exists, OuterRef
 
 logger = logging.getLogger(__name__)
 
@@ -20,14 +22,29 @@ class Command(BaseCommand):
         "Translates english rules into german or french and saves them in the database."
     )
 
+    def add_arguments(self, parser):
+        parser.add_argument("--target-lang", type=str)
+        parser.add_argument("--limit", type=int, default=None)
+        parser.add_argument("--dry-run", type=bool, default=False)
+        parser.add_argument("--lemma", type=str, default=None)
+        parser.add_argument("--diversity-dimension", type=str, default=None)
+        parser.add_argument("--level", type=str, default=None)
+        parser.add_argument("--randomize-order", type=bool, default=False)
+
     def handle(self, *args, **options):
-        try:
-            rules = Rule.objects.all().filter(language="en")
-        except Exception as e:
-            logger.error(f"Failed to fetch rules: {e}")
-            return
+        target_lang = options["target_lang"]
+        limit = options["limit"]
+        dry_run = options["dry_run"]
+        if dry_run:
+            limit = 1
+
+        data = DiversityDimension.objects.filter(Q(parent_name=F("name")))
+        diversity_dimensions = {}
+        for diversity_dimension in data:
+            diversity_dimensions[diversity_dimension.name] = diversity_dimension
 
         try:
+            # TODO migrate to HubSpot and then import into the DB
             with open(
                 "rules/management/commands/diversity_dimensions.json", "r"
             ) as file:
@@ -37,66 +54,95 @@ class Command(BaseCommand):
             return
 
         client = AzureOpenAI(
-            azure_endpoint=environ.get("AZURE_OPENAI_ENDPOINT"),
-            api_key=environ.get("AZURE_OPENAI_KEY"),
-            api_version=environ.get("AZURE_OPENAI_VERSION"),
+            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+            api_key=settings.AZURE_OPENAI_KEY,
+            api_version=settings.AZURE_OPENAI_VERSION,
         )
-        rules_generated = 0
-        instruction = ""
-        with open(
-            "rules/management/commands/translation_prompt_en_de.txt", "r"
-        ) as file:  # CHANGE THIS TO WITCH BETWEEN LANGUAGES
-            instruction = file.read()
-        for rule in rules.order_by("?"):  # Randomize the order of rules
-            try:
-                alternatives = rule.alternatives.all()
-                example_sentences = rule.training_sentences.all()
 
-                # if no alternatives skip rule
-                if len(alternatives) == 0:
+        rules_generated = 0
+
+        instruction = ""
+
+        with open(
+            f"rules/management/commands/translation_prompt_en_base.txt", "r"
+        ) as file:
+            instruction = file.read()
+            instruction = instruction.replace(
+                "__LANGUAGE__", "German" if target_lang == "de" else "French"
+            )
+
+        with open(
+            f"rules/management/commands/translation_prompt_en_{target_lang}.txt", "r"
+        ) as file:
+            instruction += file.read()
+
+        try:
+            rules = Rule.objects.filter(
+                ~Exists(
+                    Rule.objects.filter(
+                        language=target_lang, rule_translation_source=OuterRef("pk")
+                    )
+                ),
+                language="en",
+            )
+
+            if options["lemma"] is not None:
+                rules = rules.filter(lemma=options["lemma"])
+
+            if options["level"] is not None:
+                if options["level"] == "basic":
+                    rules = rules.exclude(
+                        diversity_dimension_json__0__icontains="advanced"
+                    )
+                elif options["level"] == "advanced":
+                    rules = rules.filter(
+                        diversity_dimension_json__0__icontains="advanced"
+                    )
+                else:
                     self.stdout.write(
                         self.style.ERROR(
-                            f"Skipping rule {rule} because it has no alternatives"
+                            "Level needs to be 'basic' or 'advanced', got: "
+                            + options["level"]
                         )
                     )
-                    continue
+
+            if options["randomize_order"]:
+                rules = rules.order_by("?")
+
+        except Exception as e:
+            logger.error(f"Failed to fetch rules: {e}")
+            return
+
+        if limit is not None:
+            rules = rules[0:limit]
+
+        for rule in rules:
+            try:
+                example_sentences = rule.training_sentences.all()
 
                 dimension_key = rule.diversity_dimension_json[0].removesuffix(
                     "_advanced"
                 )
-
                 dimension_info = all_diversity_dimensions[dimension_key]
                 dimension_info = str(dimension_info).replace("'", '"')
+
+                rule_type = (
+                    "unconscious_bias"
+                    if diversity_dimensions[dimension_key].proficiency_level
+                    not in ["inclusive", "openly_discriminating"]
+                    else diversity_dimensions[dimension_key].proficiency_level
+                )
+
                 rule_formatted_for_translation = {
                     "rule_category": dimension_key,
+                    "rule_type": rule_type,
                     "rule_specification": {
                         "rule_trigger": rule.text_id,
                         "lemma": rule.lemma,
                         "word_type": rule.word_types,
                     },
-                    "alternatives": {},
                     "true_positive_examples": {},
                 }
-
-                for i in range(1, 4):
-                    key = f"alternative_prio_{i}"
-                    if len(alternatives) >= i:
-                        alt = alternatives[i - 1]
-                        rule_formatted_for_translation["alternatives"][key] = {
-                            "lemma": alt.lemma,
-                            "is_collective_noun": alt.is_collective_noun,
-                            "is_gendered_noun": alt.is_gendered_noun,
-                            "is_advanced": alt.is_advanced,
-                            "is_remove": alt.is_remove,
-                        }
-                    else:
-                        rule_formatted_for_translation["alternatives"][key] = {
-                            "lemma": "",
-                            "is_collective_noun": False,
-                            "is_gendered_noun": False,
-                            "is_advanced": False,
-                            "is_remove": False,
-                        }
 
                 # Dynamically fill the true_positive_examples section
                 for i in range(1, 3):  # Assuming we need up to 2 true positive examples
@@ -113,11 +159,13 @@ class Command(BaseCommand):
                 rule_formatted_for_translation = json.dumps(
                     rule_formatted_for_translation, indent=2
                 )
+
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f"Translating rule: {rule_formatted_for_translation}"
+                    self.style.WARNING(
+                        f"Translating rule:\n{rule_formatted_for_translation}"
                     )
                 )
+
                 prompt = [
                     {
                         "role": "system",
@@ -131,8 +179,14 @@ class Command(BaseCommand):
                         + rule_formatted_for_translation,
                     },
                 ]
+
+                if dry_run:
+                    self.stdout.write(self.style.WARNING(f"Dry run, prompt:\n{prompt}"))
+
+                    continue
+
                 chat_completion = client.chat.completions.create(
-                    model=environ.get("AZURE_OPENAI_MODEL"),
+                    model=settings.AZURE_OPENAI_MODEL,
                     messages=prompt,
                     temperature=1.2,
                     max_tokens=800,
@@ -144,6 +198,25 @@ class Command(BaseCommand):
                 try:
                     # strip away everyting outside {}
                     result = chat_completion.choices[0].message.content
+
+                    # no cultural equivalent translation
+                    if result == "{}":
+                        new_rule = Rule.objects.create(
+                            text_id=rule.text_id,
+                            lemma=rule.lemma,
+                            word_types=rule.word_types,
+                            language=target_lang,
+                            is_active=False,
+                            is_marked_for_review=True,
+                            is_not_translatable=True,
+                            is_auto_generated=True,
+                            generated_at=timezone.now(),
+                            source_rule=rule_formatted_for_translation,
+                            rule_translation_source=rule,
+                        )
+                        new_rule.save()
+                        continue
+
                     result = result[result.find("{") : result.rfind("}") + 1]
 
                     result_as_json = json.loads(result)
@@ -216,17 +289,16 @@ class Command(BaseCommand):
                                 ]
                             )
 
-                    current_date = date.today()
                     # add new rule to db
                     new_rule = Rule.objects.create(
                         text_id=result_text_id,
                         lemma=result_lemma,
                         word_types=result_word_types,
-                        language="de",  # REMEMBER TO CHANGE THIS WHEN CHANGING LANGUAGE
+                        language=target_lang,
                         is_active=False,
                         is_marked_for_review=True,
                         is_auto_generated=True,
-                        generated_at=current_date,
+                        generated_at=timezone.now(),
                         source_rule=rule_formatted_for_translation,
                         rule_translation_source=rule,
                     )
@@ -252,7 +324,7 @@ class Command(BaseCommand):
                             lemma=alternative["lemma"],
                             order=alternative["priority"],
                             is_collective_noun=alternative["is_collective_noun"],
-                            is_gendered_noun=alternative["is_gendered_noun"],
+                            is_gendered_noun="~" in alternative["lemma"],
                             is_advanced=alternative["is_advanced"],
                             is_remove=alternative["is_remove"],
                         )
@@ -290,5 +362,5 @@ class Command(BaseCommand):
                         file.write("Result: " + str(result) + "\n")
             except Exception as e:
                 # Log the error and skip to the next rule
-                logger.error(f"Error processing rule {rule.id}: {e}")
+                logger.error(f"Error processing rule '{rule}': {e}")
                 continue  # Move to the next iteration

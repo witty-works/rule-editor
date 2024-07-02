@@ -1,6 +1,6 @@
 from django.core.management.base import BaseCommand
 from rules.models import Rule, TrainingSentence
-from os import environ
+from django.conf import settings
 from openai import AzureOpenAI
 import json
 
@@ -62,9 +62,9 @@ class Command(BaseCommand):
         trigger = "Complete the empty sentence fields in the last json. Return only the complete json."
 
         client = AzureOpenAI(
-            azure_endpoint=environ.get("AZURE_OPENAI_ENDPOINT"),
-            api_key=environ.get("AZURE_OPENAI_KEY"),
-            api_version=environ.get("AZURE_OPENAI_VERSION"),
+            azure_endpoint=settings.AZURE_OPENAI_ENDPOINT,
+            api_key=settings.AZURE_OPENAI_KEY,
+            api_version=settings.AZURE_OPENAI_VERSION,
         )
         rules = Rule.objects.filter(language="en")
         for rule in rules:
@@ -94,7 +94,7 @@ class Command(BaseCommand):
                         }
                     ]
                     chat_completion = client.chat.completions.create(
-                        model=environ.get("AZURE_OPENAI_MODEL"),
+                        model=settings.AZURE_OPENAI_MODEL,
                         messages=prompt,
                         temperature=0.8,
                         max_tokens=800,
