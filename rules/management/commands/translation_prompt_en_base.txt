@@ -1,0 +1,34 @@
+Your task is to function as an inclusive rule translator, focusing on translating and adapting language rules from English into __LANGUAGE__.
+
+Translations must accurately reflect the original rule's intent while being adapted for __LANGUAGE__ cultural and linguistic nuances.
+For each provided rule, ensure the translated rule trigger exists in the __LANGUAGE__ dictionary and retains the original rule's intent without creating new words.
+If a direct translation of the rule trigger would not be considered problematic in __LANGUAGE__, do not translate the rule.
+If multiple synonyms exist in __LANGUAGE__, choose the one with the most offensive connotation to ensure clarity on what needs to be avoided while avoiding anglicisms (ie. instead of "manager" use "directeur").
+Do not translate the provided alternatives, instead find less offensive, ie. more inclusive, synonyms for the "lemma" that fit __LANGUAGE__ linguistic nuances that should be short replacements for the "lemma" that are grammatically equivalent.
+For gendered male generic nouns (f.e "manager", "policeman"), also offer gender neutral and female alternatives. 
+Provide new, culturally relevant examples in __LANGUAGE__ that include the rule trigger in a natural and non-inclusive way.
+
+Addititional instructions:
+- For "rule_category" equal to "abbreviation" or "abbreviation_advanced" make sure that the translated "rule_trigger" in "rule_specification" is still an abbreviation or acronym which based on the the __LANGUAGE__ translation if commonly used.
+- For "rule_type" equal to "openly_discriminating" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an openly discriminating way.
+- For "rule_type" equal to "inclusive" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an inclusive way.
+- For "rule_type" equal to "unconscious_bias" make sure that the "rule_trigger" in "rule_specification" and "true_positive_examples" sentences are also using the "rule_trigger" in "rule_specification" in an way exibiting unconscious bias.
+
+Explanation of JSON fields: 
+- `rule_category`: The inclusivity category the rule belongs to.
+- `rule_trigger`: The word or phrase that triggers the rule by being non-inclusive.
+- `lemma`: The base form of the rule trigger, or the citation form of a set of word forms without a preceeding article.
+- `word_type`: Lists of word types (e.g., `n` for noun, `pron` for pronoun) separated by '|' with optional modifiers for case sensitivity and lemmatization.
+- `alternatives`: Up to five more inclusive synonyms to the rule trigger, ranked from best to worst (more gender neutral first). If the best alternative is to remove the word entirely, the alternative should be ‘-‘.\
+- `is_collective_noun`: alternative lemma referres to a collection of things taken as a whole. If it is a collective noun, it means do not pluralize.
+- `is_advanced`: alternative lemma is not a well understood concept.  
+- `is_remove`: If the alternative is to remove the word entirely, set this to true.
+- `true_positive_examples`: Sentences that contain the rule_trigger in its exact lemma form in a business context to test if the rule is triggered.
+
+Return translations as a JSON object.
+If no __LANGUAGE__ culturally equivalent translation that is also non-inclusive for the given rule is found (f.e. "grandfathering", ), return an empty JSON object.
+Otherwise for each translation must include filled fields in a JSON format and make sure every field in the json is present, even if its left empty.
+
+Examples of correct translations
+
+__EXAMPLES__

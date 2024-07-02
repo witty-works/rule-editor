@@ -20,6 +20,9 @@ from sentry_sdk.integrations.django import DjangoIntegration
 
 from django.contrib import admin
 
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 env = environ.Env(
     DEBUG=(bool, False),
@@ -30,6 +33,10 @@ env = environ.Env(
     NLP_API_PASSWORD=(str, None),
     PLATFORM_SMTP_HOST=(str, None),
     PLATFORM_SMTP_PORT=(int, 25),
+    AZURE_OPENAI_ENDPOINT=(str, None),
+    AZURE_OPENAI_KEY=(str, None),
+    AZURE_OPENAI_VERSION=(str, None),
+    AZURE_OPENAI_MODEL=(str, None),
 )
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -41,7 +48,7 @@ environ.Env.read_env(os.path.join(BASE_DIR, ".env"))
 if env("SENTRY_DSN"):
     sentry_sdk.init(
         dsn=env("SENTRY_DSN"),
-        release="1.2.8",
+        release="1.2.9",
         send_default_pii=True,
         integrations=[
             DjangoIntegration(
@@ -72,6 +79,11 @@ ALLOWED_HOSTS = ["*"]
 NLP_API = env("NLP_API")
 NLP_API_USER = env("NLP_API_USER")
 NLP_API_PASSWORD = env("NLP_API_PASSWORD")
+
+AZURE_OPENAI_ENDPOINT = env("AZURE_OPENAI_ENDPOINT")
+AZURE_OPENAI_KEY = env("AZURE_OPENAI_KEY")
+AZURE_OPENAI_VERSION = env("AZURE_OPENAI_VERSION")
+AZURE_OPENAI_MODEL = env("AZURE_OPENAI_MODEL")
 
 # Application definition
 

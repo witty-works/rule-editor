@@ -1,394 +1,413 @@
 {
-    "culture":{
-       "summary":"Associates cultural identities with specific stereotypes.",
-       "detailedCategoryDescription":"Cultural stereotypes reduce individuals to broad generalizations, fueling prejudice and discrimination. They stem from ethnocentrism, simplifying complex identities into singular traits like punctuality or politeness, which can alienate and impact relationships negatively.",
-       "basicExampleWithBias":"It's great to have these punctual Germans in our office",
-       "basicExampleWithoutBias":"It's great to have these well-organized people in our office",
-       "advancedExampleWithBias":"After the protest, several demonstrators were loaded into a paddy wagon",
-       "advancedExampleWithoutBias":"After the protest, several demonstrators were loaded into a police car"
-    },
-    "migration":{
-       "summary":"Highlights biases against people with diverse cultural backgrounds.",
-       "detailedCategoryDescription":"Encourages framing discussions as if everyone shares your cultural background, recognizing biases and stereotypes faced by those with international or multicultural backgrounds, and promoting inclusivity.",
-       "basicExampleWithBias":"The city has seen an increase in illegal immigrants",
-       "basicExampleWithoutBias":"The city has seen an increase in undocumented people",
-       "advancedExampleWithBias":"Our IT colleague is a Latino",
-       "advancedExampleWithoutBias":"Our IT colleague is a person with cultural ties to Latin America"
-    },
-    "nazi_language":{
-       "summary":"Avoids language associated with Nazi ideology.",
-       "detailedCategoryDescription":"Discourages the use of terms and phrases coined or popularized by the Nazi regime to prevent trivializing their victims' suffering and appearing as a sympathizer, focusing on clear communication without offensive historical connotations.",
-       "basicExampleWithBias":"We have to stop experimenting and start looking for a final solution",
-       "basicExampleWithoutBias":"We have to stop experimenting and start looking for an effective solution",
-       "advancedExampleWithBias":"They believed in the myth of a superior race",
-       "advancedExampleWithoutBias":"They believed in the myth of white supremacy"
-    },
-    "racist_source":{
-       "summary":"Avoids language with racist origins or implications.",
-       "detailedCategoryDescription":"Promotes psychological safety by avoiding terms that marginalize based on ancestry or ethnicity, recognizing the harmful impact of words and phrases with racist undertones, and encouraging respectful communication.",
-       "basicExampleWithBias":"The master bedroom of this apartment is exquisite",
-       "basicExampleWithoutBias":"The main bedroom of this apartment is exquisite",
-       "advancedExampleWithBias":"I feel like I was gypped by that unfair deal",
-       "advancedExampleWithoutBias":"I feel like I was defrauded by that unfair deal"
-    },
-    "color":{
-       "summary":"Discourages using color to assign value or describe people.",
-       "detailedCategoryDescription":"Encourages avoiding color-based descriptions for value, quality, or skin tone, recognizing the potential for offense and promoting inclusive language that respects racialized identities without perpetuating stereotypes.",
-       "basicExampleWithBias":"His name was added to the blacklist",
-       "basicExampleWithoutBias":"His name was added to the deny list",
-       "advancedExampleWithBias":"He's white",
-       "advancedExampleWithoutBias":"He's Caucasian"
-    },
-    "abbreviation":{
-       "summary":"Promotes clarity by spelling out abbreviations.",
-       "detailedCategoryDescription":"Encourages spelling out abbreviations and acronyms to ensure understanding and inclusivity, recognizing the potential for confusion and fostering an environment where everyone feels comfortable and informed.",
-       "basicExampleWithBias":"Our company plans to use our CPaaS to improve communication",
-       "basicExampleWithoutBias":"Our company plans to use our Communication Platform as a Service (CPaaS) to improve communication",
-       "advancedExampleWithBias":"For our organization, the most important KPI is ROI",
-       "advancedExampleWithoutBias":"For our organization, the most important Key Performance Indicator (KPI) is Return on Investment (ROI)"
-    },
-    "hollow":{
-       "summary":"Encourages meaningful, specific communication.",
-       "detailedCategoryDescription":"Advises against using vague, overused terms, promoting authenticity and specificity to engage audiences effectively and avoid generic, meaningless language that fails to connect.",
-       "basicExampleWithBias":"To overcome this challenge, we need to think outside the box",
-       "basicExampleWithoutBias":"To overcome this challenge, we need to think differently",
-       "advancedExampleWithBias":"Most of all, we need to focus on customer satisfaction",
-       "advancedExampleWithoutBias":"Most importantly, we need to focus on customer satisfaction"
-    },
-    "filler":{
-       "summary":"Reduces unnecessary complexity in communication.",
-       "detailedCategoryDescription":"Advocates for minimizing filler words to enhance message clarity and comprehension, recognizing their potential to distract and confuse, especially in diverse linguistic settings.",
-       "basicExampleWithBias":"This is actually important",
-       "basicExampleWithoutBias":"This is important",
-       "advancedExampleWithBias":"What we want to do is to improve our team's efficiency",
-       "advancedExampleWithoutBias":"Let's improve our team's efficiency"
-    },
-    "racism":{
-       "summary":"Avoids racially insensitive language.",
-       "detailedCategoryDescription":"Highlights the importance of considering the impact of language on people of color and underrepresented races, avoiding terms that can defame and reinforce prejudices.",
-       "basicExampleWithBias":"The redskins run the town",
-       "basicExampleWithoutBias":"The Native Americans run the town",
-       "advancedExampleWithBias":"At the trailer park there is just white trash",
-       "advancedExampleWithoutBias":"At the trailer park there is just Caucasian people"
-    },
-    "xenophobia":{
-       "summary":"Addresses fears or dislikes of the foreign or strange.",
-       "detailedCategoryDescription":"Encourages empathy towards those from different cultures or nationalities, recognizing the offense caused by xenophobic language and the importance of promoting inclusivity.",
-       "basicExampleWithBias":"They are all dog eaters over there",
-       "basicExampleWithoutBias":"They have a different food culture over there",
-       "advancedExampleWithBias":"He's such a hunkie",
-       "advancedExampleWithoutBias":"He's such a well built person"
-    },
-    "binary_pronouns":{
-       "summary":"Excludes non-binary identities by using binary pronouns.",
-       "detailedCategoryDescription":"Encourages using inclusive pronouns or direct address to welcome all genders, moving beyond the binary pronouns 'he' and 'she' to include non-binary identities.",
-       "basicExampleWithBias":"If someone needs help, he or she can always ask me",
-       "basicExampleWithoutBias":"If someone needs help, they can always ask me",
-       "advancedExampleWithBias":"Every student should bring his notebook to class",
-       "advancedExampleWithoutBias":"Every student should bring their notebook to class"
-    },
-    "female_stereotype":{
-       "summary":"Reinforces traditional female roles and behaviors.",
-       "detailedCategoryDescription":"Challenges outdated stereotypes that limit women's potential, advocating for language that reflects diverse talents and aspirations beyond traditional roles.",
-       "basicExampleWithBias":"She shouldn't be so hysterical, we'll just reschedule",
-       "basicExampleWithoutBias":"She shouldn't be so agitated, we'll just reschedule",
-       "advancedExampleWithBias":"She's bossy when leading projects",
-       "advancedExampleWithoutBias":"She's responsible when leading projects"
-    },
-    "gender_identity":{
-       "summary":"Reinforces a two-gender worldview.",
-       "detailedCategoryDescription":"Promotes inclusivity by avoiding language that enforces traditional gender roles and identities, acknowledging a diverse gender spectrum.",
-       "basicExampleWithBias":"Dear ladies and gentlemen, we welcome you warmly",
-       "basicExampleWithoutBias":"Dear distinguished guests, we welcome you warmly",
-       "advancedExampleWithBias":"The guys and girls at the party was having a great time",
-       "advancedExampleWithoutBias":"The friends at the party were having a great time"
-    },
-    "hidden_image":{
-       "summary":"Implies gender through language, often male-centric.",
-       "detailedCategoryDescription":"Encourages gender-neutral language to ensure visibility and inclusion for all genders, challenging male-default assumptions.",
-       "basicExampleWithBias":"How many man-hours will this project take?",
-       "basicExampleWithoutBias":"How many person-hours will this project take?",
-       "advancedExampleWithBias":"Our company is expanding beyond the motherland to international markets",
-       "advancedExampleWithoutBias":"Our company is expanding beyond the homeland to international markets"
-    },
-    "gender_specific_abbreviation":{
-       "summary":"Places men first in gendered abbreviations, excluding non-binary identities.",
-       "detailedCategoryDescription":"Encourages equitable and inclusive language in abbreviations to prevent reinforcing male normativity, promoting diversity in representation.",
-       "basicExampleWithBias":"We are looking for a talented developer (m/f) to join our tech team",
-       "basicExampleWithoutBias":"We are looking for a talented developer (m/f/d) to join our tech team",
-       "advancedExampleWithBias":"We are looking for a talented developer (m/f) to join our tech team",
-       "advancedExampleWithoutBias":"We are looking for a talented developer (d/f/m) to join our tech team"
-    },
-    "function":{
-       "summary":"Default to masculine imagery, excluding other genders.",
-       "detailedCategoryDescription":"Advocates for language that allows for all gender identities to be envisioned, challenging stereotypes that restrict imagination to masculine figures.",
-       "basicExampleWithBias":"The company's spokesman will give a statement on the new policy",
-       "basicExampleWithoutBias":"The company's press officer will give a statement on the new policy",
-       "advancedExampleWithBias":"If you have any furthre questions, the landlady will be happy to help",
-       "advancedExampleWithoutBias":"If you have any furthre questions, the building manager will be happy to help"
-    },
-    "titles":{
-       "summary":"Implies specific genders for job roles.",
-       "detailedCategoryDescription":"Encourages gender-neutral job titles and descriptions to attract a diverse pool of candidates, moving beyond traditional gender expectations.",
-       "basicExampleWithBias":"We are looking for a salesman",
-       "basicExampleWithoutBias":"We are looking for a salesperson",
-       "advancedExampleWithBias":"We are looking for an engineer",
-       "advancedExampleWithoutBias":"We are looking for a colleague in engineering"
-    },
-    "male_stereotype":{
-       "summary":"Confines men to traditional roles and behaviors.",
-       "detailedCategoryDescription":"Challenges stereotypes that restrict men's roles and behaviors, advocating for a broader understanding of masculinity.",
-       "basicExampleWithBias":"Kevin is a man of his word",
-       "basicExampleWithoutBias":"Kevin is someone true to their word",
-       "advancedExampleWithBias":"He's the alpha in the group",
-       "advancedExampleWithoutBias":"He's the facilitator in the group"
-    },
-    "sexual_orientation":{
-       "summary":"Reinforces heterosexual norms.",
-       "detailedCategoryDescription":"Encourages language that respects all sexual orientations, avoiding assumptions and promoting inclusivity.",
-       "basicExampleWithBias":"Your wives are highly welcome to the board's Christmas party",
-       "basicExampleWithoutBias":"Your spouses are highly welcome to the board's Christmas party",
-       "advancedExampleWithBias":"They became man and wife after the ceremony",
-       "advancedExampleWithoutBias":"They became life partners after the ceremony"
-    },
-    "leadership":{
-       "summary":"Perpetuates outdated leadership stereotypes.",
-       "detailedCategoryDescription":"Encourages a modern understanding of leadership that values diverse traits and styles, moving beyond masculine stereotypes.",
-       "basicExampleWithBias":"I'll have to ask my boss about this decision",
-       "basicExampleWithoutBias":"I'll have to ask my supervisor about this decision",
-       "advancedExampleWithBias":"The head of marketing will oversee the new campaign",
-       "advancedExampleWithoutBias":"The person responsible for marketing will oversee the new campaign"
-    },
-    "homophobia":{
-       "summary":"Avoid language with homophobic implications.",
-       "detailedCategoryDescription":"Promotes respect for all sexual orientations, challenging language that demeans based on sexual orientation.",
-       "basicExampleWithBias":"I am such a lesbo for you",
-       "basicExampleWithoutBias":"I like you so much",
-       "advancedExampleWithBias":"He is a bit light in the loafers",
-       "advancedExampleWithoutBias":"He identifies as a homosexual"
-    },
-    "sexism":{
-       "summary":"Avoid language with sexist implications.",
-       "detailedCategoryDescription":"Challenges sexist language, promoting respect and equality for all genders.",
-       "basicExampleWithBias":"I'm so sick of listening to all this feminazi stuff",
-       "basicExampleWithoutBias":"I'm so sick of listening to all this feminist stuff",
-       "advancedExampleWithBias":"No, that's not his wife, that's his baby mama.",
-       "advancedExampleWithoutBias":"No, that's not his wife, that's the mother of his child."
-    },
-    "transphobia":{
-       "summary":"Avoid language with transphobic implications.",
-       "detailedCategoryDescription":"Encourages respect and understanding for transgender identities, challenging harmful stereotypes and language.",
-       "basicExampleWithBias":"You look like such a tranny in that dress",
-       "basicExampleWithoutBias":"You don't look good in that dress",
-       "advancedExampleWithBias":"He is a femboy",
-       "advancedExampleWithoutBias":"He is feminine"
-    },
-    "ability":{
-       "summary":"Identifies and discourages biases against disabilities",
-       "detailedCategoryDescription":"Encourages respectful communication by avoiding ableist language that disparages or alienates individuals with disabilities or chronic illnesses. By being mindful of our language, we can prevent perpetuating negative stereotypes and biases, promoting a more inclusive environment.",
-       "basicExampleWithBias":"Before we proceed, let's do a sanity check on the data",
-       "basicExampleWithoutBias":"Before we proceed, let's do a quick check on the data",
-       "advancedExampleWithBias":"Accessible learning material can help colleagues overcome their learning disabilities",
-       "advancedExampleWithoutBias":"Accessible learning material can help colleagues manage their learning disabilities"
-    },
-    "physicality":{
-       "summary":"Discourages valuing individuals based on appearance",
-       "detailedCategoryDescription":"Fosters an inclusive environment by avoiding remarks or identifications that focus on physical attributes, helping everyone feel comfortable and valued beyond their appearance.",
-       "basicExampleWithBias":"The heavy-set guy next to the marketing manager is her new personal assistant",
-       "basicExampleWithoutBias":"The guy next to the marketing manager is her new personal assistant",
-       "advancedExampleWithBias":"The pretty developer over there in very compentent",
-       "advancedExampleWithoutBias":"The developer over there is very compentent"
-    },
-    "behavior":{
-       "summary":"Advocates for acceptance of diverse behaviors",
-       "detailedCategoryDescription":"Challenges societal stereotypes by recognizing and valuing the diversity in behavior as a strength, not a deviation from the norm, fostering an environment of understanding and acceptance.",
-       "basicExampleWithBias":"You'd be nuts to try that stunt!",
-       "basicExampleWithoutBias":"You'd be reckless to try that stunt",
-       "advancedExampleWithBias":"He's a loner and not much for socializing",
-       "advancedExampleWithoutBias":"He's a person in need of personal time to refocus and not much for socializing"
-    },
-    "medical_state":{
-       "summary":"Promotes sensitivity towards health conditions",
-       "detailedCategoryDescription":"Encourages a respectful approach to discussing health, illness, and wellbeing, avoiding language that stigmatizes or defines individuals by their medical conditions.",
-       "basicExampleWithBias":"He has a drinking problem",
-       "basicExampleWithoutBias":"He has an alcohol use disorder",
-       "advancedExampleWithBias":"Our new intern is hyper-active and can be quite distracting in meetings",
-       "advancedExampleWithoutBias":"Our new intern who has ADHD can be quite distracting in meetings"
-    },
-    "mobility":{
-       "summary":"Encourages inclusive language on mobility",
-       "detailedCategoryDescription":"Promotes inclusion by avoiding language that equates physical mobility with value or capability, fostering respect for individuals navigating mobility barriers.",
-       "basicExampleWithBias":"He is confined to a wheelchair",
-       "basicExampleWithoutBias":"He uses a wheelchair",
-       "advancedExampleWithBias":"Our new office layout is not suitable for a paraplegic",
-       "advancedExampleWithoutBias":"Our new office layout is not suitable for a person who has paraplegia"
-    },
-    "cognitive_ability":{
-       "summary":"Counters biases on cognitive ability",
-       "detailedCategoryDescription":"Aims to dismantle misconceptions and biases about cognitive functions by promoting language that respects the diversity of cognitive abilities without marginalizing those with disabilities.",
-       "basicExampleWithBias":"Don't be such a retard",
-       "basicExampleWithoutBias":"Don't be such a person with support needs",
-       "advancedExampleWithBias":"Sorry, but that plan's just dumb",
-       "advancedExampleWithoutBias":"Sorry, but that plan's just reckless"
-    },
-    "cognitive_perception":{
-       "summary":"Addresses biases in cognitive perception",
-       "detailedCategoryDescription":"Highlights the diversity of cognitive perception and challenges judgments based on normative standards, advocating for an understanding that different perceptions are not deficits.",
-       "basicExampleWithBias":"We can't have a lunatic deliver our keynote speech",
-       "basicExampleWithoutBias":"We can't have someone with poor impulse control deliver our keynote speech",
-       "advancedExampleWithBias":"She is mentally ill to propose such a deal",
-       "advancedExampleWithoutBias":"She is not thinking clearly to propose such a deal"
-    },
-    "hearing":{
-       "summary":"Challenges stereotypes about hearing",
-       "detailedCategoryDescription":"Promotes awareness and inclusion for the D/deaf community by avoiding language that perpetuates myths and stereotypes about hearing abilities.",
-       "basicExampleWithBias":"They used to turn a deaf ear to such requests",
-       "basicExampleWithoutBias":"They used to ignore such requests",
-       "advancedExampleWithBias":"Elon Musk is tone deaf",
-       "advancedExampleWithoutBias":"Elon Musk is unable to read the room"
-    },
-    "learning":{
-       "summary":"Promotes understanding of diverse learning abilities",
-       "detailedCategoryDescription":"Encourages recognition of the various factors affecting learning beyond just effort and innate capacity, advocating for an inclusive approach to teaching and learning.",
-       "basicExampleWithBias":"Our manager has a poor memory for important details",
-       "basicExampleWithoutBias":"Our manager finds it difficult to memorize important details",
-       "advancedExampleWithBias":"In our team, we need to consider that Mark has Dyslexia when assigning him detailed report work",
-       "advancedExampleWithoutBias":"In our team, we need to consider Mark's reading difficulties when assigning him detailed report work"
-    },
-    "mental_wellbeing":{
-       "summary":"Encourages respectful mental health discourse",
-       "detailedCategoryDescription":"Advocates for sensitive and constructive discussions around mental health, avoiding casual or derogatory language that could reinforce stigma or misunderstanding.",
-       "basicExampleWithBias":"Mason is so OCD when it comes to filing",
-       "basicExampleWithoutBias":"Mason is very detail-oriented when it comes to filing",
-       "advancedExampleWithBias":"Our department head is a workaholic and often works late into the night",
-       "advancedExampleWithoutBias":"Our department head prioritizes work and often works late"
-    },
-    "speech":{
-       "summary":"Addresses misconceptions about speech",
-       "detailedCategoryDescription":"Promotes understanding and inclusion for individuals with speech and language disabilities, avoiding stereotypes and encouraging language that respects their abilities and challenges.",
-       "basicExampleWithBias":"Our new team member stutters all the time",
-       "basicExampleWithoutBias":"Our new team member stammers all the time",
-       "advancedExampleWithBias":"When presented with the quarterly profits, I was completely tongue-tied",
-       "advancedExampleWithoutBias":"When presented with the quarterly profits, I was completely amazed"
-    },
-    "vision":{
-       "summary":"Promotes inclusivity regarding vision",
-       "detailedCategoryDescription":"Fosters an inclusive perspective on vision abilities, challenging stereotypes and promoting language that respects the diversity of visual experiences.",
-       "basicExampleWithBias":"As a team we should never turn a blind eye on our mistakes",
-       "basicExampleWithoutBias":"As a team we should never ignore our mistakes",
-       "advancedExampleWithBias":"I'll see you soon",
-       "advancedExampleWithoutBias":"I'll be in touch soon"
-    },
-    "ableism":{
-       "summary":"Advocates avoiding ableist language",
-       "detailedCategoryDescription":"Emphasizes the importance of refraining from ableist slurs and hate speech, which can harm and alienate individuals with disabilities, creating a hostile environment.",
-       "basicExampleWithBias":"She needed some extra help, so she was assigned to special ed",
-       "basicExampleWithoutBias":"She needed some extra help, so she was assigned to adaptive learning",
-       "advancedExampleWithBias":"Special education services and educational specialists can help your child overcome their learning disability",
-       "advancedExampleWithoutBias":"Adaptive education services and educational specialists can help your child navigate their learning challenges"
-    },
-    "belief":{
-       "summary":"Inclusive language for diverse beliefs",
-       "detailedCategoryDescription":"Avoid language that implies one belief is standard, which can devalue others. Aim for inclusivity in expressions to respect diverse beliefs.",
-       "basicExampleWithBias":"Merry Christmas to all our team members",
-       "basicExampleWithoutBias":"Season's greetings to all our team members",
-       "advancedExampleWithBias":"For our mental well-being, it's important to rest on Sunday",
-       "advancedExampleWithoutBias":"For our mental well-being, it's important to relax and refuel on your rest day"
-    },
-    "antisemitism":{
-       "summary":"Prevent anti-Semitic language",
-       "detailedCategoryDescription":"Be mindful of language that could offend people of Jewish faith, avoiding expressions that defame or perpetuate prejudices.",
-       "basicExampleWithBias":"He is a Jew Yorker",
-       "basicExampleWithoutBias":"He is a New Yorker of Jewish faith",
-       "advancedExampleWithBias":"She is just another jewish princess",
-       "advancedExampleWithoutBias":"She is just another person of Jewish faith"
-    },
-    "antimuslim":{
-       "summary":"Counter Islamophobia",
-       "detailedCategoryDescription":"Avoid Islamophobic language that offends or defames Muslims, reinforcing prejudices.",
-       "basicExampleWithBias":"Look at those muzzies over there",
-       "basicExampleWithoutBias":"Look at those Muslims over there",
-       "advancedExampleWithBias":"I don't want to work with towel-heads anymore",
-       "advancedExampleWithoutBias":"I don't want to work with Muslims anymore"
-    },
-    "classism":{
-       "summary":"Avoid classist language",
-       "detailedCategoryDescription":"Language should not imply value based on socioeconomic status, fostering inclusivity and respect for all economic backgrounds.",
-       "basicExampleWithBias":"Our new marketing campaign targets the lower-class demographic to expand our customer base",
-       "basicExampleWithoutBias":"Our new marketing campaign targets the working-class demographic to expand our customer base",
-       "advancedExampleWithBias":"They are considered first-class citizens",
-       "advancedExampleWithoutBias":"They are considered citizens"
-    },
-    "formality":{
-       "summary":"Embrace less formal language",
-       "detailedCategoryDescription":"Opt for language that fosters emotional closeness, avoiding overly formal expressions that may seem distant or impersonal.",
-       "basicExampleWithBias":"Dear Sir, I am writing to...",
-       "basicExampleWithoutBias":"Dear [name or professional title], I am writing to...",
-       "advancedExampleWithBias":"We look forward to your reply. Sincerely yours, ",
-       "advancedExampleWithoutBias":"We look forward to your reply. Best regards, "
-    },
-    "age_young":{
-       "summary":"Neutral language for younger individuals",
-       "detailedCategoryDescription":"Avoid generalizations that feed biases against those under 25, focusing on individual capabilities rather than age.",
-       "basicExampleWithBias":"Hey kiddo, I want to give you some advice!",
-       "basicExampleWithoutBias":"Hey [given name], I want to give you some advice!",
-       "advancedExampleWithBias":"He's a typical millenial, always on his phone",
-       "advancedExampleWithoutBias":"He's a typical younger person, always on his phone"
-    },
-    "age_old":{
-       "summary":"Respectful language for older individuals",
-       "detailedCategoryDescription":"Avoid stereotypes about individuals aged 50+, focusing on skills and knowledge rather than age.",
-       "basicExampleWithBias":"Our next lead in communications should be a digital native",
-       "basicExampleWithoutBias":"Our next lead in communications should be a digitally skilled person",
-       "advancedExampleWithBias":"Even though she's in her 60s, she's young at heart",
-       "advancedExampleWithoutBias":"Even though she's in her 60s, she's energetic"
-    },
-    "age":{
-       "summary":"Focus on relevance of age",
-       "detailedCategoryDescription":"Mention age only when essential, promoting trust and focusing on strengths and skills across all age groups.",
-       "basicExampleWithBias":"We are looking for a dynamic professional under 30 to join our marketing team and bring fresh ideas",
-       "basicExampleWithoutBias":"We are looking for a dynamic professional to join our marketing team and bring fresh ideas",
-       "advancedExampleWithBias":"We are looking for a committed person, older than 35 years",
-       "advancedExampleWithoutBias":"We are looking for a committed person, with suitable prior knowledge and experience"
-    },
-    "agentic":{
-       "summary":"Promote collaborative language",
-       "detailedCategoryDescription":"Use language that values collaboration over individual achievement, appealing to team-minded people.",
-       "basicExampleWithBias":"Our goal is to consistently outperform our competitors in the market",
-       "basicExampleWithoutBias":"Our goal is to consistently achieve better results than our competitors in the market",
-       "advancedExampleWithBias":"In this new project manager role, assertiveness is crucial",
-       "advancedExampleWithoutBias":"In this new project manager role, commitment is crucial"
-    },
-    "exaggerating":{
-       "summary":"Avoid exaggeration",
-       "detailedCategoryDescription":"Stay factual and specific to maintain credibility and trust, especially important for audiences skeptical of hyperbole.",
-       "basicExampleWithBias":"Trust us with your brand. We're the number 1 in the business",
-       "basicExampleWithoutBias":"Trust us with your brand. We're key players in the business",
-       "advancedExampleWithBias":"We want candidates who reach for the stars",
-       "advancedExampleWithoutBias":"We want candidates who have high aspirations"
-    },
-    "military_source":{
-       "summary":"Minimize military jargon",
-       "detailedCategoryDescription":"Avoid military terms that can exclude or make some uncomfortable, promoting a more inclusive communication style.",
-       "basicExampleWithBias":"She's killing it in sales this quarter",
-       "basicExampleWithoutBias":"She's excelling in sales this quarter",
-       "advancedExampleWithBias":"In this project they will take point on the key tasks",
-       "advancedExampleWithoutBias":"In this project they will lead the way on the key tasks"
-    },
-    "sports_terms":{
-       "summary":"Use inclusive language over sports metaphors",
-       "detailedCategoryDescription":"Avoid sports jargon that may not resonate with everyone, emphasizing collaboration and inclusivity in communication.",
-       "basicExampleWithBias":"The sudden change in market trends threw our team a curveball",
-       "basicExampleWithoutBias":"The sudden change in market trends was unexpected for our team",
-       "advancedExampleWithBias":"He gave a compelling sales pitch to the prospective client",
-       "advancedExampleWithoutBias":"He gave a compelling sales presentation to the prospective client"
-    },
-    "offensive_language":{
-       "summary":"Avoid offensive language",
-       "detailedCategoryDescription":"Refrain from using language that could offend, intimidate, or alienate, fostering a respectful and inclusive atmosphere.",
-       "basicExampleWithBias":"Do you have to be such a pain in the ass about it?",
-       "basicExampleWithoutBias":"Do you have to be so difficult about it?",
-       "advancedExampleWithBias":"How are you doing son of a gun? ",
-       "advancedExampleWithoutBias":"How are you doing?"
-    }
- }
+   "culture": {
+      "summary": "Associates cultural identities with specific stereotypes.",
+      "detailedCategoryDescription": "Cultural stereotypes reduce individuals to broad generalizations, fueling prejudice and discrimination. They stem from ethnocentrism, simplifying complex identities into singular traits like punctuality or politeness, which can alienate and impact relationships negatively.",
+      "basicExampleWithBias": "It's great to have these punctual Germans in our office",
+      "basicExampleWithoutBias": "It's great to have these well-organized people in our office",
+      "advancedExampleWithBias": "After the protest, several demonstrators were loaded into a paddy wagon",
+      "advancedExampleWithoutBias": "After the protest, several demonstrators were loaded into a police car"
+   },
+   "migration": {
+      "summary": "Highlights biases against people with diverse cultural backgrounds.",
+      "detailedCategoryDescription": "Encourages framing discussions as if everyone shares your cultural background, recognizing biases and stereotypes faced by those with international or multicultural backgrounds, and promoting inclusivity.",
+      "basicExampleWithBias": "The city has seen an increase in illegal immigrants",
+      "basicExampleWithoutBias": "The city has seen an increase in undocumented people",
+      "advancedExampleWithBias": "Our IT colleague is a Latino",
+      "advancedExampleWithoutBias": "Our IT colleague is a person with cultural ties to Latin America"
+   },
+   "nazi_language": {
+      "summary": "Avoids language associated with Nazi ideology.",
+      "detailedCategoryDescription": "Discourages the use of terms and phrases coined or popularized by the Nazi regime to prevent trivializing their victims' suffering and appearing as a sympathizer, focusing on clear communication without offensive historical connotations.",
+      "basicExampleWithBias": "We have to stop experimenting and start looking for a final solution",
+      "basicExampleWithoutBias": "We have to stop experimenting and start looking for an effective solution",
+      "advancedExampleWithBias": "They believed in the myth of a superior race",
+      "advancedExampleWithoutBias": "They believed in the myth of white supremacy"
+   },
+   "racist_source": {
+      "summary": "Avoids language with racist origins or implications.",
+      "detailedCategoryDescription": "Promotes psychological safety by avoiding terms that marginalize based on ancestry or ethnicity, recognizing the harmful impact of words and phrases with racist undertones, and encouraging respectful communication.",
+      "basicExampleWithBias": "The master bedroom of this apartment is exquisite",
+      "basicExampleWithoutBias": "The main bedroom of this apartment is exquisite",
+      "advancedExampleWithBias": "I feel like I was gypped by that unfair deal",
+      "advancedExampleWithoutBias": "I feel like I was defrauded by that unfair deal"
+   },
+   "color": {
+      "summary": "Discourages using color to assign value or describe people.",
+      "detailedCategoryDescription": "Encourages avoiding color-based descriptions for value, quality, or skin tone, recognizing the potential for offense and promoting inclusive language that respects racialized identities without perpetuating stereotypes.",
+      "basicExampleWithBias": "His name was added to the blacklist",
+      "basicExampleWithoutBias": "His name was added to the deny list",
+      "advancedExampleWithBias": "He's white",
+      "advancedExampleWithoutBias": "He's Caucasian"
+   },
+   "abbreviation": {
+      "summary": "Promotes clarity by spelling out abbreviations.",
+      "detailedCategoryDescription": "Encourages spelling out abbreviations and acronyms to ensure understanding and inclusivity, recognizing the potential for confusion and fostering an environment where everyone feels comfortable and informed.",
+      "basicExampleWithBias": "Our company plans to use our CPaaS to improve communication",
+      "basicExampleWithoutBias": "Our company plans to use our Communication Platform as a Service (CPaaS) to improve communication",
+      "advancedExampleWithBias": "For our organization, the most important KPI is ROI",
+      "advancedExampleWithoutBias": "For our organization, the most important Key Performance Indicator (KPI) is Return on Investment (ROI)"
+   },
+   "hollow": {
+      "summary": "Encourages meaningful, specific communication.",
+      "detailedCategoryDescription": "Advises against using vague, overused terms, promoting authenticity and specificity to engage audiences effectively and avoid generic, meaningless language that fails to connect.",
+      "basicExampleWithBias": "To overcome this challenge, we need to think outside the box",
+      "basicExampleWithoutBias": "To overcome this challenge, we need to think differently",
+      "advancedExampleWithBias": "Most of all, we need to focus on customer satisfaction",
+      "advancedExampleWithoutBias": "Most importantly, we need to focus on customer satisfaction"
+   },
+   "filler": {
+      "summary": "Reduces unnecessary complexity in communication.",
+      "detailedCategoryDescription": "Advocates for minimizing filler words to enhance message clarity and comprehension, recognizing their potential to distract and confuse, especially in diverse linguistic settings.",
+      "basicExampleWithBias": "This is actually important",
+      "basicExampleWithoutBias": "This is important",
+      "advancedExampleWithBias": "What we want to do is to improve our team's efficiency",
+      "advancedExampleWithoutBias": "Let's improve our team's efficiency"
+   },
+   "racism": {
+      "summary": "Avoids racially insensitive language.",
+      "detailedCategoryDescription": "Highlights the importance of considering the impact of language on people of color and underrepresented races, avoiding terms that can defame and reinforce prejudices.",
+      "basicExampleWithBias": "The redskins run the town",
+      "basicExampleWithoutBias": "The Native Americans run the town",
+      "advancedExampleWithBias": "At the trailer park there is just white trash",
+      "advancedExampleWithoutBias": "At the trailer park there is just Caucasian people"
+   },
+   "xenophobia": {
+      "summary": "Addresses fears or dislikes of the foreign or strange.",
+      "detailedCategoryDescription": "Encourages empathy towards those from different cultures or nationalities, recognizing the offense caused by xenophobic language and the importance of promoting inclusivity.",
+      "basicExampleWithBias": "They are all dog eaters over there",
+      "basicExampleWithoutBias": "They have a different food culture over there",
+      "advancedExampleWithBias": "He's such a hunkie",
+      "advancedExampleWithoutBias": "He's such a well built person"
+   },
+   "binary_pronouns": {
+      "summary": "Excludes non-binary identities by using binary pronouns.",
+      "detailedCategoryDescription": "Encourages using inclusive pronouns or direct address to welcome all genders, moving beyond the binary pronouns 'he' and 'she' to include non-binary identities.",
+      "basicExampleWithBias": "If someone needs help, he or she can always ask me",
+      "basicExampleWithoutBias": "If someone needs help, they can always ask me",
+      "advancedExampleWithBias": "Every student should bring his notebook to class",
+      "advancedExampleWithoutBias": "Every student should bring their notebook to class"
+   },
+   "female_stereotype": {
+      "summary": "Reinforces traditional female roles and behaviors.",
+      "detailedCategoryDescription": "Challenges outdated stereotypes that limit women's potential, advocating for language that reflects diverse talents and aspirations beyond traditional roles.",
+      "basicExampleWithBias": "She shouldn't be so hysterical, we'll just reschedule",
+      "basicExampleWithoutBias": "She shouldn't be so agitated, we'll just reschedule",
+      "advancedExampleWithBias": "She's bossy when leading projects",
+      "advancedExampleWithoutBias": "She's responsible when leading projects"
+   },
+   "gender_identity": {
+      "summary": "Reinforces a two-gender worldview.",
+      "detailedCategoryDescription": "Promotes inclusivity by avoiding language that enforces traditional gender roles and identities, acknowledging a diverse gender spectrum.",
+      "basicExampleWithBias": "Dear ladies and gentlemen, we welcome you warmly",
+      "basicExampleWithoutBias": "Dear distinguished guests, we welcome you warmly",
+      "advancedExampleWithBias": "The guys and girls at the party was having a great time",
+      "advancedExampleWithoutBias": "The friends at the party were having a great time"
+   },
+   "hidden_image": {
+      "summary": "Implies gender through language, often male-centric.",
+      "detailedCategoryDescription": "Encourages gender-neutral language to ensure visibility and inclusion for all genders, challenging male-default assumptions.",
+      "basicExampleWithBias": "How many man-hours will this project take?",
+      "basicExampleWithoutBias": "How many person-hours will this project take?",
+      "advancedExampleWithBias": "Our company is expanding beyond the motherland to international markets",
+      "advancedExampleWithoutBias": "Our company is expanding beyond the homeland to international markets"
+   },
+   "gender_specific_abbreviation": {
+      "summary": "Places men first in gendered abbreviations, excluding non-binary identities.",
+      "detailedCategoryDescription": "Encourages equitable and inclusive language in abbreviations to prevent reinforcing male normativity, promoting diversity in representation.",
+      "basicExampleWithBias": "We are looking for a talented developer (m/f) to join our tech team",
+      "basicExampleWithoutBias": "We are looking for a talented developer (m/f/d) to join our tech team",
+      "advancedExampleWithBias": "We are looking for a talented developer (m/f) to join our tech team",
+      "advancedExampleWithoutBias": "We are looking for a talented developer (d/f/m) to join our tech team"
+   },
+   "function": {
+      "summary": "Default to masculine imagery, excluding other genders.",
+      "detailedCategoryDescription": "Advocates for language that allows for all gender identities to be envisioned, challenging stereotypes that restrict imagination to masculine figures.",
+      "basicExampleWithBias": "The company's spokesman will give a statement on the new policy",
+      "basicExampleWithoutBias": "The company's press officer will give a statement on the new policy",
+      "advancedExampleWithBias": "If you have any furthre questions, the landlady will be happy to help",
+      "advancedExampleWithoutBias": "If you have any furthre questions, the building manager will be happy to help"
+   },
+   "titles": {
+      "summary": "Implies specific genders for job roles.",
+      "detailedCategoryDescription": "Encourages gender-neutral job titles and descriptions to attract a diverse pool of candidates, moving beyond traditional gender expectations.",
+      "basicExampleWithBias": "We are looking for a salesman",
+      "basicExampleWithoutBias": "We are looking for a salesperson",
+      "advancedExampleWithBias": "We are looking for an engineer",
+      "advancedExampleWithoutBias": "We are looking for a colleague in engineering"
+   },
+   "male_stereotype": {
+      "summary": "Confines men to traditional roles and behaviors.",
+      "detailedCategoryDescription": "Challenges stereotypes that restrict men's roles and behaviors, advocating for a broader understanding of masculinity.",
+      "basicExampleWithBias": "Kevin is a man of his word",
+      "basicExampleWithoutBias": "Kevin is someone true to their word",
+      "advancedExampleWithBias": "He's the alpha in the group",
+      "advancedExampleWithoutBias": "He's the facilitator in the group"
+   },
+   "sexual_orientation": {
+      "summary": "Reinforces heterosexual norms.",
+      "detailedCategoryDescription": "Encourages language that respects all sexual orientations, avoiding assumptions and promoting inclusivity.",
+      "basicExampleWithBias": "Your wives are highly welcome to the board's Christmas party",
+      "basicExampleWithoutBias": "Your spouses are highly welcome to the board's Christmas party",
+      "advancedExampleWithBias": "They became man and wife after the ceremony",
+      "advancedExampleWithoutBias": "They became life partners after the ceremony"
+   },
+   "leadership": {
+      "summary": "Perpetuates outdated leadership stereotypes.",
+      "detailedCategoryDescription": "Encourages a modern understanding of leadership that values diverse traits and styles, moving beyond masculine stereotypes.",
+      "basicExampleWithBias": "I'll have to ask my boss about this decision",
+      "basicExampleWithoutBias": "I'll have to ask my supervisor about this decision",
+      "advancedExampleWithBias": "The head of marketing will oversee the new campaign",
+      "advancedExampleWithoutBias": "The person responsible for marketing will oversee the new campaign"
+   },
+   "homophobia": {
+      "summary": "Avoid language with homophobic implications.",
+      "detailedCategoryDescription": "Promotes respect for all sexual orientations, challenging language that demeans based on sexual orientation.",
+      "basicExampleWithBias": "I am such a lesbo for you",
+      "basicExampleWithoutBias": "I like you so much",
+      "advancedExampleWithBias": "He is a bit light in the loafers",
+      "advancedExampleWithoutBias": "He identifies as a homosexual"
+   },
+   "sexism": {
+      "summary": "Avoid language with sexist implications.",
+      "detailedCategoryDescription": "Challenges sexist language, promoting respect and equality for all genders.",
+      "basicExampleWithBias": "I'm so sick of listening to all this feminazi stuff",
+      "basicExampleWithoutBias": "I'm so sick of listening to all this feminist stuff",
+      "advancedExampleWithBias": "No, that's not his wife, that's his baby mama.",
+      "advancedExampleWithoutBias": "No, that's not his wife, that's the mother of his child."
+   },
+   "transphobia": {
+      "summary": "Avoid language with transphobic implications.",
+      "detailedCategoryDescription": "Encourages respect and understanding for transgender identities, challenging harmful stereotypes and language.",
+      "basicExampleWithBias": "You look like such a tranny in that dress",
+      "basicExampleWithoutBias": "You don't look good in that dress",
+      "advancedExampleWithBias": "He is a femboy",
+      "advancedExampleWithoutBias": "He is feminine"
+   },
+   "ability": {
+      "summary": "Identifies and discourages biases against disabilities",
+      "detailedCategoryDescription": "Encourages respectful communication by avoiding ableist language that disparages or alienates individuals with disabilities or chronic illnesses. By being mindful of our language, we can prevent perpetuating negative stereotypes and biases, promoting a more inclusive environment.",
+      "basicExampleWithBias": "Before we proceed, let's do a sanity check on the data",
+      "basicExampleWithoutBias": "Before we proceed, let's do a quick check on the data",
+      "advancedExampleWithBias": "Accessible learning material can help colleagues overcome their learning disabilities",
+      "advancedExampleWithoutBias": "Accessible learning material can help colleagues manage their learning disabilities"
+   },
+   "physicality": {
+      "summary": "Discourages valuing individuals based on appearance",
+      "detailedCategoryDescription": "Fosters an inclusive environment by avoiding remarks or identifications that focus on physical attributes, helping everyone feel comfortable and valued beyond their appearance.",
+      "basicExampleWithBias": "The heavy-set guy next to the marketing manager is her new personal assistant",
+      "basicExampleWithoutBias": "The guy next to the marketing manager is her new personal assistant",
+      "advancedExampleWithBias": "The pretty developer over there in very compentent",
+      "advancedExampleWithoutBias": "The developer over there is very compentent"
+   },
+   "behavior": {
+      "summary": "Advocates for acceptance of diverse behaviors",
+      "detailedCategoryDescription": "Challenges societal stereotypes by recognizing and valuing the diversity in behavior as a strength, not a deviation from the norm, fostering an environment of understanding and acceptance.",
+      "basicExampleWithBias": "You'd be nuts to try that stunt!",
+      "basicExampleWithoutBias": "You'd be reckless to try that stunt",
+      "advancedExampleWithBias": "He's a loner and not much for socializing",
+      "advancedExampleWithoutBias": "He's a person in need of personal time to refocus and not much for socializing"
+   },
+   "medical_state": {
+      "summary": "Promotes sensitivity towards health conditions",
+      "detailedCategoryDescription": "Encourages a respectful approach to discussing health, illness, and wellbeing, avoiding language that stigmatizes or defines individuals by their medical conditions.",
+      "basicExampleWithBias": "He has a drinking problem",
+      "basicExampleWithoutBias": "He has an alcohol use disorder",
+      "advancedExampleWithBias": "Our new intern is hyper-active and can be quite distracting in meetings",
+      "advancedExampleWithoutBias": "Our new intern who has ADHD can be quite distracting in meetings"
+   },
+   "mobility": {
+      "summary": "Encourages inclusive language on mobility",
+      "detailedCategoryDescription": "Promotes inclusion by avoiding language that equates physical mobility with value or capability, fostering respect for individuals navigating mobility barriers.",
+      "basicExampleWithBias": "He is confined to a wheelchair",
+      "basicExampleWithoutBias": "He uses a wheelchair",
+      "advancedExampleWithBias": "Our new office layout is not suitable for a paraplegic",
+      "advancedExampleWithoutBias": "Our new office layout is not suitable for a person who has paraplegia"
+   },
+   "cognitive_ability": {
+      "summary": "Counters biases on cognitive ability",
+      "detailedCategoryDescription": "Aims to dismantle misconceptions and biases about cognitive functions by promoting language that respects the diversity of cognitive abilities without marginalizing those with disabilities.",
+      "basicExampleWithBias": "Don't be such a retard",
+      "basicExampleWithoutBias": "Don't be such a person with support needs",
+      "advancedExampleWithBias": "Sorry, but that plan's just dumb",
+      "advancedExampleWithoutBias": "Sorry, but that plan's just reckless"
+   },
+   "cognitive_perception": {
+      "summary": "Addresses biases in cognitive perception",
+      "detailedCategoryDescription": "Highlights the diversity of cognitive perception and challenges judgments based on normative standards, advocating for an understanding that different perceptions are not deficits.",
+      "basicExampleWithBias": "We can't have a lunatic deliver our keynote speech",
+      "basicExampleWithoutBias": "We can't have someone with poor impulse control deliver our keynote speech",
+      "advancedExampleWithBias": "She is mentally ill to propose such a deal",
+      "advancedExampleWithoutBias": "She is not thinking clearly to propose such a deal"
+   },
+   "hearing": {
+      "summary": "Challenges stereotypes about hearing",
+      "detailedCategoryDescription": "Promotes awareness and inclusion for the D/deaf community by avoiding language that perpetuates myths and stereotypes about hearing abilities.",
+      "basicExampleWithBias": "They used to turn a deaf ear to such requests",
+      "basicExampleWithoutBias": "They used to ignore such requests",
+      "advancedExampleWithBias": "Elon Musk is tone deaf",
+      "advancedExampleWithoutBias": "Elon Musk is unable to read the room"
+   },
+   "mental_wellbeing": {
+      "summary": "Encourages respectful mental health discourse",
+      "detailedCategoryDescription": "Advocates for sensitive and constructive discussions around mental health, avoiding casual or derogatory language that could reinforce stigma or misunderstanding.",
+      "basicExampleWithBias": "Mason is so OCD when it comes to filing",
+      "basicExampleWithoutBias": "Mason is very detail-oriented when it comes to filing",
+      "advancedExampleWithBias": "Our department head is a workaholic and often works late into the night",
+      "advancedExampleWithoutBias": "Our department head prioritizes work and often works late"
+   },
+   "speech": {
+      "summary": "Addresses misconceptions about speech",
+      "detailedCategoryDescription": "Promotes understanding and inclusion for individuals with speech and language disabilities, avoiding stereotypes and encouraging language that respects their abilities and challenges.",
+      "basicExampleWithBias": "Our new team member stutters all the time",
+      "basicExampleWithoutBias": "Our new team member stammers all the time",
+      "advancedExampleWithBias": "When presented with the quarterly profits, I was completely tongue-tied",
+      "advancedExampleWithoutBias": "When presented with the quarterly profits, I was completely amazed"
+   },
+   "vision": {
+      "summary": "Promotes inclusivity regarding vision",
+      "detailedCategoryDescription": "Fosters an inclusive perspective on vision abilities, challenging stereotypes and promoting language that respects the diversity of visual experiences.",
+      "basicExampleWithBias": "As a team we should never turn a blind eye on our mistakes",
+      "basicExampleWithoutBias": "As a team we should never ignore our mistakes",
+      "advancedExampleWithBias": "I'll see you soon",
+      "advancedExampleWithoutBias": "I'll be in touch soon"
+   },
+   "ableism": {
+      "summary": "Advocates avoiding ableist language",
+      "detailedCategoryDescription": "Emphasizes the importance of refraining from ableist slurs and hate speech, which can harm and alienate individuals with disabilities, creating a hostile environment.",
+      "basicExampleWithBias": "She needed some extra help, so she was assigned to special ed",
+      "basicExampleWithoutBias": "She needed some extra help, so she was assigned to adaptive learning",
+      "advancedExampleWithBias": "Special education services and educational specialists can help your child overcome their learning disability",
+      "advancedExampleWithoutBias": "Adaptive education services and educational specialists can help your child navigate their learning challenges"
+   },
+   "belief": {
+      "summary": "Inclusive language for diverse beliefs",
+      "detailedCategoryDescription": "Avoid language that implies one belief is standard, which can devalue others. Aim for inclusivity in expressions to respect diverse beliefs.",
+      "basicExampleWithBias": "Merry Christmas to all our team members",
+      "basicExampleWithoutBias": "Season's greetings to all our team members",
+      "advancedExampleWithBias": "For our mental well-being, it's important to rest on Sunday",
+      "advancedExampleWithoutBias": "For our mental well-being, it's important to relax and refuel on your rest day"
+   },
+   "antisemitism": {
+      "summary": "Prevent anti-Semitic language",
+      "detailedCategoryDescription": "Be mindful of language that could offend people of Jewish faith, avoiding expressions that defame or perpetuate prejudices.",
+      "basicExampleWithBias": "He is a Jew Yorker",
+      "basicExampleWithoutBias": "He is a New Yorker of Jewish faith",
+      "advancedExampleWithBias": "She is just another jewish princess",
+      "advancedExampleWithoutBias": "She is just another person of Jewish faith"
+   },
+   "antimuslim": {
+      "summary": "Counter Islamophobia",
+      "detailedCategoryDescription": "Avoid Islamophobic language that offends or defames Muslims, reinforcing prejudices.",
+      "basicExampleWithBias": "Look at those muzzies over there",
+      "basicExampleWithoutBias": "Look at those Muslims over there",
+      "advancedExampleWithBias": "I don't want to work with towel-heads anymore",
+      "advancedExampleWithoutBias": "I don't want to work with Muslims anymore"
+   },
+   "classism": {
+      "summary": "Avoid classist language",
+      "detailedCategoryDescription": "Language should not imply value based on socioeconomic status, fostering inclusivity and respect for all economic backgrounds.",
+      "basicExampleWithBias": "Our new marketing campaign targets the lower-class demographic to expand our customer base",
+      "basicExampleWithoutBias": "Our new marketing campaign targets the working-class demographic to expand our customer base",
+      "advancedExampleWithBias": "They are considered first-class citizens",
+      "advancedExampleWithoutBias": "They are considered citizens"
+   },
+   "formality": {
+      "summary": "Embrace less formal language",
+      "detailedCategoryDescription": "Opt for language that fosters emotional closeness, avoiding overly formal expressions that may seem distant or impersonal.",
+      "basicExampleWithBias": "Dear Sir, I am writing to...",
+      "basicExampleWithoutBias": "Dear [name or professional title], I am writing to...",
+      "advancedExampleWithBias": "We look forward to your reply. Sincerely yours, ",
+      "advancedExampleWithoutBias": "We look forward to your reply. Best regards, "
+   },
+   "age_young": {
+      "summary": "Neutral language for younger individuals",
+      "detailedCategoryDescription": "Avoid generalizations that feed biases against those under 25, focusing on individual capabilities rather than age.",
+      "basicExampleWithBias": "Hey kiddo, I want to give you some advice!",
+      "basicExampleWithoutBias": "Hey [given name], I want to give you some advice!",
+      "advancedExampleWithBias": "He's a typical millenial, always on his phone",
+      "advancedExampleWithoutBias": "He's a typical younger person, always on his phone"
+   },
+   "age_old": {
+      "summary": "Respectful language for older individuals",
+      "detailedCategoryDescription": "Avoid stereotypes about individuals aged 50+, focusing on skills and knowledge rather than age.",
+      "basicExampleWithBias": "Our next lead in communications should be a digital native",
+      "basicExampleWithoutBias": "Our next lead in communications should be a digitally skilled person",
+      "advancedExampleWithBias": "Even though she's in her 60s, she's young at heart",
+      "advancedExampleWithoutBias": "Even though she's in her 60s, she's energetic"
+   },
+   "age": {
+      "summary": "Focus on relevance of age",
+      "detailedCategoryDescription": "Mention age only when essential, promoting trust and focusing on strengths and skills across all age groups.",
+      "basicExampleWithBias": "We are looking for a dynamic professional under 30 to join our marketing team and bring fresh ideas",
+      "basicExampleWithoutBias": "We are looking for a dynamic professional to join our marketing team and bring fresh ideas",
+      "advancedExampleWithBias": "We are looking for a committed person, older than 35 years",
+      "advancedExampleWithoutBias": "We are looking for a committed person, with suitable prior knowledge and experience"
+   },
+   "agentic": {
+      "summary": "Promote collaborative language",
+      "detailedCategoryDescription": "Use language that values collaboration over individual achievement, appealing to team-minded people.",
+      "basicExampleWithBias": "Our goal is to consistently outperform our competitors in the market",
+      "basicExampleWithoutBias": "Our goal is to consistently achieve better results than our competitors in the market",
+      "advancedExampleWithBias": "In this new project manager role, assertiveness is crucial",
+      "advancedExampleWithoutBias": "In this new project manager role, commitment is crucial"
+   },
+   "exaggerating": {
+      "summary": "Avoid exaggeration",
+      "detailedCategoryDescription": "Stay factual and specific to maintain credibility and trust, especially important for audiences skeptical of hyperbole.",
+      "basicExampleWithBias": "Trust us with your brand. We're the number 1 in the business",
+      "basicExampleWithoutBias": "Trust us with your brand. We're key players in the business",
+      "advancedExampleWithBias": "We want candidates who reach for the stars",
+      "advancedExampleWithoutBias": "We want candidates who have high aspirations"
+   },
+   "military_source": {
+      "summary": "Minimize military jargon",
+      "detailedCategoryDescription": "Avoid military terms that can exclude or make some uncomfortable, promoting a more inclusive communication style.",
+      "basicExampleWithBias": "She's killing it in sales this quarter",
+      "basicExampleWithoutBias": "She's excelling in sales this quarter",
+      "advancedExampleWithBias": "In this project they will take point on the key tasks",
+      "advancedExampleWithoutBias": "In this project they will lead the way on the key tasks"
+   },
+   "sports_terms": {
+      "summary": "Use inclusive language over sports metaphors",
+      "detailedCategoryDescription": "Avoid sports jargon that may not resonate with everyone, emphasizing collaboration and inclusivity in communication.",
+      "basicExampleWithBias": "The sudden change in market trends threw our team a curveball",
+      "basicExampleWithoutBias": "The sudden change in market trends was unexpected for our team",
+      "advancedExampleWithBias": "He gave a compelling sales pitch to the prospective client",
+      "advancedExampleWithoutBias": "He gave a compelling sales presentation to the prospective client"
+   },
+   "offensive_language": {
+      "summary": "Avoid offensive language",
+      "detailedCategoryDescription": "Refrain from using language that could offend, intimidate, or alienate, fostering a respectful and inclusive atmosphere.",
+      "basicExampleWithBias": "Do you have to be such a pain in the ass about it?",
+      "basicExampleWithoutBias": "Do you have to be so difficult about it?",
+      "advancedExampleWithBias": "How are you doing son of a gun? ",
+      "advancedExampleWithoutBias": "How are you doing?"
+   },
+   "anglicism": {
+      "summary": "Avoid using English words in other languages",
+      "detailedCategoryDescription": "In today's business jargon, we often use expressions from English business language. Depending on the audience, however, these expressions exclude people: They do not understand an Anglicism or misinterpret it because they have been through a different education or do not work in the same professional field. The use of Anglicisms is perceived as exclusionary, arrogant and 'from above'.",
+      "basicExampleWithBias": "Wir können diesen Schritt nicht einfach skippen.",
+      "advancedExampleWithBias": "Für unser neues Startup-Unternehmen brauchen wir Digital Natives."
+   },
+   "yiddish-pejoratives": {
+      "summary": "Avoid using language that adds negative connonations to yiddish words adopted into other languages",
+      "detailedCategoryDescription": "But caution is advised when using Yiddish loan words with a negative or derogatory meaning. This is because many Yiddish words that originally had a completely neutral or positive connotation have been given a derogatory reinterpretation in German. And that makes them an expression of anti-Semitism. Yiddish words that have retained their casually charming character, such as 'schmusen', 'malochen', 'Tacheles reden', finding something 'meschugge' or being 'angeschickert, are harmless.",
+      "basicExampleWithBias": "What is wrong with this Mischpoke?",
+      "basicExampleWithoutBias": "I find this a bit meschugge."
+   },
+   "emotional_security": {
+      "summary": "Promotes language to communicate whether our needs are met or whether we trust our needs will be met",
+      "detailedCategoryDescription": "Feelings, and the words that describe them, are indicators. They communicate whether our needs are met or whether we trust our needs will be met.  Communicating how we feel about something is a powerful way to connect with our experience and with the people who interact with us. Sharing how we feel helps improve a team's well-being and builds emotional trust. When someone emotionally trusts you, they know you have their back and treat them with respect.",
+      "basicExampleWithBias": "She gave an animated and delighful talk to the team."
+   },
+   "d_and_i": {
+      "summary": "Promotes acceptance and empathy, use a shared vocabulary in conversations around DEIB.",
+      "detailedCategoryDescription": "Diversity, equity, inclusion, and belonging, DEIB for short, stand at the heart of a lively dialog that is broad and growing. Engaging people in meaningful DEIB conversations can drive empathy in an organization. It can raise awareness and garner support for an accepting and welcoming workplace. Building a common vocabulary around DEIB and feeling at home with DEIB concepts, helps avoid confusion and misunderstandings in conversations. And it can effect positive change.",
+      "basicExampleWithBias": "We want to create an atmosphere together where everyone feels safe and free to contribute."
+   },
+   "communal": {
+      "summary": "Promotes an emotional connection and joint persuit of goals",
+      "detailedCategoryDescription": "Growing up, we learn to associate words like supportive or caring with women, emotional connection, and the joint pursuit of shared goals. We call these words communal. They resonate with people who grew up to value collaborative thinking, such as Generation Z and most who identify as female. The complexity of today’s business models and workplaces makes collaborative thinking a vital quality. Communal language gives you a win-win tool for nurturing inclusion and staff efficiency: It invites in community-driven people but doesn’t turn off people who won’t use communal words themselves.",
+      "basicExampleWithBias": "Caring about the team is important in our culture."
+   }
+}
