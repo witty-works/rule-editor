@@ -58,12 +58,23 @@ class Command(BaseCommand):
             api_key=settings.AZURE_OPENAI_KEY,
             api_version=settings.AZURE_OPENAI_VERSION,
         )
+
         rules_generated = 0
+
         instruction = ""
+
+        with open(
+            f"rules/management/commands/translation_prompt_en_base.txt", "r"
+        ) as file:
+            instruction = file.read()
+            instruction = instruction.replace(
+                "__LANGUAGE__", "German" if target_lang == "de" else "French"
+            )
+
         with open(
             f"rules/management/commands/translation_prompt_en_{target_lang}.txt", "r"
         ) as file:
-            instruction = file.read()
+            instruction += file.read()
 
         try:
             rules = Rule.objects.filter(
@@ -102,15 +113,11 @@ class Command(BaseCommand):
             logger.error(f"Failed to fetch rules: {e}")
             return
 
-        print(rules.query, len(rules))
-        return
-
         if limit is not None:
             rules = rules[0:limit]
 
         for rule in rules:
             try:
-                alternatives = rule.alternatives.all()
                 example_sentences = rule.training_sentences.all()
 
                 dimension_key = rule.diversity_dimension_json[0].removesuffix(
@@ -134,32 +141,8 @@ class Command(BaseCommand):
                         "lemma": rule.lemma,
                         "word_type": rule.word_types,
                     },
-                    "alternatives": {},
                     "true_positive_examples": {},
                 }
-
-                for i in range(1, 4):
-                    key = f"alternative_prio_{i}"
-                    if len(alternatives) >= i:
-                        alt = alternatives[i - 1]
-                        rule_formatted_for_translation["alternatives"][key] = {
-                            "lemma": alt.lemma,
-                            "is_collective_noun": alt.is_collective_noun,
-                            "is_gendered_noun": alt.is_gendered_noun,
-                            "is_advanced": alt.is_advanced,
-                            "is_remove": alt.is_remove,
-                        }
-                    elif (
-                        diversity_dimensions[dimension_key].proficiency_level
-                        != "inclusive"
-                    ):
-                        rule_formatted_for_translation["alternatives"][key] = {
-                            "lemma": "",
-                            "is_collective_noun": False,
-                            "is_gendered_noun": False,
-                            "is_advanced": False,
-                            "is_remove": False,
-                        }
 
                 # Dynamically fill the true_positive_examples section
                 for i in range(1, 3):  # Assuming we need up to 2 true positive examples
@@ -341,7 +324,7 @@ class Command(BaseCommand):
                             lemma=alternative["lemma"],
                             order=alternative["priority"],
                             is_collective_noun=alternative["is_collective_noun"],
-                            is_gendered_noun=alternative["is_gendered_noun"],
+                            is_gendered_noun="~" in alternative["lemma"],
                             is_advanced=alternative["is_advanced"],
                             is_remove=alternative["is_remove"],
                         )
