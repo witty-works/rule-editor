@@ -361,8 +361,6 @@ class Command(BaseCommand):
                             f"added rule (nr): {rules_generated, chat_completion.choices[0].message.content}"
                         )
                     )
-                    if rules_generated >= 100:
-                        break
                 except Exception as e:
                     logger.error(f"Error processing rule: {e}")
 
