@@ -5,6 +5,7 @@ from rules.models import (
     RuleDiversityDimension,
     TrainingSentence,
     Alternative,
+    TranslatableEnum,
 )
 from openai import AzureOpenAI
 import json
@@ -139,7 +140,6 @@ class Command(BaseCommand):
                     "rule_specification": {
                         "rule_trigger": rule.text_id,
                         "lemma": rule.lemma,
-                        "word_type": rule.word_types,
                     },
                     "true_positive_examples": {},
                 }
@@ -209,7 +209,7 @@ class Command(BaseCommand):
                             language=target_lang,
                             is_active=False,
                             is_marked_for_review=True,
-                            is_not_translatable=True,
+                            is_translatable=TranslatableEnum.NO,
                             is_auto_generated=True,
                             generated_at=timezone.now(),
                             source_rule=rule_formatted_for_translation,
@@ -229,13 +229,11 @@ class Command(BaseCommand):
                         "rule_trigger"
                     ]
                     result_lemma = result_as_json["rule_specification"]["lemma"]
-                    result_word_types = result_as_json["rule_specification"][
-                        "word_type"
-                    ]
                     result_alternatives_with_info = []
 
-                    for i in range(1, 4):
-                        alternative_key = f"alternative_prio_{i}"
+                    has_remove = False
+                    for priority in range(1, 4):
+                        alternative_key = f"alternative_prio_{priority}"
                         if (
                             alternative_key in result_as_json["alternatives"]
                             and "lemma"
@@ -246,33 +244,48 @@ class Command(BaseCommand):
                             > 0
                             and "is_collective_noun"
                             in result_as_json["alternatives"][alternative_key]
-                            and "is_gendered_noun"
-                            in result_as_json["alternatives"][alternative_key]
-                            and "is_advanced"
-                            in result_as_json["alternatives"][alternative_key]
                             and "is_remove"
                             in result_as_json["alternatives"][alternative_key]
                         ):
-                            result_alternatives_with_info.append(
-                                {
-                                    "lemma": result_as_json["alternatives"][
-                                        alternative_key
-                                    ]["lemma"],
-                                    "priority": i,
-                                    "is_collective_noun": result_as_json[
-                                        "alternatives"
-                                    ][alternative_key]["is_collective_noun"],
-                                    "is_gendered_noun": result_as_json["alternatives"][
-                                        alternative_key
-                                    ]["is_gendered_noun"],
-                                    "is_advanced": result_as_json["alternatives"][
-                                        alternative_key
-                                    ]["is_advanced"],
-                                    "is_remove": result_as_json["alternatives"][
-                                        alternative_key
-                                    ]["is_remove"],
-                                }
-                            )
+                            alternative = {
+                                "lemma": result_as_json["alternatives"][
+                                    alternative_key
+                                ]["lemma"],
+                                "priority": priority,
+                                "is_collective_noun": result_as_json["alternatives"][
+                                    alternative_key
+                                ]["is_collective_noun"],
+                                "is_remove": result_as_json["alternatives"][
+                                    alternative_key
+                                ]["is_remove"],
+                                "label": None,
+                            }
+                            result_alternatives_with_info.append(alternative)
+
+                            if alternative["is_remove"]:
+                                has_remove = True
+
+                    # copy top 5 english alternatives
+                    alternative_count = 0
+                    for alternative in rule.alternatives.all():
+                        alternative_count += 1
+                        if has_remove and alternative.is_remove:
+                            continue
+
+                        priority += 1
+
+                        result_alternatives_with_info.append(
+                            {
+                                "lemma": alternative.lemma,
+                                "priority": priority,
+                                "is_collective_noun": alternative.is_collective_noun,
+                                "is_remove": alternative.is_remove,
+                                "label": alternative.label,
+                            }
+                        )
+
+                        if alternative_count == 5:
+                            break
 
                     result_example_sentences = []
                     for i in range(1, 3):
@@ -292,7 +305,7 @@ class Command(BaseCommand):
                     new_rule = Rule.objects.create(
                         text_id=result_text_id,
                         lemma=result_lemma,
-                        word_types=result_word_types,
+                        word_types=rule.word_types,
                         language=target_lang,
                         is_active=False,
                         is_marked_for_review=True,
@@ -300,7 +313,11 @@ class Command(BaseCommand):
                         generated_at=timezone.now(),
                         source_rule=rule_formatted_for_translation,
                         rule_translation_source=rule,
+                        label_type=rule.label_type,
                     )
+
+                    tokenized, lemmas, new_rule.word_types = new_rule.tokenize()
+
                     new_rule.save()
                     rules_generated += 1
 
@@ -324,8 +341,8 @@ class Command(BaseCommand):
                             order=alternative["priority"],
                             is_collective_noun=alternative["is_collective_noun"],
                             is_gendered_noun="~" in alternative["lemma"],
-                            is_advanced=alternative["is_advanced"],
                             is_remove=alternative["is_remove"],
+                            label=alternative["label"],
                         )
                         new_alternative.save()
 
