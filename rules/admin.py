@@ -909,6 +909,8 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                 data["id"].save()
 
     def all_diversity_dimensions(self, obj):
+        if obj.parent:
+            return self.all_diversity_dimensions(obj.parent)
         return ", ".join(obj.diversity_dimension_json)
 
     def all_reviewers(self, obj):
