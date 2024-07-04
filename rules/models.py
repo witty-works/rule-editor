@@ -225,7 +225,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         path = f"/debug/spacy?lang={language}&text={text}"
         result = fetch_json(path)
         word_types = result.pop(0)
-        word_types = "" if "word_type" not in word_types else word_types["word_type"]
+        word_types = "" if "auto-detected word type" not in word_types else word_types["auto-detected word type"]
         tokens = []
         lemmas = []
         for token in result:
