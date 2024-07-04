@@ -83,6 +83,12 @@ class PluralizationEnum(models.TextChoices):
     PLURAL_ONLY = "plural_only"
 
 
+class TranslatableEnum(models.TextChoices):
+    YES = "yes"
+    NO = "no"
+    UNCLEAR = "unclear"
+
+
 class AlternativeTypeEnum(models.TextChoices):
     DEFAULT = "default"
     PERSON_FIRST = "person_first"
@@ -547,9 +553,10 @@ class Rule(
         default=False,
         help_text="If this rule is enabled only for the HR-addon",
     )
-    is_not_translatable = models.BooleanField(
-        default=False,
-        help_text="If this rule cannot be translated from the source language",
+    is_translatable = EnumField(
+        TranslatableEnum,
+        default=TranslatableEnum.YES,
+        help_text="If the rule is translatable from the source language",
     )
 
     diversity_dimensions = models.ManyToManyField(

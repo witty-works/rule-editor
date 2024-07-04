@@ -5,6 +5,7 @@ from rules.models import (
     RuleDiversityDimension,
     TrainingSentence,
     Alternative,
+    TranslatableEnum,
 )
 from openai import AzureOpenAI
 import json
@@ -209,7 +210,7 @@ class Command(BaseCommand):
                             language=target_lang,
                             is_active=False,
                             is_marked_for_review=True,
-                            is_not_translatable=True,
+                            is_translatable=TranslatableEnum.NO,
                             is_auto_generated=True,
                             generated_at=timezone.now(),
                             source_rule=rule_formatted_for_translation,
