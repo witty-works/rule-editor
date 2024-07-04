@@ -324,17 +324,16 @@ class Command(BaseCommand):
                     rules_generated += 1
 
                     # add RuleDiversityDimension
-                    existing_diversity_dimension = DiversityDimension.objects.get(
-                        name=dimension_key
-                    )
-                    new_rule_diversity_dimension = (
-                        RuleDiversityDimension.objects.create(
+                    priority = 0
+                    for diversity_dimension in rule.diversity_dimensions.all():
+                        new_rule_diversity_dimension = RuleDiversityDimension.objects.create(
                             rule=new_rule,
-                            diversity_dimension=existing_diversity_dimension,
-                            order=1,
+                            diversity_dimension=diversity_dimension,
+                            order=priority,
                         )
-                    )
-                    new_rule_diversity_dimension.save()
+                        new_rule_diversity_dimension.save()
+                        priority += 1
+
                     # add new alternatives to db
                     for i, alternative in enumerate(result_alternatives_with_info):
                         new_alternative = Alternative.objects.create(
