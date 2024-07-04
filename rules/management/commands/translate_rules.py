@@ -315,6 +315,7 @@ class Command(BaseCommand):
                         source_rule=rule_formatted_for_translation,
                         rule_translation_source=rule,
                         label_type=rule.label_type,
+                        is_hr_rule=rule.is_hr_rule,
                     )
 
                     tokenized, lemmas, new_rule.word_types = new_rule.tokenize()
