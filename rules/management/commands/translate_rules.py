@@ -31,6 +31,7 @@ class Command(BaseCommand):
         parser.add_argument("--diversity-dimension", type=str, default=None)
         parser.add_argument("--level", type=str, default=None)
         parser.add_argument("--randomize-order", type=bool, default=False)
+        parser.add_argument("--debug", type=str, default=False)
 
     def handle(self, *args, **options):
         target_lang = options["target_lang"]
@@ -364,12 +365,14 @@ class Command(BaseCommand):
                         break
                 except Exception as e:
                     logger.error(f"Error processing rule: {e}")
-                    with open(
-                        "rules/management/commands/translated_rules_error_de.json", "a"
-                    ) as file:  # REMOVE THIS AFTER INITIAL RULE GENERATION
-                        file.write("Error: " + str(e) + "\n")
-                        file.write("Rule: " + str(rule) + "\n")
-                        file.write("Result: " + str(result) + "\n")
+
+                    if options["debug"]:
+                        with open(
+                            f"rules/management/commands/translated_rules_error_{target_lang}.json", "a"
+                        ) as file:  # REMOVE THIS AFTER INITIAL RULE GENERATION
+                            file.write("Error: " + str(e) + "\n")
+                            file.write("Rule: " + str(rule) + "\n")
+                            file.write("Result: " + str(result) + "\n")
             except Exception as e:
                 # Log the error and skip to the next rule
                 logger.error(f"Error processing rule '{rule}': {e}")
