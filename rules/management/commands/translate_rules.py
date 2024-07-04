@@ -356,6 +356,9 @@ class Command(BaseCommand):
                             comment="auto generated",
                         )
                         new_example_sentence.save()
+
+                    new_rule.save()
+
                     self.stdout.write(
                         self.style.SUCCESS(
                             f"added rule (nr): {rules_generated, chat_completion.choices[0].message.content}"
@@ -366,7 +369,8 @@ class Command(BaseCommand):
 
                     if options["debug"]:
                         with open(
-                            f"rules/management/commands/translated_rules_error_{target_lang}.json", "a"
+                            f"rules/management/commands/translated_rules_error_{target_lang}.json",
+                            "a",
                         ) as file:  # REMOVE THIS AFTER INITIAL RULE GENERATION
                             file.write("Error: " + str(e) + "\n")
                             file.write("Rule: " + str(rule) + "\n")
