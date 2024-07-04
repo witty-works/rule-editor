@@ -6,7 +6,6 @@ Original:
    "rule_specification":{
       "rule_trigger":"blind as a bat",
       "lemma":"blind as a bat",
-      "word_type":"~a|||~n"
    },
    "true_positive_examples":{
       "true_positive_sentence_1":"She was as blind as a bat when it came to understanding the complex math problem.",
@@ -21,25 +20,21 @@ Translation:
    "rule_specification":{
       "rule_trigger":"blind wie eine Fledermaus",
       "lemma":"blind wie eine Fledermaus",
-      "word_type":"a||~|n"
    },
    "alternatives":{
       "alternative_prio_1":{
          "lemma":"schlecht sehen",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"mit schwachem Sehvermögen",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"-",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": true
       }
    },
@@ -57,7 +52,6 @@ Original:
    "rule_specification":{
       "rule_trigger":"play for the other team",
       "lemma":"play for the other team",
-      "word_type":"v|||a|n"
    },
    "true_positive_examples":{
       "true_positive_sentence_1":"Does he play for the other team?",
@@ -72,25 +66,21 @@ Translation:
    "rule_specification":{
       "rule_trigger":"vom anderen Ufer",
       "lemma":"vom anderen Ufer",
-      "word_type":"|a|n"
    },
    "alternatives":{
       "alternative_prio_1":{
          "lemma":"-",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": true
       },
       "alternative_prio_2":{
          "lemma":"schwul",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"lesbisch",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": false
       }
    },
@@ -108,7 +98,6 @@ Original:
    "rule_specification":{
       "rule_trigger":"policeman",
       "lemma":"policeman",
-      "word_type":"n"
    },
    "true_positive_examples":{
       "true_positive_sentence_1":"The policeman stopped the car for speeding.",
@@ -123,25 +112,21 @@ Translation:
    "rule_specification":{
       "rule_trigger":"Polizist",
       "lemma":"Polizist",
-      "word_type":"n"
    },
    "alternatives":{
       "alternative_prio_1":{
          "lemma":"~Polizist~",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"~Polizei",
          "is_collective_noun":true,
-         "is_advanced":true,
          "is_remove": false
       },
       "alternative_prio_3":{
          "lemma":"~Polizeikraft",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": false
       }
    },
@@ -159,7 +144,6 @@ Original:
    "rule_specification":{
       "rule_trigger":"guys",
       "lemma":"guys",
-      "word_type":"~n"
    },
    "true_positive_examples":{
       "true_positive_sentence_1":"Hey guys, are you coming to the party tonight?",
@@ -174,25 +158,21 @@ Translation:
    "rule_specification":{
       "rule_trigger":"jungs",
       "lemma":"jungs",
-      "word_type":"~n"
    },
    "alternatives":{
       "alternative_prio_1":{
          "lemma":"Leute",
          "is_collective_noun":true,
-         "is_advanced":true,
          "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"Alle",
          "is_collective_noun":true,
-         "is_advanced":false,
          "is_remove": false
      },
      "alternative_prio_3":{
          "lemma":"Freunde",
          "is_collective_noun":true,
-         "is_advanced":false,
          "is_remove": false
       }
    },
@@ -210,7 +190,6 @@ Original:
    "rule_specification":{
       "rule_trigger":"rat",
       "lemma":"rat",
-      "word_type":"n"
    },
    "true_positive_examples":{
       "true_positive_sentence_1":"He is such a knob, never gets what is being talked about",
@@ -225,13 +204,11 @@ Translation:
    "rule_specification":{
       "rule_trigger":"Ratte",
       "lemma":"Ratte",
-      "word_type":"n"
    },
    "alternatives":{
       "alternative_prio_1":{
          "lemma":"-",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": true
       }
    },
@@ -249,7 +226,6 @@ Original:
    "rule_specification":{
       "rule_trigger":"team",
       "lemma":"team",
-      "word_type":"n"
    },
    "true_positive_examples":{
       "true_positive_sentence_1":"We work closely together in our team.",
@@ -264,7 +240,6 @@ Translation:
    "rule_specification":{
       "rule_trigger":"Team",
       "lemma":"Team",
-      "word_type":"n"
    },
    "alternatives":{},
    "true_positive_examples":{
@@ -281,7 +256,6 @@ Original:
    "rule_specification":{
       "rule_trigger":"FTE",
       "lemma":"FTE",
-      "word_type":"n"
    },
    "true_positive_examples":{
       "true_positive_sentence_1":"The company plans to increase its FTE by 10% next year.",
@@ -296,19 +270,16 @@ Translation:
    "rule_specification":{
       "rule_trigger":"VZÄ",
       "lemma":"VZÄ",
-      "word_type":"n"
    },
    "alternatives":{
       "alternative_prio_1":{
          "lemma":"Vollzeitäquivalent (VZÄ)",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": false
       },
       "alternative_prio_2":{
          "lemma":"Vollzeitäquivalent",
          "is_collective_noun":false,
-         "is_advanced":false,
          "is_remove": false
       }
    },

@@ -140,7 +140,6 @@ class Command(BaseCommand):
                     "rule_specification": {
                         "rule_trigger": rule.text_id,
                         "lemma": rule.lemma,
-                        "word_type": rule.word_types,
                     },
                     "true_positive_examples": {},
                 }
@@ -230,9 +229,6 @@ class Command(BaseCommand):
                         "rule_trigger"
                     ]
                     result_lemma = result_as_json["rule_specification"]["lemma"]
-                    result_word_types = result_as_json["rule_specification"][
-                        "word_type"
-                    ]
                     result_alternatives_with_info = []
 
                     has_remove = False
@@ -309,7 +305,7 @@ class Command(BaseCommand):
                     new_rule = Rule.objects.create(
                         text_id=result_text_id,
                         lemma=result_lemma,
-                        word_types=result_word_types,
+                        word_types=rule.word_types,
                         language=target_lang,
                         is_active=False,
                         is_marked_for_review=True,
@@ -317,7 +313,11 @@ class Command(BaseCommand):
                         generated_at=timezone.now(),
                         source_rule=rule_formatted_for_translation,
                         rule_translation_source=rule,
+                        label_type=rule.label_type,
                     )
+
+                    tokenized, lemmas, new_rule.word_types = new_rule.tokenize()
+
                     new_rule.save()
                     rules_generated += 1
 
