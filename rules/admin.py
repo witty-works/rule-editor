@@ -871,6 +871,32 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
     }
 
 
+class ParentRuleReviewInline(ParentRuleInline):
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "text_id",
+                    "lemma",
+                    "is_marked_for_review",
+                    "is_translatable",
+                    "is_active",
+                    "rule_translation_source",
+                    "label_type",
+                    "label",
+                    "parent",
+                    "remove_from_parent",
+                    "tags",
+                ),
+            },
+        ),
+    )
+    radio_fields = {
+        "label_type": admin.HORIZONTAL,
+        "is_translatable": admin.HORIZONTAL,
+    }
+
 @admin.register(Rule)
 class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     class Meta:
@@ -1128,6 +1154,61 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         FalsePositiveInline,
     ]
     save_as = True
+
+
+class RuleReview(Rule):
+    class Meta:
+        proxy = True
+
+@admin.register(RuleReview)
+class RuleReviewAdmin(RuleAdmin):
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "language",
+                    "text_id",
+                    "lemma",
+                    "is_marked_for_review",
+                    "is_translatable",
+                    "is_active",
+                    "rule_translation_source",
+                    "label_type",
+                    "label",
+                    "parent",
+                    "tags",
+                ),
+            },
+        ),
+    )
+    radio_fields = {
+        "label_type": admin.HORIZONTAL,
+        "is_translatable": admin.HORIZONTAL,
+    }
+    search_fields = (
+        "lemma",
+        "comment",
+        "label_type",
+        "label",
+        "alternatives__lemma",
+    )
+    list_display = (
+        "lemma",
+        "language",
+        "is_active",
+        "all_diversity_dimensions",
+        "is_marked_for_review",
+        "is_translatable",
+        "is_active",
+    )
+    inlines = [
+        ParentRuleReviewInline,
+        RuleDiversityDimensionInline,
+        AlternativeInline,
+        TrainingSentenceInline,
+        FalsePositiveInline,
+    ]
 
 
 @admin.register(DiversityDimension)
