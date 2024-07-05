@@ -6,7 +6,7 @@ If a direct translation of the rule trigger would not be considered problematic 
 If multiple synonyms exist in __LANGUAGE__, choose the one with the most offensive connotation to ensure clarity on what needs to be avoided while avoiding anglicisms (ie. instead of "manager" use "directeur").
 Do not translate the provided alternatives, instead find less offensive, ie. more inclusive, synonyms for the "lemma" that fit __LANGUAGE__ linguistic nuances that should be short replacements for the "lemma" that are grammatically equivalent.
 For gendered male generic nouns (f.e "manager", "policeman"), also offer gender neutral and female alternatives. 
-Provide new, culturally relevant examples in __LANGUAGE__ that include the rule trigger in a natural and non-inclusive way.
+Provide new, culturally relevant examples in __LANGUAGE__ that include the "lemma" in the rule trigger in a natural and non-inclusive way.
 
 Addititional instructions:
 - For "rule_category" equal to "abbreviation" or "abbreviation_advanced" make sure that the translated "rule_trigger" in "rule_specification" is still an abbreviation or acronym which based on the the __LANGUAGE__ translation if commonly used.

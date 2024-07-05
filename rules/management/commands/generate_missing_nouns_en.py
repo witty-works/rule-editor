@@ -16,7 +16,6 @@ class Command(BaseCommand):
     help = "Finds missing nouns for english and adds them to the db."
 
     def add_arguments(self, parser):
-        parser.add_argument("--debug", type=str, default=True)
         parser.add_argument("--language", type=str, default="en")
         parser.add_argument("--limit", type=int, default=None)
 

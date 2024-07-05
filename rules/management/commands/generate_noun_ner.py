@@ -15,7 +15,7 @@ class Command(BaseCommand):
     help = "Generate NER information for english and german nouns."
 
     def add_arguments(self, parser):
-        parser.add_argument("--debug", type=str, default=True)
+        parser.add_argument("--debug", type=str, default=False)
         parser.add_argument("--language", type=str, default="en")
         parser.add_argument("--limit", type=int, default=None)
 

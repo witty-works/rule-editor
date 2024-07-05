@@ -815,18 +815,18 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",
-                    "is_not_translatable",
-                    "is_auto_generated",
                     "is_context_aware",
                     "is_hr_rule",
                     "has_failing_training_sentence",
+                    "is_translatable",
+                    "is_auto_generated",
+                    "is_active",
+                    "rule_translation_source",
                     "type",
                     "entity_type",
                     "pluralization",
                     "label_type",
                     "label",
-                    "is_active",
-                    "rule_translation_source",
                     "remove_from_parent",
                 ),
             },
@@ -867,8 +867,35 @@ class ParentRuleInline(nested_admin.NestedStackedInline):
         "entity_type": admin.HORIZONTAL,
         "label_type": admin.HORIZONTAL,
         "pluralization": admin.HORIZONTAL,
+        "is_translatable": admin.HORIZONTAL,
     }
 
+
+class ParentRuleReviewInline(ParentRuleInline):
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "text_id",
+                    "lemma",
+                    "is_marked_for_review",
+                    "is_translatable",
+                    "is_active",
+                    "rule_translation_source",
+                    "label_type",
+                    "label",
+                    "parent",
+                    "remove_from_parent",
+                    "tags",
+                ),
+            },
+        ),
+    )
+    radio_fields = {
+        "label_type": admin.HORIZONTAL,
+        "is_translatable": admin.HORIZONTAL,
+    }
 
 @admin.register(Rule)
 class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
@@ -877,12 +904,14 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
     form = RuleForm
 
+    parent_redirect = "admin:rules_rule_change"
+
     def change_view(self, request, object_id, form_url="", extra_context=None):
         try:
             rule = Rule.objects.get(pk=object_id)
             if rule.parent is not None:
                 return redirect(
-                    reverse(f"admin:rules_rule_change", args=[rule.parent.id])
+                    reverse(self.parent_redirect, args=[rule.parent.id])
                 )
         except Rule.DoesNotExist:
             pass
@@ -908,6 +937,8 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                 data["id"].save()
 
     def all_diversity_dimensions(self, obj):
+        if obj.parent:
+            return self.all_diversity_dimensions(obj.parent)
         return ", ".join(obj.diversity_dimension_json)
 
     def all_reviewers(self, obj):
@@ -1023,18 +1054,18 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
                     "pattern",
                     "is_pattern_match",
                     "is_marked_for_review",
-                    "is_not_translatable",
-                    "is_auto_generated",
                     "is_context_aware",
                     "is_hr_rule",
                     "has_failing_training_sentence",
+                    "is_translatable",
+                    "is_auto_generated",
+                    "is_active",
+                    "rule_translation_source",
                     "type",
                     "entity_type",
                     "pluralization",
                     "label_type",
                     "label",
-                    "is_active",
-                    "rule_translation_source",
                 ),
             },
         ),
@@ -1071,6 +1102,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "entity_type": admin.HORIZONTAL,
         "label_type": admin.HORIZONTAL,
         "pluralization": admin.HORIZONTAL,
+        "is_translatable": admin.HORIZONTAL,
     }
     filter_horizontal = (
         "links",
@@ -1087,7 +1119,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         LemmaFilter,
         "language",
         "is_marked_for_review",
-        "is_not_translatable",
+        "is_translatable",
         "is_auto_generated",
         "is_hr_rule",
         "tags",
@@ -1116,7 +1148,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     )
 
     inlines = [
-        RuleStructureEvaluationInline,
+        # RuleStructureEvaluationInline,
         ParentRuleInline,
         RuleDiversityDimensionInline,
         AlternativeInline,
@@ -1124,6 +1156,63 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         FalsePositiveInline,
     ]
     save_as = True
+
+
+class RuleReview(Rule):
+    class Meta:
+        proxy = True
+
+@admin.register(RuleReview)
+class RuleReviewAdmin(RuleAdmin):
+    parent_redirect = "admin:rules_rulereview_change"
+
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "language",
+                    "text_id",
+                    "lemma",
+                    "is_marked_for_review",
+                    "is_translatable",
+                    "is_active",
+                    "rule_translation_source",
+                    "label_type",
+                    "label",
+                    "parent",
+                    "tags",
+                ),
+            },
+        ),
+    )
+    radio_fields = {
+        "label_type": admin.HORIZONTAL,
+        "is_translatable": admin.HORIZONTAL,
+    }
+    search_fields = (
+        "lemma",
+        "comment",
+        "label_type",
+        "label",
+        "alternatives__lemma",
+    )
+    list_display = (
+        "lemma",
+        "language",
+        "is_active",
+        "all_diversity_dimensions",
+        "is_marked_for_review",
+        "is_translatable",
+        "is_active",
+    )
+    inlines = [
+        ParentRuleReviewInline,
+        RuleDiversityDimensionInline,
+        AlternativeInline,
+        TrainingSentenceInline,
+        FalsePositiveInline,
+    ]
 
 
 @admin.register(DiversityDimension)
