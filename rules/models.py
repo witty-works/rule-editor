@@ -2349,9 +2349,18 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
             genders = (
                 element["id"].removeprefix("Substantiv,").replace("_", "").split(",")
             )
-            self.gender_1 = gender_map[genders[0]]
-            if len(genders) > 1 and genders[1] in gender_map:
-                self.gender_2 = gender_map[genders[1]]
+
+            while len(genders):
+                gender = genders.pop(0)
+                if gender in gender_map:
+                    self.gender_1 = gender_map[gender]
+                    break
+
+            while len(genders):
+                gender = genders.pop(0)
+                if gender in gender_map:
+                    self.gender_2 = gender_map[gender]
+                    break
 
             try:
                 rows = element.parent.find_next_sibling("table")
