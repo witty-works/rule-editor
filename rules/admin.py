@@ -904,12 +904,14 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 
     form = RuleForm
 
+    parent_redirect = "admin:rules_rule_change"
+
     def change_view(self, request, object_id, form_url="", extra_context=None):
         try:
             rule = Rule.objects.get(pk=object_id)
             if rule.parent is not None:
                 return redirect(
-                    reverse(f"admin:rules_rule_change", args=[rule.parent.id])
+                    reverse(self.parent_redirect, args=[rule.parent.id])
                 )
         except Rule.DoesNotExist:
             pass
@@ -1162,6 +1164,8 @@ class RuleReview(Rule):
 
 @admin.register(RuleReview)
 class RuleReviewAdmin(RuleAdmin):
+    parent_redirect = "admin:rules_rulereview_change"
+
     fieldsets = (
         (
             "",
