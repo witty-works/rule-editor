@@ -326,10 +326,12 @@ class Command(BaseCommand):
                     # add RuleDiversityDimension
                     priority = 0
                     for diversity_dimension in rule.diversity_dimensions.all():
-                        new_rule_diversity_dimension = RuleDiversityDimension.objects.create(
-                            rule=new_rule,
-                            diversity_dimension=diversity_dimension,
-                            order=priority,
+                        new_rule_diversity_dimension = (
+                            RuleDiversityDimension.objects.create(
+                                rule=new_rule,
+                                diversity_dimension=diversity_dimension,
+                                order=priority,
+                            )
                         )
                         new_rule_diversity_dimension.save()
                         priority += 1
