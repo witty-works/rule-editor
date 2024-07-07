@@ -108,6 +108,13 @@ class Command(BaseCommand):
                         )
                     )
 
+            if options["diversity_dimension"] is not None:
+                rules = rules.filter(
+                    diversity_dimension_json__0__icontains=options[
+                        "diversity_dimension"
+                    ]
+                )
+
             if options["randomize_order"]:
                 rules = rules.order_by("?")
 
