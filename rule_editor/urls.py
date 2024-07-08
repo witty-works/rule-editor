@@ -19,8 +19,6 @@ from django.urls import include, path, re_path, reverse_lazy
 from django.views.generic.base import RedirectView
 
 from rules.views import TagAutocomplete
-from rules.views import DiversityDimensionAutocomplete
-from rules.views import RuleAutocomplete
 
 admin.site.site_header = "Witty Works Rule Editor"
 admin.site.site_title = "Rule Editor"
@@ -35,16 +33,6 @@ urlpatterns = [
         r"^tag-autocomplete/$",
         TagAutocomplete.as_view(),
         name="tag-autocomplete",
-    ),
-    re_path(
-        r"^diversity_dimension-autocomplete/$",
-        DiversityDimensionAutocomplete.as_view(),
-        name="diversity_dimension-autocomplete",
-    ),
-    re_path(
-        r"^rule-autocomplete/$",
-        RuleAutocomplete.as_view(),
-        name="rule-autocomplete",
     ),
     path('_nested_admin/', include('nested_admin.urls')),
     path("__debug__/", include("debug_toolbar.urls")),
