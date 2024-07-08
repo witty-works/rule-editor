@@ -225,7 +225,11 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         path = f"/debug/spacy?lang={language}&text={text}"
         result = fetch_json(path)
         word_types = result.pop(0)
-        word_types = "" if "auto-detected word type" not in word_types else word_types["auto-detected word type"]
+        word_types = (
+            ""
+            if "auto-detected word type" not in word_types
+            else word_types["auto-detected word type"]
+        )
         tokens = []
         lemmas = []
         for token in result:
@@ -436,6 +440,9 @@ class Rule(
             self.url = None if self.url == "" else self.url
 
         if self.parent:
+            if self.parent == self:
+                errors["parent"] = "Parent must not reference to the rule itself"
+
             self.language = self.parent.language
 
         if self.url is not None:

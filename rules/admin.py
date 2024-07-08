@@ -704,19 +704,6 @@ class TrainingSentenceInline(nested_admin.NestedStackedInline):
     extra = 0
 
 
-class RuleDiversityDimensionForm(forms.ModelForm):
-    class Meta:
-        widgets = {
-            "diversity_dimension": autocomplete.ModelSelect2(
-                url="diversity_dimension-autocomplete",
-                attrs={
-                    "class": "form-control",
-                    "data-placeholder": "Diversity dimensions ..",
-                },
-            )
-        }
-
-
 class RuleDiversityDimensionInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     def get_formset(self, request, obj=None, **kwargs):
         res = super().get_formset(request, obj=None, **kwargs)
@@ -728,7 +715,6 @@ class RuleDiversityDimensionInline(GrappelliSortableHiddenMixin, admin.StackedIn
         return res
 
     model = RuleDiversityDimension
-    form = RuleDiversityDimensionForm
     fields = (
         "diversity_dimension",
         "order",
@@ -736,6 +722,7 @@ class RuleDiversityDimensionInline(GrappelliSortableHiddenMixin, admin.StackedIn
     ordering = ("order",)
     sortable_field_name = "order"
     extra = 0
+    autocomplete_fields = ["diversity_dimension"]
 
 
 class InputFilter(admin.SimpleListFilter):
@@ -768,22 +755,6 @@ class LemmaFilter(InputFilter):
 
 
 class RuleForm(forms.ModelForm):
-    class Meta:
-        widgets = {
-            "parent": autocomplete.ModelSelect2(
-                url="rule-autocomplete",
-                forward=(
-                    # Hacky workaround for https://github.com/yourlabs/django-autocomplete-light/issues/1346
-                    forward.Field("children-__prefix__-parent", "ignore_id"),
-                    forward.Field("language"),
-                ),
-                attrs={
-                    "class": "form-control",
-                    "data-placeholder": "Parent rule ..",
-                },
-            )
-        }
-
     remove_from_parent = forms.BooleanField(required=False)
 
     def __init__(self, *args, **kwargs):
@@ -888,6 +859,7 @@ class ParentRuleReviewInline(ParentRuleInline):
                     "parent",
                     "remove_from_parent",
                     "tags",
+                    "comment",
                 ),
             },
         ),
@@ -1146,6 +1118,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "has_failing_training_sentence",
         "all_reviewers",
     )
+    autocomplete_fields = ["parent"]
 
     inlines = [
         # RuleStructureEvaluationInline,
@@ -1182,6 +1155,7 @@ class RuleReviewAdmin(RuleAdmin):
                     "label",
                     "parent",
                     "tags",
+                    "comment",
                 ),
             },
         ),
