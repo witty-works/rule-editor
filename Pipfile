@@ -30,6 +30,7 @@ django-nested-admin = "*"
 breame = "*"
 openai = "*"
 python-dotenv = "*"
+json-repair = "*"
 
 [dev-packages]
 
