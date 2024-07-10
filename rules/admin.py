@@ -27,8 +27,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from rangefilter.filters import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
-from dal import autocomplete, forward
-from taggit_bulk.actions import tag_wizard
+from dal import autocomplete
 from dynamic_forms import DynamicField, DynamicFormMixin
 from grappelli.forms import GrappelliSortableHiddenMixin
 import nested_admin
@@ -1011,8 +1010,6 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
 
-    actions = [tag_wizard]
-
     fieldsets = (
         (
             "",
@@ -1330,8 +1327,6 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
-
-    actions = [tag_wizard]
 
     resource_class = SourceResource
 
