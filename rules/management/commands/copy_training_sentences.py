@@ -21,7 +21,7 @@ class Command(BaseCommand):
                 training_sentences = TrainingSentence.objects.filter(rule=rule)
                 if len(training_sentences) < 2:
                     generated_sentences = []
-                    query = f"SELECT text FROM rules_trainingsentence WHERE rule_id = ? AND comment = ? AND text NOT LIKE ?"
+                    query = "SELECT text FROM rules_trainingsentence WHERE rule_id = ? AND comment = ? AND text NOT LIKE ?"
                     for generated_sentence in con.execute(
                         query, [rule.id, "auto generated", "I'm sorry%"]
                     ):
