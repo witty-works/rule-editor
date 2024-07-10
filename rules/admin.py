@@ -641,25 +641,17 @@ def apply_german_gender_ending(alternative):
     return fetch_json(path)
 
 
-from django.template.loader import render_to_string
-import hashlib
-
-
-def visualize_sentence(values):
+def analyze_sentence(values):
     if values is None or "rule" not in values or "text" not in values:
         return None
 
     rule = Rule.objects.get(pk=values["rule"])
 
-    text = values["text"]
-    path = f"/debug/displacy?lang={requests.utils.quote(rule.language)}&text={requests.utils.quote(text)}"
-    url = settings.NLP_API + path
-    sentence_hash = hashlib.md5(text.encode()).hexdigest()
+    models = {"en": "en_core_web_sm", "de": "de_core_news_sm", "fr": "fr_core_news_sm"}
 
-    html = render_to_string(
-        "admin/displacy.html",
-        context={"url": mark_safe(url), "id": mark_safe(sentence_hash)},
-    )
+    html = f'<a href="https://demos.explosion.ai/displacy?text={requests.utils.quote(values["text"])}&model={requests.utils.quote(models[rule.language])}">Visualize</a>'
+
+    html += f' - <a href="https://dev-54ta5gq-jyeciedibdzvq.fr-4.platformsh.site/debug/spacy?text={requests.utils.quote(values["text"])}&lang={requests.utils.quote(rule.language)}&detailed=false">Debug</a>'
 
     return mark_safe(html)
 
@@ -676,14 +668,7 @@ class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
         required=False,
         initial=lambda form: apply_rule(form.initial),
         encoder=lambda form: PrettyJSONEncoder,
-    )
-    spacy = DynamicField(
-        forms.JSONField,
-        disabled=True,
-        required=False,
-        initial=lambda form: apply_spacy(form.initial),
-        encoder=lambda form: PrettyJSONEncoder,
-        help_text=lambda form: visualize_sentence(form.initial),
+        help_text=lambda form: analyze_sentence(form.initial),
     )
 
 
@@ -697,7 +682,6 @@ class TrainingSentenceInline(nested_admin.NestedStackedInline):
         "alternative_expected",
         "is_on_website",
         "comment",
-        "spacy",
         "response",
     )
     extra = 0
@@ -868,6 +852,7 @@ class ParentRuleReviewInline(ParentRuleInline):
         "is_translatable": admin.HORIZONTAL,
     }
 
+
 @admin.register(Rule)
 class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     class Meta:
@@ -881,9 +866,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         try:
             rule = Rule.objects.get(pk=object_id)
             if rule.parent is not None:
-                return redirect(
-                    reverse(self.parent_redirect, args=[rule.parent.id])
-                )
+                return redirect(reverse(self.parent_redirect, args=[rule.parent.id]))
         except Rule.DoesNotExist:
             pass
 
@@ -1131,6 +1114,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
 class RuleReview(Rule):
     class Meta:
         proxy = True
+
 
 @admin.register(RuleReview)
 class RuleReviewAdmin(RuleAdmin):
