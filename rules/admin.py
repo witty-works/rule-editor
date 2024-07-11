@@ -468,9 +468,9 @@ class AlternativeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
-        if instance and isinstance(instance, Alternative):
+        if instance and isinstance(instance, Alternative) and "word_types" in self.fields:
             update_lemma_help_text(
-                instance, instance.language, self.fields["lemma"], "alternative"
+                instance, instance.language, self.fields["word_types"], "alternative"
             )
 
 
@@ -765,9 +765,9 @@ class RuleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(RuleForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
-        if instance and isinstance(instance, Rule):
+        if instance and isinstance(instance, Rule) and "word_types" in self.fields:
             update_lemma_help_text(
-                instance, instance.language, self.fields["lemma"], "rule"
+                instance, instance.language, self.fields["word_types"], "rule"
             )
 
 
