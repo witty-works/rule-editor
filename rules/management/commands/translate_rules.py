@@ -14,6 +14,7 @@ from django.utils import timezone
 from django.db.models import F, Q
 from django.conf import settings
 from django.db.models import Exists, OuterRef
+import json_repair
 
 logger = logging.getLogger(__name__)
 
@@ -226,7 +227,7 @@ class Command(BaseCommand):
                         new_rule.save()
                         continue
 
-                    result_as_json = json.loads(result)
+                    result_as_json = json_repair.loads(result)
                     if (
                         "rule_specification" not in result_as_json
                         or "alternatives" not in result_as_json

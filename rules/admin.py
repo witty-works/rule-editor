@@ -27,8 +27,7 @@ from import_export import resources
 from import_export.admin import ImportExportModelAdmin
 from rangefilter.filters import DateRangeFilter
 from more_admin_filters import MultiSelectRelatedOnlyFilter
-from dal import autocomplete, forward
-from taggit_bulk.actions import tag_wizard
+from dal import autocomplete
 from dynamic_forms import DynamicField, DynamicFormMixin
 from grappelli.forms import GrappelliSortableHiddenMixin
 import nested_admin
@@ -469,9 +468,9 @@ class AlternativeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
-        if instance and isinstance(instance, Alternative):
+        if instance and isinstance(instance, Alternative) and "word_types" in self.fields:
             update_lemma_help_text(
-                instance, instance.language, self.fields["lemma"], "alternative"
+                instance, instance.language, self.fields["word_types"], "alternative"
             )
 
 
@@ -554,6 +553,28 @@ class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     extra = 0
     sortable_field_name = "order"
 
+
+class AlternativeReviewInline(AlternativeInline):
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "lemma",
+                    "is_remove",
+                    "is_inspiration",
+                    "is_collective_noun",
+                    "is_advanced",
+                    "pluralization",
+                    "type",
+                    "is_active",
+                    "label",
+                    "order",
+                    "comment",
+                ),
+            },
+        ),
+    )
 
 class FalsePositiveInline(nested_admin.NestedStackedInline):
     model = FalsePositive
@@ -642,25 +663,17 @@ def apply_german_gender_ending(alternative):
     return fetch_json(path)
 
 
-from django.template.loader import render_to_string
-import hashlib
-
-
-def visualize_sentence(values):
+def analyze_sentence(values):
     if values is None or "rule" not in values or "text" not in values:
         return None
 
     rule = Rule.objects.get(pk=values["rule"])
 
-    text = values["text"]
-    path = f"/debug/displacy?lang={requests.utils.quote(rule.language)}&text={requests.utils.quote(text)}"
-    url = settings.NLP_API + path
-    sentence_hash = hashlib.md5(text.encode()).hexdigest()
+    models = {"en": "en_core_web_sm", "de": "de_core_news_sm", "fr": "fr_core_news_sm"}
 
-    html = render_to_string(
-        "admin/displacy.html",
-        context={"url": mark_safe(url), "id": mark_safe(sentence_hash)},
-    )
+    html = f'<a href="https://demos.explosion.ai/displacy?text={requests.utils.quote(values["text"])}&model={requests.utils.quote(models[rule.language])}">Visualize</a>'
+
+    html += f' - <a href="https://dev-54ta5gq-jyeciedibdzvq.fr-4.platformsh.site/debug/spacy?text={requests.utils.quote(values["text"])}&lang={requests.utils.quote(rule.language)}&detailed=false">Debug</a>'
 
     return mark_safe(html)
 
@@ -677,14 +690,7 @@ class TrainingSentenceForm(DynamicFormMixin, forms.ModelForm):
         required=False,
         initial=lambda form: apply_rule(form.initial),
         encoder=lambda form: PrettyJSONEncoder,
-    )
-    spacy = DynamicField(
-        forms.JSONField,
-        disabled=True,
-        required=False,
-        initial=lambda form: apply_spacy(form.initial),
-        encoder=lambda form: PrettyJSONEncoder,
-        help_text=lambda form: visualize_sentence(form.initial),
+        help_text=lambda form: analyze_sentence(form.initial),
     )
 
 
@@ -698,7 +704,6 @@ class TrainingSentenceInline(nested_admin.NestedStackedInline):
         "alternative_expected",
         "is_on_website",
         "comment",
-        "spacy",
         "response",
     )
     extra = 0
@@ -760,9 +765,9 @@ class RuleForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(RuleForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
-        if instance and isinstance(instance, Rule):
+        if instance and isinstance(instance, Rule) and "word_types" in self.fields:
             update_lemma_help_text(
-                instance, instance.language, self.fields["lemma"], "rule"
+                instance, instance.language, self.fields["word_types"], "rule"
             )
 
 
@@ -869,6 +874,7 @@ class ParentRuleReviewInline(ParentRuleInline):
         "is_translatable": admin.HORIZONTAL,
     }
 
+
 @admin.register(Rule)
 class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     class Meta:
@@ -882,9 +888,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         try:
             rule = Rule.objects.get(pk=object_id)
             if rule.parent is not None:
-                return redirect(
-                    reverse(self.parent_redirect, args=[rule.parent.id])
-                )
+                return redirect(reverse(self.parent_redirect, args=[rule.parent.id]))
         except Rule.DoesNotExist:
             pass
 
@@ -1011,8 +1015,6 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
 
-    actions = [tag_wizard]
-
     fieldsets = (
         (
             "",
@@ -1135,6 +1137,7 @@ class RuleReview(Rule):
     class Meta:
         proxy = True
 
+
 @admin.register(RuleReview)
 class RuleReviewAdmin(RuleAdmin):
     parent_redirect = "admin:rules_rulereview_change"
@@ -1183,7 +1186,7 @@ class RuleReviewAdmin(RuleAdmin):
     inlines = [
         ParentRuleReviewInline,
         RuleDiversityDimensionInline,
-        AlternativeInline,
+        AlternativeReviewInline,
         TrainingSentenceInline,
         FalsePositiveInline,
     ]
@@ -1330,8 +1333,6 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     def tag_list(self, obj):
         return ", ".join(o.name for o in obj.tags.all())
-
-    actions = [tag_wizard]
 
     resource_class = SourceResource
 

@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from rules.models import Rule, TrainingSentence
 from django.conf import settings
 from openai import AzureOpenAI
-import json
+import json_repair
 
 
 class Command(BaseCommand):
@@ -106,7 +106,7 @@ class Command(BaseCommand):
                     print(
                         f"chat_completion: {chat_completion.choices[0].message.content}"
                     )
-                    api_response = json.loads(
+                    api_response = json_repair.loads(
                         chat_completion.choices[0].message.content
                     )
                     self.stdout.write(
