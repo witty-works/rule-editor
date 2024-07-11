@@ -554,6 +554,28 @@ class AlternativeInline(GrappelliSortableHiddenMixin, admin.StackedInline):
     sortable_field_name = "order"
 
 
+class AlternativeReviewInline(AlternativeInline):
+    fieldsets = (
+        (
+            "",
+            {
+                "fields": (
+                    "lemma",
+                    "is_remove",
+                    "is_inspiration",
+                    "is_collective_noun",
+                    "is_advanced",
+                    "pluralization",
+                    "type",
+                    "is_active",
+                    "label",
+                    "order",
+                    "comment",
+                ),
+            },
+        ),
+    )
+
 class FalsePositiveInline(nested_admin.NestedStackedInline):
     model = FalsePositive
     fields = (
@@ -1164,7 +1186,7 @@ class RuleReviewAdmin(RuleAdmin):
     inlines = [
         ParentRuleReviewInline,
         RuleDiversityDimensionInline,
-        AlternativeInline,
+        AlternativeReviewInline,
         TrainingSentenceInline,
         FalsePositiveInline,
     ]
