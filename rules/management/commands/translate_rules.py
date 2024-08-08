@@ -7,7 +7,7 @@ from rules.models import (
     Alternative,
     TranslatableEnum,
 )
-from openai import AzureOpenAI
+from openai import AzureOpenAI, BadRequestError
 import json
 import logging
 from django.utils import timezone
@@ -204,188 +204,187 @@ class Command(BaseCommand):
                     presence_penalty=0,
                 )
 
-                try:
-                    # strip away everyting outside {}
-                    result = chat_completion.choices[0].message.content
+                # strip away everyting outside {}
+                result = chat_completion.choices[0].message.content
+                if result is not None:
                     result = result[result.find("{") : result.rfind("}") + 1]
 
-                    # no cultural equivalent translation
-                    if result == "{}":
-                        new_rule = Rule.objects.create(
-                            text_id=rule.text_id,
-                            lemma=rule.lemma,
-                            word_types=rule.word_types,
-                            language=target_lang,
-                            is_active=False,
-                            is_marked_for_review=True,
-                            is_translatable=TranslatableEnum.NO,
-                            is_auto_generated=True,
-                            generated_at=timezone.now(),
-                            source_rule=rule_formatted_for_translation,
-                            rule_translation_source=rule,
+                # no cultural equivalent translation
+                if result is None or result == "{}":
+                    raise ValueError("JSON structure is not as expected.")
+
+                result_as_json = json_repair.loads(result)
+                if (
+                    "rule_specification" not in result_as_json
+                    or "alternatives" not in result_as_json
+                ):
+                    raise ValueError("JSON structure is not as expected.")
+
+                result_text_id = result_as_json["rule_specification"][
+                    "rule_trigger"
+                ]
+                result_lemma = result_as_json["rule_specification"]["lemma"]
+                result_alternatives_with_info = []
+
+                has_remove = False
+                for priority in range(1, 4):
+                    alternative_key = f"alternative_prio_{priority}"
+                    if (
+                        alternative_key in result_as_json["alternatives"]
+                        and "lemma"
+                        in result_as_json["alternatives"][alternative_key]
+                        and len(
+                            result_as_json["alternatives"][alternative_key]["lemma"]
                         )
-                        new_rule.save()
+                        > 0
+                        and "is_collective_noun"
+                        in result_as_json["alternatives"][alternative_key]
+                        and "is_remove"
+                        in result_as_json["alternatives"][alternative_key]
+                    ):
+                        alternative = {
+                            "lemma": result_as_json["alternatives"][
+                                alternative_key
+                            ]["lemma"],
+                            "priority": priority,
+                            "is_collective_noun": result_as_json["alternatives"][
+                                alternative_key
+                            ]["is_collective_noun"],
+                            "is_remove": result_as_json["alternatives"][
+                                alternative_key
+                            ]["is_remove"],
+                            "label": None,
+                        }
+                        result_alternatives_with_info.append(alternative)
+
+                        if alternative["is_remove"]:
+                            has_remove = True
+
+                # copy top 5 english alternatives
+                alternative_count = 0
+                for alternative in rule.alternatives.all():
+                    alternative_count += 1
+                    if has_remove and alternative.is_remove:
                         continue
 
-                    result_as_json = json_repair.loads(result)
+                    priority += 1
+
+                    result_alternatives_with_info.append(
+                        {
+                            "lemma": alternative.lemma,
+                            "priority": priority,
+                            "is_collective_noun": alternative.is_collective_noun,
+                            "is_remove": alternative.is_remove,
+                            "label": alternative.label,
+                        }
+                    )
+
+                    if alternative_count == 5:
+                        break
+
+                result_example_sentences = []
+                for i in range(1, 3):
+                    key = f"true_positive_sentence_{i}"
                     if (
-                        "rule_specification" not in result_as_json
-                        or "alternatives" not in result_as_json
+                        key in result_as_json["true_positive_examples"]
+                        and result_as_json["true_positive_examples"][key] != ""
                     ):
-                        raise ValueError("JSON structure is not as expected.")
-
-                    result_text_id = result_as_json["rule_specification"][
-                        "rule_trigger"
-                    ]
-                    result_lemma = result_as_json["rule_specification"]["lemma"]
-                    result_alternatives_with_info = []
-
-                    has_remove = False
-                    for priority in range(1, 4):
-                        alternative_key = f"alternative_prio_{priority}"
-                        if (
-                            alternative_key in result_as_json["alternatives"]
-                            and "lemma"
-                            in result_as_json["alternatives"][alternative_key]
-                            and len(
-                                result_as_json["alternatives"][alternative_key]["lemma"]
-                            )
-                            > 0
-                            and "is_collective_noun"
-                            in result_as_json["alternatives"][alternative_key]
-                            and "is_remove"
-                            in result_as_json["alternatives"][alternative_key]
-                        ):
-                            alternative = {
-                                "lemma": result_as_json["alternatives"][
-                                    alternative_key
-                                ]["lemma"],
-                                "priority": priority,
-                                "is_collective_noun": result_as_json["alternatives"][
-                                    alternative_key
-                                ]["is_collective_noun"],
-                                "is_remove": result_as_json["alternatives"][
-                                    alternative_key
-                                ]["is_remove"],
-                                "label": None,
-                            }
-                            result_alternatives_with_info.append(alternative)
-
-                            if alternative["is_remove"]:
-                                has_remove = True
-
-                    # copy top 5 english alternatives
-                    alternative_count = 0
-                    for alternative in rule.alternatives.all():
-                        alternative_count += 1
-                        if has_remove and alternative.is_remove:
-                            continue
-
-                        priority += 1
-
-                        result_alternatives_with_info.append(
-                            {
-                                "lemma": alternative.lemma,
-                                "priority": priority,
-                                "is_collective_noun": alternative.is_collective_noun,
-                                "is_remove": alternative.is_remove,
-                                "label": alternative.label,
-                            }
+                        result_example_sentences.append(
+                            result_as_json["true_positive_examples"][key]
                         )
 
-                        if alternative_count == 5:
-                            break
+                # add new rule to db
+                new_rule = Rule.objects.create(
+                    text_id=result_text_id,
+                    lemma=result_lemma,
+                    word_types=rule.word_types,
+                    language=target_lang,
+                    is_active=False,
+                    is_marked_for_review=True,
+                    is_auto_generated=True,
+                    generated_at=timezone.now(),
+                    source_rule=rule_formatted_for_translation,
+                    rule_translation_source=rule,
+                    label_type=rule.label_type,
+                    is_hr_rule=rule.is_hr_rule,
+                )
 
-                    result_example_sentences = []
-                    for i in range(1, 3):
-                        if (
-                            result_as_json["true_positive_examples"][
-                                f"true_positive_sentence_{i}"
-                            ]
-                            != ""
-                        ):
-                            result_example_sentences.append(
-                                result_as_json["true_positive_examples"][
-                                    f"true_positive_sentence_{i}"
-                                ]
-                            )
+                tokenized, lemmas, new_rule.word_types = new_rule.tokenize()
 
-                    # add new rule to db
-                    new_rule = Rule.objects.create(
-                        text_id=result_text_id,
-                        lemma=result_lemma,
-                        word_types=rule.word_types,
-                        language=target_lang,
-                        is_active=False,
-                        is_marked_for_review=True,
-                        is_auto_generated=True,
-                        generated_at=timezone.now(),
-                        source_rule=rule_formatted_for_translation,
-                        rule_translation_source=rule,
-                        label_type=rule.label_type,
-                        is_hr_rule=rule.is_hr_rule,
-                    )
+                new_rule.save()
+                rules_generated += 1
 
-                    tokenized, lemmas, new_rule.word_types = new_rule.tokenize()
-
-                    new_rule.save()
-                    rules_generated += 1
-
-                    # add RuleDiversityDimension
-                    priority = 0
-                    for diversity_dimension in rule.diversity_dimensions.all():
-                        new_rule_diversity_dimension = (
-                            RuleDiversityDimension.objects.create(
-                                rule=new_rule,
-                                diversity_dimension=diversity_dimension,
-                                order=priority,
-                            )
-                        )
-                        new_rule_diversity_dimension.save()
-                        priority += 1
-
-                    # add new alternatives to db
-                    for i, alternative in enumerate(result_alternatives_with_info):
-                        new_alternative = Alternative.objects.create(
+                # add RuleDiversityDimension
+                priority = 0
+                for diversity_dimension in rule.diversity_dimensions.all():
+                    new_rule_diversity_dimension = (
+                        RuleDiversityDimension.objects.create(
                             rule=new_rule,
-                            lemma=alternative["lemma"],
-                            order=alternative["priority"],
-                            is_collective_noun=alternative["is_collective_noun"],
-                            is_gendered_noun="~" in alternative["lemma"],
-                            is_remove=alternative["is_remove"],
-                            label=alternative["label"],
-                        )
-                        new_alternative.save()
-
-                    # add new example sentences to db
-                    for i, example_sentence in enumerate(result_example_sentences):
-                        new_example_sentence = TrainingSentence.objects.create(
-                            rule=new_rule,
-                            text=example_sentence,
-                            is_false_positive=False,
-                            comment="auto generated",
-                        )
-                        new_example_sentence.save()
-
-                    new_rule.save()
-
-                    self.stdout.write(
-                        self.style.SUCCESS(
-                            f"added rule (nr): {rules_generated, chat_completion.choices[0].message.content}"
+                            diversity_dimension=diversity_dimension,
+                            order=priority,
                         )
                     )
-                except Exception as e:
-                    logger.error(f"Error processing rule: {e}")
+                    new_rule_diversity_dimension.save()
+                    priority += 1
 
-                    if options["debug"]:
-                        with open(
-                            f"rules/management/commands/translated_rules_error_{target_lang}.json",
-                            "a",
-                        ) as file:  # REMOVE THIS AFTER INITIAL RULE GENERATION
-                            file.write("Error: " + str(e) + "\n")
-                            file.write("Rule: " + str(rule) + "\n")
-                            file.write("Result: " + str(result) + "\n")
+                # add new alternatives to db
+                for i, alternative in enumerate(result_alternatives_with_info):
+                    new_alternative = Alternative.objects.create(
+                        rule=new_rule,
+                        lemma=alternative["lemma"],
+                        order=alternative["priority"],
+                        is_collective_noun=alternative["is_collective_noun"],
+                        is_gendered_noun="~" in alternative["lemma"],
+                        is_remove=alternative["is_remove"],
+                        label=alternative["label"],
+                    )
+                    new_alternative.save()
+
+                # add new example sentences to db
+                for i, example_sentence in enumerate(result_example_sentences):
+                    new_example_sentence = TrainingSentence.objects.create(
+                        rule=new_rule,
+                        text=example_sentence,
+                        is_false_positive=False,
+                        comment="auto generated",
+                    )
+                    new_example_sentence.save()
+
+                new_rule.save()
+
+                self.stdout.write(
+                    self.style.SUCCESS(
+                        f"added rule (nr): {rules_generated, chat_completion.choices[0].message.content}"
+                    )
+                )
+            except BadRequestError as e:
+                logger.error(f"Error processing rule (marked as non-translatable): {e}")
+
+                new_rule = Rule.objects.create(
+                    text_id=rule.text_id,
+                    lemma=rule.lemma,
+                    word_types=rule.word_types,
+                    language=target_lang,
+                    is_active=False,
+                    is_marked_for_review=True,
+                    is_translatable=TranslatableEnum.NO,
+                    is_auto_generated=True,
+                    generated_at=timezone.now(),
+                    source_rule=rule_formatted_for_translation,
+                    rule_translation_source=rule,
+                )
+                new_rule.save()
+
             except Exception as e:
+                print ('type is:', e.__class__.__name__)
                 # Log the error and skip to the next rule
                 logger.error(f"Error processing rule '{rule}': {e}")
-                continue  # Move to the next iteration
+
+                if options["debug"]:
+                    with open(
+                        f"rules/management/commands/translated_rules_error_{target_lang}.json",
+                        "a",
+                    ) as file:  # REMOVE THIS AFTER INITIAL RULE GENERATION
+                        file.write("Error: " + str(e) + "\n")
+                        file.write("Rule: " + str(rule) + "\n")
+                        file.write("Result: " + str(result) + "\n")
