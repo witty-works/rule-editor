@@ -207,10 +207,11 @@ class Command(BaseCommand):
                 try:
                     # strip away everyting outside {}
                     result = chat_completion.choices[0].message.content
-                    result = result[result.find("{") : result.rfind("}") + 1]
+                    if result is not None:
+                        result = result[result.find("{") : result.rfind("}") + 1]
 
                     # no cultural equivalent translation
-                    if result == "{}":
+                    if result is None or result == "{}":
                         new_rule = Rule.objects.create(
                             text_id=rule.text_id,
                             lemma=rule.lemma,
