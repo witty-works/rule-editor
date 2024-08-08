@@ -148,6 +148,10 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": os.path.join(BASE_DIR, "database/db.sqlite3"),
+        "OPTIONS": {
+            "timeout": 20,  # 5 seconds is the default, but we can increase it to, e.g., 20s
+            "transaction_mode": "IMMEDIATE",  # <-- Set the transaction mode to IMMEDIATE
+        },
     }
 }
 
