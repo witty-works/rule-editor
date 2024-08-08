@@ -298,16 +298,13 @@ class Command(BaseCommand):
 
                     result_example_sentences = []
                     for i in range(1, 3):
+                        key = f"true_positive_sentence_{i}"
                         if (
-                            result_as_json["true_positive_examples"][
-                                f"true_positive_sentence_{i}"
-                            ]
-                            != ""
+                            key in result_as_json["true_positive_examples"]
+                            and result_as_json["true_positive_examples"][key] != ""
                         ):
                             result_example_sentences.append(
-                                result_as_json["true_positive_examples"][
-                                    f"true_positive_sentence_{i}"
-                                ]
+                                result_as_json["true_positive_examples"][key]
                             )
 
                     # add new rule to db
