@@ -257,10 +257,10 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
 
-        if self.is_active:
-            try:
-                self.parsed_word_types = self.parse_word_types()
-            except ValidationError as exception:
+        try:
+            self.parsed_word_types = self.parse_word_types()
+        except ValidationError as exception:
+            if self.is_active:
                 errors["word_types"] = (
                     "Word_types validation failed: " + exception.message
                 )
