@@ -5,9 +5,7 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.shortcuts import redirect
-from django.conf import settings
 from django.db.models import Q
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Lookup
 from django.db.models import Field
