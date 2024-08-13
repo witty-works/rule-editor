@@ -5,9 +5,7 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.shortcuts import redirect
-from django.conf import settings
 from django.db.models import Q
-from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db.models import Lookup
 from django.db.models import Field
@@ -307,11 +305,11 @@ def update_lemma_help_text(obj, language, field, type):
 
     try:
         tokens, lemmas, generated_word_types = obj.tokenize()
-        message = (
-            f"<br>Auto-detected word_types: {generated_word_types}"
-            if obj.word_types == generated_word_types
-            else f"<br><b>Auto-detected word_types mismatch: {generated_word_types}</b>"
-        )
+        message = "<br>Auto-detected word_types"
+        if obj.word_types != generated_word_types:
+            message += "<b>mismatch</b>" 
+        message+= f': <a href="https://dev-54ta5gq-jyeciedibdzvq.fr-4.platformsh.site/debug/spacy?text={requests.utils.quote(obj.lemma)}&lang={requests.utils.quote(obj.language)}&detailed=false">{generated_word_types}</a>'
+
         help_texts.append(message)
 
         word_types = obj.parse_word_types()
@@ -468,7 +466,11 @@ class AlternativeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(AlternativeForm, self).__init__(*args, **kwargs)
         instance = getattr(self, "instance", None)
-        if instance and isinstance(instance, Alternative) and "word_types" in self.fields:
+        if (
+            instance
+            and isinstance(instance, Alternative)
+            and "word_types" in self.fields
+        ):
             update_lemma_help_text(
                 instance, instance.language, self.fields["word_types"], "alternative"
             )
@@ -575,6 +577,7 @@ class AlternativeReviewInline(AlternativeInline):
             },
         ),
     )
+
 
 class FalsePositiveInline(nested_admin.NestedStackedInline):
     model = FalsePositive

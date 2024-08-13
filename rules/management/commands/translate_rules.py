@@ -376,7 +376,6 @@ class Command(BaseCommand):
                 new_rule.save()
 
             except Exception as e:
-                print ('type is:', e.__class__.__name__)
                 # Log the error and skip to the next rule
                 logger.error(f"Error processing rule '{rule}': {e}")
 

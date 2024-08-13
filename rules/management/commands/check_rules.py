@@ -11,17 +11,25 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument("--email", type=str)
+        parser.add_argument("--lang", type=str)
 
     def handle(self, *args, **options):
         new_failing_rules = new_passing_rules = failing_rules = 0
 
         results = []
 
-        rules = Rule.objects.all()
+        lang = options["lang"]
+
+        rules = (
+            Rule.objects.all() if lang is None else Rule.objects.filter(language=lang)
+        )
+
         for rule in rules:
             self.stdout.write(self.style.WARNING(f"Checking rule {rule}"))
 
-            rule_url = f"https://rule-editor.witty.works/admin/rules/rule/{rule.id}/change/"
+            rule_url = (
+                f"https://rule-editor.witty.works/admin/rules/rule/{rule.id}/change/"
+            )
 
             training_sentences = TrainingSentence.objects.filter(rule=rule)
             if len(training_sentences):
