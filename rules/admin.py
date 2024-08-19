@@ -307,8 +307,8 @@ def update_lemma_help_text(obj, language, field, type):
         tokens, lemmas, generated_word_types = obj.tokenize()
         message = "<br>Auto-detected word_types"
         if obj.word_types != generated_word_types:
-            message += "<b>mismatch</b>" 
-        message+= f': <a href="https://dev-54ta5gq-jyeciedibdzvq.fr-4.platformsh.site/debug/spacy?text={requests.utils.quote(obj.lemma)}&lang={requests.utils.quote(obj.language)}&detailed=false">{generated_word_types}</a>'
+            message += "<b>mismatch</b>"
+        message += f': <a href="https://dev-54ta5gq-jyeciedibdzvq.fr-4.platformsh.site/debug/spacy?text={requests.utils.quote(obj.lemma)}&lang={requests.utils.quote(obj.language)}&detailed=false">{generated_word_types}</a>'
 
         help_texts.append(message)
 
@@ -1073,7 +1073,6 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
             },
         ),
     )
-    readonly_fields = ("rule_translation_source",)
     radio_fields = {
         "type": admin.HORIZONTAL,
         "entity_type": admin.HORIZONTAL,
@@ -1123,7 +1122,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         "has_failing_training_sentence",
         "all_reviewers",
     )
-    autocomplete_fields = ["parent"]
+    autocomplete_fields = ["parent", "rule_translation_source"]
 
     inlines = [
         # RuleStructureEvaluationInline,
