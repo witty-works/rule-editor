@@ -1280,6 +1280,7 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         "proficiency_level",
         "has_en_rules",
         "has_de_rules",
+        "has_fr_rules",
         "rule_count",
         "sentences",
         "comment",
@@ -1292,8 +1293,10 @@ class DiversityDimensionAdmin(admin.ModelAdmin):
         "proficiency_level",
         "has_en_rules",
         "has_de_rules",
+        "has_fr_rules",
         "url_en",
         "url_de",
+        "url_fr",
     )
     search_fields = (
         "name",
