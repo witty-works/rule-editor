@@ -1,8 +1,9 @@
 from django.core.management.base import BaseCommand
-from rules.models import Alternative
+from rules.models import Alternative, fetch_json
 import re
 
 import logging
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -32,13 +33,24 @@ class Command(BaseCommand):
                 alternatives = alternatives.filter(language=lang)
 
             match issue:
+                case "genderstar":
+                    alternatives = alternatives.extra(
+                        where=["lemma LIKE %s"],
+                        params=["%~%~%"],
+                    )
                 case "pointmedian":
+                    # alternatives = alternatives.filter(lemma__contains="·")
+
                     alternatives = alternatives.extra(
                         where=["lemma LIKE %s OR lemma LIKE %s"],
                         params=["% %·%", "%·% %"],
                     )
                 case "placeholder":
                     alternatives = alternatives.filter(lemma__contains="[")
+                case "genderednoun":
+                    alternatives = alternatives.filter(
+                        lemma__regex="^.*~\\b[^ ]+\\b~.*$", is_gendered_noun=False
+                    )
                 case _:
                     logger.error(f"Issue missing or not supported: {issue}")
                     return
@@ -54,10 +66,14 @@ class Command(BaseCommand):
                 original_lemma = alternative.lemma
 
                 match issue:
+                    case "genderstar":
+                        fix_genderstar(alternative)
                     case "pointmedian":
                         fix_pointmedian(alternative)
                     case "placeholder":
                         fix_placeholder(alternative)
+                    case "genderednoun":
+                        fix_genderednoun(alternative)
 
                 if dry_run == False:
                     alternative.save()
@@ -77,7 +93,37 @@ class Command(BaseCommand):
         self.stdout.write(self.style.WARNING(f"Updated {count} alternatives"))
 
 
-def fix_pointmedian(alternative):
+def fix_genderstar(alternative: Alternative):
+    alternative.is_gendered_noun = True
+
+    lemma = ""
+    words = alternative.lemma.split()
+    for word in words:
+        if lemma != "":
+            lemma += " "
+
+        if word.startswith("~") and word.endswith("~"):
+            path = f"/debug/german_gender_ending?alternative={requests.utils.quote(word)}"
+            result = fetch_json(path)
+            female_form = male_form = None
+            for item in result:
+                if "/" in item:
+                    female_form, male_form = item.split("/")
+                    break
+
+            lemma += male_form + "~" + female_form
+        else:
+            lemma += word
+
+    alternative.lemma = lemma
+
+
+def fix_pointmedian(alternative: Alternative):
+    alternative.is_gendered_noun = True
+
+    # alternative.lemma = alternative.lemma.replace("·", "~")
+    # return
+
     male_form = ""
     female_form = ""
 
@@ -131,3 +177,7 @@ def fix_placeholder(alternative: Alternative):
                 alternative.label += " nennen"
 
     alternative.lemma = alternative.lemma.replace("[", "((").replace("]", "))")
+
+
+def fix_genderednoun(alternative: Alternative):
+    alternative.is_gendered_noun = True
