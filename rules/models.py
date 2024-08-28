@@ -366,6 +366,10 @@ class DiversityDimension(
         default=False,
         help_text="If the diversity dimension has German rules",
     )
+    has_fr_rules = models.BooleanField(
+        default=False,
+        help_text="If the diversity dimension has French rules",
+    )
     url_en = models.CharField(
         max_length=255,
         null=True,
@@ -377,6 +381,12 @@ class DiversityDimension(
         null=True,
         blank=True,
         help_text="URL to the category page in German",
+    )
+    url_fr = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text="URL to the category page in French",
     )
     has_rules = models.BooleanField(
         default=True,
@@ -918,28 +928,36 @@ class Alternative(
         return super().save(*args, **kwargs)
 
     def clean(self):
+        gendered_noun_found = False
         if self.is_remove:
             self.lemma = "-"
             self.word_types = ""
         else:
             words = self.lemma.split()
-            gendered_noun_found = False
             for word in words:
+                if "~" not in word:
+                    continue
+
                 if word.endswith("~"):
-                    if not word.startswith("~"):
-                        raise ValidationError(
-                            f"Word in lemma may not end with '~' for '{self.lemma}'"
-                        )
+                    raise ValidationError(
+                        f"Word in lemma may not end with '~' for '{self.lemma}'"
+                    )
 
-                    gendered_noun_found = True
-                    if not self.is_gendered_noun:
-                        raise ValidationError(
-                            f"Gendered noun markers detected (noun with '~' prefix+suffix) but alternative not marked as 'gendered noun' for '{self.lemma}'"
-                        )
+                if word.count("~") > 1:
+                    raise ValidationError(
+                        f"Word my only contain one '~' for '{self.lemma}'"
+                    )
 
-        if self.is_gendered_noun and not gendered_noun_found:
+                if self.language == "fr" and word.startswith("~"):
+                    raise ValidationError(
+                        f"Word in lemma may not start with '~' for '{self.lemma}'"
+                    )
+
+                gendered_noun_found = True
+
+        if self.is_gendered_noun and gendered_noun_found == False:
             raise ValidationError(
-                f"No Gendered noun markers detected (noun with '~' prefix+suffix) but alternative marked as 'gendered noun' for '{self.lemma}'"
+                f"No Gendered noun markers detected (noun with '~') but alternative marked as 'gendered noun' for '{self.lemma}'"
             )
 
         return super().clean()
