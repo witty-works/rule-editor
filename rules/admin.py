@@ -1583,6 +1583,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         try:
             rule = Rule.objects.get(pk=object_id)
             if rule.parent is not None:
+                messages.warning(request, f"Redirected '{rule}' to parent rule.")
                 return redirect(reverse(self.parent_redirect, args=[rule.parent.id]))
         except Rule.DoesNotExist:
             pass
