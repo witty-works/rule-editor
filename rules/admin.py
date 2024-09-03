@@ -2033,12 +2033,24 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     resource_class = SourceResource
 
-    fields = ("name", "url", "tags", "reference", "comment")
+    fields = (
+        "name",
+        "url",
+        "tags",
+        "reference",
+        "citation",
+        "comment",
+    )
     list_display = (
         "name",
         "tag_list",
     )
-    search_fields = ("name", "url", "reference")
+    search_fields = (
+        "name",
+        "url",
+        "reference",
+        "citation",
+    )
     list_filter = (
         "tags",
         ("created_at", DateRangeFilter),

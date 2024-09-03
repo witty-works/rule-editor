@@ -100,6 +100,7 @@ INSTALLED_APPS = [
     "taggit",
     "computedfields",
     "nested_admin",
+    "markdownfield",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
