@@ -1583,6 +1583,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
         try:
             rule = Rule.objects.get(pk=object_id)
             if rule.parent is not None:
+                messages.warning(request, f"Redirected '{rule}' to parent rule.")
                 return redirect(reverse(self.parent_redirect, args=[rule.parent.id]))
         except Rule.DoesNotExist:
             pass
@@ -2032,12 +2033,24 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
 
     resource_class = SourceResource
 
-    fields = ("name", "url", "tags", "reference", "comment")
+    fields = (
+        "name",
+        "url",
+        "tags",
+        "reference",
+        "citation",
+        "comment",
+    )
     list_display = (
         "name",
         "tag_list",
     )
-    search_fields = ("name", "url", "reference")
+    search_fields = (
+        "name",
+        "url",
+        "reference",
+        "citation",
+    )
     list_filter = (
         "tags",
         ("created_at", DateRangeFilter),

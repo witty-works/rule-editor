@@ -9,6 +9,9 @@ from django_enum import EnumField
 from taggit.managers import TaggableManager
 from computedfields.models import ComputedFieldsModel, computed
 
+from markdownfield.models import MarkdownField, RenderedMarkdownField
+from markdownfield.validators import VALIDATOR_STANDARD
+
 from german_nouns.lookup import Nouns
 from inflex import Noun, Verb, Adjective
 from bs4 import BeautifulSoup
@@ -205,6 +208,16 @@ class Source(BaseTimestampedModel, BaseCommentableModel, BaseCreatedByModel):
         blank=True,
         help_text="A reference to a non URL source, f.e. ISBN, journal name/number etc.",
     )
+    citation = MarkdownField(
+        rendered_field="citation_rendered",
+        validator=VALIDATOR_STANDARD,
+        null=True,
+        blank=True,
+        help_text="How the source should be cited inside clients. May contain markdown",
+        use_editor=False,
+        use_admin_editor=True,
+    )
+    citation_rendered = RenderedMarkdownField(null=True, blank=True)
     tags = TaggableManager(blank=True)
 
 
