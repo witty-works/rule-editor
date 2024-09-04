@@ -2039,6 +2039,7 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
         "tags",
         "reference",
         "citation",
+        "is_citation_shown",
         "comment",
     )
     list_display = (
@@ -2053,6 +2054,7 @@ class SourceAdmin(CreatedByAdmin, ImportExportModelAdmin):
     )
     list_filter = (
         "tags",
+        "is_citation_shown",
         ("created_at", DateRangeFilter),
         ("updated_at", DateRangeFilter),
     )

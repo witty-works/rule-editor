@@ -218,6 +218,7 @@ class Source(BaseTimestampedModel, BaseCommentableModel, BaseCreatedByModel):
         use_admin_editor=True,
     )
     citation_rendered = RenderedMarkdownField(null=True, blank=True)
+    is_citation_shown = models.BooleanField(default=False)
     tags = TaggableManager(blank=True)
 
 
