@@ -124,7 +124,9 @@ class Command(BaseCommand):
             rule_diversity_dimension = RuleDiversityDimension()
             rule_diversity_dimension.rule = rule
             rule_diversity_dimension.order = 0
-            rule_diversity_dimension.diversity_dimension = rule_data["diversity_dimension"]
+            rule_diversity_dimension.diversity_dimension = rule_data[
+                "diversity_dimension"
+            ]
             rule_diversity_dimension.save()
 
             alternative_count = 0
@@ -133,7 +135,7 @@ class Command(BaseCommand):
                 alternative.rule = rule
                 alternative.language = rule.language
                 alternative.lemma = alternative_lemma
-                alternative.is_collective_noun = "~" in alternative_lemma
+                alternative.is_gendered_noun = "~" in alternative_lemma
                 alternative.source = source
                 alternative.order = alternative_count
                 alternative.save()
