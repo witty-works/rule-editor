@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5d4886e47dfa880c84eb40325db0a2dd44422adfbf47b6f6a0cb54d8368e4f0f"
+            "sha256": "7ffdb390393796b732e889e24dabc0629c8b7703112eb92ce1ead9e68ed6ae8c"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -48,17 +48,6 @@
             "index": "pypi",
             "markers": "python_full_version >= '3.6.0'",
             "version": "==4.12.3"
-        },
-        "bleach": {
-            "extras": [
-                "css"
-            ],
-            "hashes": [
-                "sha256:0a31f1837963c41d46bbf1331b8778e1308ea0791db03cc4e7357b97cf42a8fe",
-                "sha256:3225f354cfc436b9789c66c4ee030194bee0568fbf9cbdad3bc8b5c26c5f12b6"
-            ],
-            "markers": "python_version >= '3.8'",
-            "version": "==6.1.0"
         },
         "breame": {
             "hashes": [
@@ -277,15 +266,6 @@
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==4.1.1"
-        },
-        "django-markdownfield": {
-            "hashes": [
-                "sha256:6f1636b21226b658a18a9bc3d5284a8708447fe3d772b933c65fec9f28d119b9",
-                "sha256:fc9d60b4dbb846954ec05832c28400f138303e02d309316a105b9e1b9182183d"
-            ],
-            "index": "pypi",
-            "markers": "python_version >= '3.8'",
-            "version": "==0.11.0"
         },
         "django-more-admin-filters": {
             "hashes": [
@@ -564,14 +544,6 @@
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
             "version": "==4.9.4"
         },
-        "markdown": {
-            "hashes": [
-                "sha256:2ae2471477cfd02dbbf038d5d9bc226d40def84b4fe2986e49b59b6b472bbed2",
-                "sha256:7eb6df5690b81a1d7942992c97fad2938e956e79df20cbc6186e9c3a77b1c803"
-            ],
-            "markers": "python_version >= '3.8'",
-            "version": "==3.7"
-        },
         "mwparserfromhell": {
             "hashes": [
                 "sha256:007d0859e5467241b73c6e974df039a074609ce4e2b9df8c2263a8920554d032",
@@ -768,22 +740,6 @@
             "markers": "python_version >= '3.6'",
             "version": "==2.13.0"
         },
-        "shortuuid": {
-            "hashes": [
-                "sha256:3bb9cf07f606260584b1df46399c0b87dd84773e7b25912b7e391e30797c5e72",
-                "sha256:a482a497300b49b4953e15108a7913244e1bb0d41f9d332f5e9925dba33a3c5a"
-            ],
-            "markers": "python_version >= '3.6'",
-            "version": "==1.0.13"
-        },
-        "six": {
-            "hashes": [
-                "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926",
-                "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"
-            ],
-            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3'",
-            "version": "==1.16.0"
-        },
         "sniffio": {
             "hashes": [
                 "sha256:2f6da418d1f1e0fddd844478f41680e794e6051915791a034ff65e5f100525a2",
@@ -823,13 +779,6 @@
             "markers": "python_version >= '3.8'",
             "version": "==3.5.0"
         },
-        "tinycss2": {
-            "hashes": [
-                "sha256:2b80a96d41e7c3914b8cda8bc7f705a4d9c49275616e886103dd839dfc847847",
-                "sha256:8cff3a8f066c2ec677c06dbc7b45619804a6938478d9d73c284b29d14ecb0627"
-            ],
-            "version": "==1.2.1"
-        },
         "tqdm": {
             "hashes": [
                 "sha256:90279a3770753eafc9194a0364852159802111925aa30eb3f9d85b0e805ac7cd",
@@ -853,13 +802,6 @@
             ],
             "markers": "python_version >= '3.8'",
             "version": "==2.2.2"
-        },
-        "webencodings": {
-            "hashes": [
-                "sha256:a0af1213f3c2226497a97e2b3aa01a7e4bee4f403f95be16fc9acd2947514a78",
-                "sha256:b36a1c245f2d304965eb4e0a82848379241dc04b865afcc4aab16748587e1923"
-            ],
-            "version": "==0.5.1"
         },
         "wiktionary-de-parser": {
             "hashes": [
