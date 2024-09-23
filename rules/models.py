@@ -974,9 +974,14 @@ class Alternative(
 
                 gendered_noun_found = True
 
-        if self.is_gendered_noun and gendered_noun_found == False:
+        if self.is_gendered_noun:
+            if gendered_noun_found == False:
+                raise ValidationError(
+                    f"No Gendered noun markers detected (noun with '~') but alternative marked as 'gendered noun' for '{self.lemma}'"
+                )
+        elif gendered_noun_found == True:
             raise ValidationError(
-                f"No Gendered noun markers detected (noun with '~') but alternative marked as 'gendered noun' for '{self.lemma}'"
+                f"Gendered noun markers detected (noun with '~') but alternative not marked as 'gendered noun' for '{self.lemma}'"
             )
 
         return super().clean()
