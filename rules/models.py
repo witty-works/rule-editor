@@ -493,6 +493,22 @@ class Rule(
         if len(errors):
             raise ValidationError(errors)
 
+    def save(self, *args, **kwargs):
+        result = super(Rule, self).save(*args, **kwargs)
+
+        if self.pk and self.parent is None:
+            diversity_dimensions = []
+            for diversity_dimension in self.diversity_dimensions.all().order_by(
+                "rulediversitydimension__order"
+            ):
+                diversity_dimensions.append(diversity_dimension.name)
+
+            for child in self.children.all():
+                child.diversity_dimension_json = diversity_dimensions
+                child.save()
+
+        return result
+
     def __str__(self):
         return f"{self.lemma[0:40]} - {self.word_types} ({self.language})"
 
@@ -696,18 +712,15 @@ class Rule(
         prefetch_related=["diversity_dimensions"],
     )
     def diversity_dimension_json(self):
+        if not self.pk and not self.parent:
+            return []
+
         diversity_dimensions = []
-        if self.pk:
-            obj = self.parent if self.parent else self
-
-            for diversity_dimension in obj.diversity_dimensions.all().order_by(
-                "rulediversitydimension__order"
-            ):
-                diversity_dimensions.append(diversity_dimension.name)
-
-            for child in self.children.all():
-                child.diversity_dimension_json = diversity_dimensions
-                child.save()
+        obj = self.parent if self.parent else self
+        for diversity_dimension in obj.diversity_dimensions.all().order_by(
+            "rulediversitydimension__order"
+        ):
+            diversity_dimensions.append(diversity_dimension.name)
 
         return diversity_dimensions
 
@@ -961,9 +974,14 @@ class Alternative(
 
                 gendered_noun_found = True
 
-        if self.is_gendered_noun and gendered_noun_found == False:
+        if self.is_gendered_noun:
+            if gendered_noun_found == False:
+                raise ValidationError(
+                    f"No Gendered noun markers detected (noun with '~') but alternative marked as 'gendered noun' for '{self.lemma}'"
+                )
+        elif gendered_noun_found == True:
             raise ValidationError(
-                f"No Gendered noun markers detected (noun with '~') but alternative marked as 'gendered noun' for '{self.lemma}'"
+                f"Gendered noun markers detected (noun with '~') but alternative not marked as 'gendered noun' for '{self.lemma}'"
             )
 
         return super().clean()

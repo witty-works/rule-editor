@@ -1836,6 +1836,8 @@ class RuleReview(Rule):
 @admin.register(RuleReview)
 class RuleReviewAdmin(RuleAdmin):
     parent_redirect = "admin:rules_rulereview_change"
+    def has_add_permission(self, request):
+        return False
 
     fieldsets = (
         (
