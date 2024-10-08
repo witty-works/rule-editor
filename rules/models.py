@@ -967,10 +967,19 @@ class Alternative(
                         f"Word my only contain one '~' for '{self.lemma}'"
                     )
 
-                if self.language == "fr" and word.startswith("~"):
-                    raise ValidationError(
-                        f"Word in lemma may not start with '~' for '{self.lemma}'"
-                    )
+                if self.language == "de":
+                    if word.startswith("~") and word.count("~") == 1:
+                        continue
+
+                    words = word.split("~")
+                    # ihr~ihm | Trans~gender
+                    if words[0].islower() or words[1].islower():
+                        continue
+                elif self.language == "fr":
+                    if word.startswith("~"):
+                        raise ValidationError(
+                            f"Word in lemma may not start with '~' for '{self.lemma}'"
+                        )
 
                 gendered_noun_found = True
 
