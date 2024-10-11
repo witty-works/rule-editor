@@ -75,6 +75,7 @@ class NerTypeEnum(models.TextChoices):
     LOCATION = "location"
     THING = "thing"
     MISC = "misc"
+    ANIMAL = "animal"
 
 
 class PluralizationEnum(models.TextChoices):
