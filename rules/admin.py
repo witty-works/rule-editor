@@ -48,6 +48,7 @@ from .models import (
     GermanVerb,
     GermanAdjective,
     GermanNoun,
+    FrenchNoun,
     LanguageEnum,
     fetch_json,
 )
@@ -926,6 +927,14 @@ class NotEqual(Lookup):
         return "%s <> %s" % (lhs, rhs), params
 
 
+def getLanguageName(language):
+    for item in LanguageEnum.choices:
+        if language == item[0]:
+            return item[1]
+
+    return None
+
+
 def generate_help_text(name, language, filters, token, text="", recurse=True):
     if token.startswith("~"):
         token = token[1:]
@@ -935,7 +944,7 @@ def generate_help_text(name, language, filters, token, text="", recurse=True):
 
     class_name = name
     if class_name in ["Verb", "Adjective", "Noun"]:
-        class_name = ("German" if language == "de" else "English") + class_name
+        class_name = getLanguageName(language) + class_name
 
     text = "" if text == "" else f" '{text}'"
 
@@ -959,7 +968,7 @@ def generate_help_text(name, language, filters, token, text="", recurse=True):
                 f'{name} <a href="{link}">data available</a> for {word}{text}'
             )
 
-            if recurse and class_name == "GermanNoun":
+            if recurse and class_name in "GermanNoun":
                 if instance.male_form:
                     other_form = instance.male_form
                     text = "Male Form"
@@ -1111,19 +1120,19 @@ def update_base_form_help_text(obj, field):
 
     help_texts.append(link)
 
-    if isinstance(obj, GermanNoun):
+    if isinstance(obj, GermanNoun) or isinstance(obj, FrenchNoun):
         if obj.female_form:
             filters = {"base_form": obj.female_form}
             help_texts.append(
                 generate_help_text(
-                    "Noun", "de", filters, obj.female_form, "Female Form", False
+                    "Noun", language, filters, obj.female_form, "Female Form", False
                 )
             )
         elif obj.male_form:
             filters = {"base_form": obj.male_form}
             help_texts.append(
                 generate_help_text(
-                    "Noun", "de", filters, obj.male_form, "Male Form", False
+                    "Noun", language, filters, obj.male_form, "Male Form", False
                 )
             )
 
@@ -1836,6 +1845,7 @@ class RuleReview(Rule):
 @admin.register(RuleReview)
 class RuleReviewAdmin(RuleAdmin):
     parent_redirect = "admin:rules_rulereview_change"
+
     def has_add_permission(self, request):
         return False
 
@@ -2323,6 +2333,60 @@ class GermanNounAdmin(DeclensionAdmin):
     list_filter = (
         ("sg_nom", admin.EmptyFieldListFilter),
         ("pl_nom", admin.EmptyFieldListFilter),
+        ("gender_1", admin.EmptyFieldListFilter),
+        ("male_form", admin.EmptyFieldListFilter),
+        ("female_form", admin.EmptyFieldListFilter),
+        ("collective_noun", admin.EmptyFieldListFilter),
+        ("collective_noun_2", admin.EmptyFieldListFilter),
+        "gender_1",
+        "gender_2",
+        "singular_only",
+        "plural_only",
+        "ner",
+    )
+    list_display = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "gender_1",
+        "ner",
+    )
+
+
+class FrenchNounResource(resources.ModelResource):
+    class Meta:
+        model = FrenchNoun
+
+
+@admin.register(FrenchNoun)
+class FrenchNounAdmin(DeclensionAdmin):
+    class Meta:
+        model = FrenchNoun
+
+    resource_class = FrenchNounResource
+    search_fields = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "singular_only",
+        "plural_only",
+    )
+    fields = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "gender_1",
+        "gender_2",
+        "singular_only",
+        "plural_only",
+        "plural",
+        "collective_noun",
+        "collective_noun_2",
+        "ner",
+        "comment",
+    )
+    list_filter = (
+        ("plural", admin.EmptyFieldListFilter),
         ("gender_1", admin.EmptyFieldListFilter),
         ("male_form", admin.EmptyFieldListFilter),
         ("female_form", admin.EmptyFieldListFilter),
