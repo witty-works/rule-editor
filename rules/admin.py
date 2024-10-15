@@ -999,7 +999,7 @@ def link_nouns(noun, language, help_texts):
     if language == "de":
         noun = GermanNoun.objects.filter(base_form=noun)
         classname = "germannoun"
-    elif language == "de":
+    elif language == "fr":
         noun = FrenchNoun.objects.filter(base_form=noun)
         classname = "frenchnoun"
     else:
