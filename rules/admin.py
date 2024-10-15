@@ -2407,6 +2407,7 @@ class FrenchNounAdmin(DeclensionAdmin):
         "female_form",
         "male_form",
         "gender_1",
+        "gender_2",
         "ner",
     )
 
