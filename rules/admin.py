@@ -48,6 +48,7 @@ from .models import (
     GermanVerb,
     GermanAdjective,
     GermanNoun,
+    FrenchNoun,
     LanguageEnum,
     fetch_json,
 )
@@ -926,6 +927,14 @@ class NotEqual(Lookup):
         return "%s <> %s" % (lhs, rhs), params
 
 
+def getLanguageName(language):
+    for item in LanguageEnum.choices:
+        if language == item[0]:
+            return item[1]
+
+    return None
+
+
 def generate_help_text(name, language, filters, token, text="", recurse=True):
     if token.startswith("~"):
         token = token[1:]
@@ -935,7 +944,10 @@ def generate_help_text(name, language, filters, token, text="", recurse=True):
 
     class_name = name
     if class_name in ["Verb", "Adjective", "Noun"]:
-        class_name = ("German" if language == "de" else "English") + class_name
+        if language == "fr" and class_name in ["Verb", "Adjective"]:
+            return ""
+
+        class_name = getLanguageName(language) + class_name
 
     text = "" if text == "" else f" '{text}'"
 
@@ -959,7 +971,7 @@ def generate_help_text(name, language, filters, token, text="", recurse=True):
                 f'{name} <a href="{link}">data available</a> for {word}{text}'
             )
 
-            if recurse and class_name == "GermanNoun":
+            if recurse and class_name in "GermanNoun":
                 if instance.male_form:
                     other_form = instance.male_form
                     text = "Male Form"
@@ -983,17 +995,43 @@ def generate_help_text(name, language, filters, token, text="", recurse=True):
     return f"No {name} {text} for '{token}'"
 
 
+def link_nouns(noun, language, help_texts):
+    if language == "de":
+        noun = GermanNoun.objects.filter(base_form=noun)
+        classname = "germannoun"
+    elif language == "fr":
+        noun = FrenchNoun.objects.filter(base_form=noun)
+        classname = "frenchnoun"
+    else:
+        return
+
+    if len(noun):
+        url = f"/admin/rules/{classname}/{noun[0].id}/change/"
+        help_texts.append(f'<br><a href="{url}" target="_new">{noun[0].base_form}</a>')
+
+
 def update_lemma_help_text(obj, language, field, type):
     help_texts = [field.help_text]
 
     if type == "alternative":
-        help_texts.append("German Gender Lemma (check 'is gendered noun'): ~Male Form~")
-
-    if language == "de" and type == "alternative" and obj.is_gendered_noun:
-        variations = apply_german_gender_ending(obj.lemma)
         help_texts.append(
-            "<br><b>German Gender Variations:</b><br>" + "<br>".join(variations)
+            "Gender Lemma (check 'is gendered noun'): [Male Form]~[Female Form]"
         )
+
+    if type == "alternative":
+        if obj.is_gendered_noun:
+            male_form, female_form = obj.lemma.split("~")
+
+            if language == "de":
+                variations = apply_german_gender_ending(obj.lemma)
+                help_texts.append(
+                    "<br><b>German Gender Variations:</b><br>" + "<br>".join(variations)
+                )
+
+            link_nouns(male_form, language, help_texts)
+            link_nouns(female_form, language, help_texts)
+        elif language == "de" and obj.lemma.startswith("~"):
+            link_nouns(obj.lemma.removeprefix("~"), language, help_texts)
 
     try:
         tokens, lemmas, generated_word_types = obj.tokenize()
@@ -1111,19 +1149,19 @@ def update_base_form_help_text(obj, field):
 
     help_texts.append(link)
 
-    if isinstance(obj, GermanNoun):
+    if isinstance(obj, GermanNoun) or isinstance(obj, FrenchNoun):
         if obj.female_form:
             filters = {"base_form": obj.female_form}
             help_texts.append(
                 generate_help_text(
-                    "Noun", "de", filters, obj.female_form, "Female Form", False
+                    "Noun", language, filters, obj.female_form, "Female Form", False
                 )
             )
         elif obj.male_form:
             filters = {"base_form": obj.male_form}
             help_texts.append(
                 generate_help_text(
-                    "Noun", "de", filters, obj.male_form, "Male Form", False
+                    "Noun", language, filters, obj.male_form, "Male Form", False
                 )
             )
 
@@ -1337,7 +1375,10 @@ def apply_rule(values):
 
     path = "/debug/rule"
 
-    return fetch_json(path, data)
+    try:
+        return fetch_json(path, data)
+    except ValidationError as e:
+        return e.message
 
 
 def apply_spacy(values):
@@ -1806,6 +1847,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     )
     list_display = (
         "lemma",
+        "pattern",
         "word_types",
         "language",
         "type",
@@ -1836,6 +1878,7 @@ class RuleReview(Rule):
 @admin.register(RuleReview)
 class RuleReviewAdmin(RuleAdmin):
     parent_redirect = "admin:rules_rulereview_change"
+
     def has_add_permission(self, request):
         return False
 
@@ -2339,6 +2382,61 @@ class GermanNounAdmin(DeclensionAdmin):
         "female_form",
         "male_form",
         "gender_1",
+        "ner",
+    )
+
+
+class FrenchNounResource(resources.ModelResource):
+    class Meta:
+        model = FrenchNoun
+
+
+@admin.register(FrenchNoun)
+class FrenchNounAdmin(DeclensionAdmin):
+    class Meta:
+        model = FrenchNoun
+
+    resource_class = FrenchNounResource
+    search_fields = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "singular_only",
+        "plural_only",
+    )
+    fields = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "gender_1",
+        "gender_2",
+        "singular_only",
+        "plural_only",
+        "plural",
+        "collective_noun",
+        "collective_noun_2",
+        "ner",
+        "comment",
+    )
+    list_filter = (
+        ("plural", admin.EmptyFieldListFilter),
+        ("gender_1", admin.EmptyFieldListFilter),
+        ("male_form", admin.EmptyFieldListFilter),
+        ("female_form", admin.EmptyFieldListFilter),
+        ("collective_noun", admin.EmptyFieldListFilter),
+        ("collective_noun_2", admin.EmptyFieldListFilter),
+        "gender_1",
+        "gender_2",
+        "singular_only",
+        "plural_only",
+        "ner",
+    )
+    list_display = (
+        "base_form",
+        "female_form",
+        "male_form",
+        "gender_1",
+        "gender_2",
         "ner",
     )
 

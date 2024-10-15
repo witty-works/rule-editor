@@ -18,6 +18,7 @@ import emoji
 import requests
 from requests.auth import HTTPBasicAuth
 
+from rules.pluralize_fr import pluralize
 
 allowed_word_types = ["n", "pron", "a", "adv", "v", "conj", "emoji", "num", "card"]
 
@@ -75,6 +76,7 @@ class NerTypeEnum(models.TextChoices):
     LOCATION = "location"
     THING = "thing"
     MISC = "misc"
+    ANIMAL = "animal"
 
 
 class PluralizationEnum(models.TextChoices):
@@ -454,6 +456,9 @@ class Rule(
         if self.url:
             self.url = self.url.strip()
             self.url = None if self.url == "" else self.url
+
+        if self.pattern and "l" not in self.pattern.split("|"):
+            errors["pattern"] = "Pattern must either be empty or contain 'l'"
 
         if self.parent:
             if self.parent == self:
@@ -2530,6 +2535,33 @@ class GermanNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     pl_gen = models.CharField(max_length=255, null=True, blank=True)
     pl_dat = models.CharField(max_length=255, null=True, blank=True)
     pl_acc = models.CharField(max_length=255, null=True, blank=True)
+    collective_noun = models.CharField(max_length=255, null=True, blank=True)
+    collective_noun_2 = models.CharField(max_length=255, null=True, blank=True)
+    ner = EnumField(NerTypeEnum, null=True, blank=True)
+
+
+class FrenchNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
+    def __str__(self):
+        return self.base_form
+
+    def fill_declensions_standard(self, _=None):
+        self.plural = pluralize(self.base_form)
+        self.save()
+
+        message = "French noun declension data has been filled."
+        return False, message
+
+    def fill_declensions(self, _=None):
+        return self.fill_declensions_standard()
+
+    base_form = models.CharField(max_length=255, unique=True)
+    female_form = models.CharField(max_length=255, null=True, blank=True)
+    male_form = models.CharField(max_length=255, null=True, blank=True)
+    gender_1 = EnumField(GenderTypeEnum, null=True, blank=True)
+    gender_2 = EnumField(GenderTypeEnum, null=True, blank=True)
+    singular_only = models.BooleanField(default=False)
+    plural_only = models.BooleanField(default=False)
+    plural = models.CharField(max_length=255, null=True, blank=True)
     collective_noun = models.CharField(max_length=255, null=True, blank=True)
     collective_noun_2 = models.CharField(max_length=255, null=True, blank=True)
     ner = EnumField(NerTypeEnum, null=True, blank=True)
