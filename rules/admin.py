@@ -944,6 +944,9 @@ def generate_help_text(name, language, filters, token, text="", recurse=True):
 
     class_name = name
     if class_name in ["Verb", "Adjective", "Noun"]:
+        if language == "fr" and class_name in ["Verb", "Adjective"]:
+            return ""
+
         class_name = getLanguageName(language) + class_name
 
     text = "" if text == "" else f" '{text}'"
