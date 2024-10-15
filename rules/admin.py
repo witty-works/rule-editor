@@ -995,17 +995,43 @@ def generate_help_text(name, language, filters, token, text="", recurse=True):
     return f"No {name} {text} for '{token}'"
 
 
+def link_nouns(noun, language, help_texts):
+    if language == "de":
+        noun = GermanNoun.objects.filter(base_form=noun)
+        classname = "germannoun"
+    elif language == "de":
+        noun = FrenchNoun.objects.filter(base_form=noun)
+        classname = "frenchnoun"
+    else:
+        return
+
+    if len(noun):
+        url = f"/admin/rules/{classname}/{noun[0].id}/change/"
+        help_texts.append(f'<br><a href="{url}" target="_new">{noun[0].base_form}</a>')
+
+
 def update_lemma_help_text(obj, language, field, type):
     help_texts = [field.help_text]
 
     if type == "alternative":
-        help_texts.append("German Gender Lemma (check 'is gendered noun'): ~Male Form~")
-
-    if language == "de" and type == "alternative" and obj.is_gendered_noun:
-        variations = apply_german_gender_ending(obj.lemma)
         help_texts.append(
-            "<br><b>German Gender Variations:</b><br>" + "<br>".join(variations)
+            "Gender Lemma (check 'is gendered noun'): [Male Form]~[Female Form]"
         )
+
+    if type == "alternative":
+        if obj.is_gendered_noun:
+            male_form, female_form = obj.lemma.split("~")
+
+            if language == "de":
+                variations = apply_german_gender_ending(obj.lemma)
+                help_texts.append(
+                    "<br><b>German Gender Variations:</b><br>" + "<br>".join(variations)
+                )
+
+            link_nouns(male_form, language, help_texts)
+            link_nouns(female_form, language, help_texts)
+        elif language == "de" and obj.lemma.startswith("~"):
+            link_nouns(obj.lemma.removeprefix("~"), language, help_texts)
 
     try:
         tokens, lemmas, generated_word_types = obj.tokenize()
