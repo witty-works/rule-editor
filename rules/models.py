@@ -457,6 +457,9 @@ class Rule(
             self.url = self.url.strip()
             self.url = None if self.url == "" else self.url
 
+        if self.pattern and "l" not in self.pattern.split("|"):
+            errors["pattern"] = "Pattern must either be empty or contain 'l'"
+
         if self.parent:
             if self.parent == self:
                 errors["parent"] = "Parent must not reference to the rule itself"

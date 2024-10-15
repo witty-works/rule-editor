@@ -1346,7 +1346,10 @@ def apply_rule(values):
 
     path = "/debug/rule"
 
-    return fetch_json(path, data)
+    try:
+        return fetch_json(path, data)
+    except ValidationError as e:
+        return e.message
 
 
 def apply_spacy(values):
