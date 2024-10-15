@@ -1818,6 +1818,7 @@ class RuleAdmin(nested_admin.NestedModelAdmin, CreatedByAdmin):
     )
     list_display = (
         "lemma",
+        "pattern",
         "word_types",
         "language",
         "type",
