@@ -2,7 +2,9 @@ from django.core.management.base import BaseCommand
 from rules.models import (
     EnglishNoun,
     GermanNoun,
+    FrenchNoun,
     NerTypeEnum,
+    GenderTypeEnum,
 )
 from openai import AzureOpenAI
 from django.conf import settings
@@ -18,14 +20,22 @@ class Command(BaseCommand):
         parser.add_argument("--debug", type=str, default=False)
         parser.add_argument("--language", type=str, default="en")
         parser.add_argument("--limit", type=int, default=None)
+        parser.add_argument("--force", type=bool, default=False)
 
     def handle(self, *args, **options):
         language = options["language"]
         limit = options["limit"]
+        force = options["force"]
 
         try:
-            objects = GermanNoun.objects if language == "de" else EnglishNoun.objects
-            nouns = objects.filter(ner__isnull=True)
+            if language == "de":
+                objects = GermanNoun.objects
+            elif language == "en":
+                objects = EnglishNoun.objects
+            elif language == "fr":
+                objects = FrenchNoun.objects
+
+            nouns = objects.all() if force else objects.filter(ner__isnull=True)
             if limit is not None and limit > 0:
                 nouns = nouns[0:limit]
         except Exception as e:
@@ -38,13 +48,14 @@ class Command(BaseCommand):
             api_version=settings.AZURE_OPENAI_VERSION,
         )
 
-        instruction = '''You are an advanced Named Entity Recognition (NER) system. Your task is to classify a given noun, which will be either in English or German, into one of the following categories:
+        instruction = '''You are an advanced Named Entity Recognition (NER) system. Your task is to classify a given noun, which will be either in English, French or German, into one of the following categories:
 - person
 - group
 - location
 - organization
 - thing
 - misc
+- animal
 
 Example Inputs and Outputs:
 - Input: "Office"
@@ -86,9 +97,55 @@ Example Inputs and Outputs:
 - Input: "grief"
   - Output: "misc"
 - Input: "element"
-  - Output: "misc"'''
+  - Output: "misc"
+- Input: "bureau" (French for "office")
+  - Output: "location"
+- Input: "étrange" (French for "weird" or "strange")
+  - Output: "person"
+- Input: "Paris" (French for "Paris")
+  - Output: "location"
+- Input: "extérieur" (French for "outdoor")
+  - Output: "location"
+- Input: "Google" (French for "Google")
+  - Output: "organization"
+- Input: "école" (French for "school")
+  - Output: "organization"
+- Input: "groupe" (French for "group")
+  - Output: "group"
+- Input: "livre" (French for "book")
+  - Output: "thing"
+- Input: "maison" (French for "house")
+  - Output: "thing"
+- Input: "fourchette" (French for "fork")
+  - Output: "thing"
+- Input: "air" (French for "air")
+  - Output: "misc"
+- Input: "tâche" (French for "task")
+  - Output: "misc"
+- Input: "action" (French for "action")
+  - Output: "misc"
+- Input: "chagrin" (French for "grief")
+  - Output: "misc"
+- Input: "élément" (French for "element")
+  - Output: "misc"
+- Input: "chat" (French for "cat")
+  - Output: "animal"
+- Input: "Katze" (German for "cat")
+  - Output: "animal"
+- Input: "dog"
+  - Output: "animal"'''
 
         for noun in nouns:
+            if (
+                noun.female_form
+                or noun.male_form
+                or (
+                    noun.gender_1 == GenderTypeEnum.MASCULINE
+                    and noun.gender_2 == GenderTypeEnum.FEMININE
+                )
+            ):
+                continue
+
             self.stdout.write(self.style.WARNING(f"Processing noun: {noun}"))
             try:
                 prompt = [
@@ -115,6 +172,7 @@ Example Inputs and Outputs:
                         NerTypeEnum.LOCATION,
                         NerTypeEnum.THING,
                         NerTypeEnum.MISC,
+                        NerTypeEnum.ANIMAL,
                     ]
 
                     found_entity_value = None

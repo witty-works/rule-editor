@@ -8,6 +8,10 @@ class Command(BaseCommand):
     help = "Imports the lemmatization"
 
     def handle(self, *args, **options):
+        rules = Rule.objects.filter(language="fr", word_types="n")
+        for rule in rules:
+            self.store_noun(rule.lemma, None, None)
+
         alternatives = Alternative.objects.filter(language="fr", is_gendered_noun=True)
         for alternative in alternatives:
             rule = Rule.objects.get(id=alternative.rule_id)
@@ -32,13 +36,17 @@ class Command(BaseCommand):
     def store_noun(
         self, base_form: str, male_form: str | None, female_form: str | None
     ):
+        if " " in base_form:
+            return False
+
         try:
             french_noun = FrenchNoun()
-            french_noun.gender_1 = (
-                GenderTypeEnum.FEMININE
-                if female_form is None
-                else GenderTypeEnum.MASCULINE
-            )
+            if male_form or female_form:
+                french_noun.gender_1 = (
+                    GenderTypeEnum.FEMININE
+                    if female_form is None
+                    else GenderTypeEnum.MASCULINE
+                )
             french_noun.base_form = base_form
             french_noun.male_form = male_form
             french_noun.female_form = female_form
