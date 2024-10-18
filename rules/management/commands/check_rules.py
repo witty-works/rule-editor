@@ -12,6 +12,8 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument("--email", type=str)
         parser.add_argument("--lang", type=str)
+        parser.add_argument("--limit", type=int, default=0)
+        parser.add_argument("--is-active", type=bool, default=None)
 
     def handle(self, *args, **options):
         new_failing_rules = new_passing_rules = failing_rules = 0
@@ -19,10 +21,20 @@ class Command(BaseCommand):
         results = []
 
         lang = options["lang"]
+        limit = options["limit"]
+        is_active = options["is_active"]
 
-        rules = (
-            Rule.objects.all() if lang is None else Rule.objects.filter(language=lang)
-        )
+        if lang is None and is_active is None:
+            rules = Rule.objects.all()
+        else:
+            rules = Rule.objects
+            if lang is not None:
+                rules = rules.filter(language=lang)
+            if is_active is not None:
+                rules = rules.filter(is_active=is_active)
+
+        if limit > 0:
+            rules = rules[0:limit]
 
         for rule in rules:
             self.stdout.write(self.style.WARNING(f"Checking rule {rule}"))

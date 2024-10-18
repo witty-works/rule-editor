@@ -77,7 +77,7 @@ crons:
         spec: "30 2 * * *"
         cmd: |
             if [ "$PLATFORM_BRANCH" = main ]; then
-                python manage.py check_rules --email=engineering@witty.works
+                python manage.py check_rules --email=engineering@witty.works --is-active=True
             fi
 
 
