@@ -521,13 +521,13 @@ class Rule(
     tags = TaggableManager(blank=True, related_name="RuleTags")
     rule_translation_source = models.ForeignKey(
         "self",
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
     )
 
     parent = models.ForeignKey(
-        "self", null=True, blank=True, related_name="children", on_delete=models.CASCADE
+        "self", null=True, blank=True, related_name="children", on_delete=models.SET_NULL
     )
     links = models.ManyToManyField("self", symmetrical=True, blank=True)
 
