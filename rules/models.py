@@ -18,7 +18,7 @@ import emoji
 import requests
 from requests.auth import HTTPBasicAuth
 
-from rules.pluralize_fr import pluralize
+from pluralizefr import pluralize
 
 allowed_word_types = ["n", "pron", "a", "adv", "v", "conj", "emoji", "num", "card"]
 
@@ -300,7 +300,7 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
         max_length=255,
         null=True,
         blank=True,
-        help_text="'|' separated list of word types used for matching the rule (n, pron, a, adv, v, conj, emoji, num, card) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
+        help_text="'|' separated list of word types used for matching the rule (n, pron, a, adv, v, conj, emoji, num, card, article) and optional modifiers: '=' case sensitive unlemmatized, '~' case insensitive unlemmatize, '-' case sensitive lemmatized",
     )
 
     @computed(
