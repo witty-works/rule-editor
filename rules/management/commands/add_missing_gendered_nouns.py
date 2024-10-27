@@ -8,7 +8,7 @@ from rules.models import (
     GenderTypeEnum,
     Rule,
 )
-from rules.pluralize_fr import pluralize
+from pluralizefr import pluralize
 
 
 class Command(BaseCommand):

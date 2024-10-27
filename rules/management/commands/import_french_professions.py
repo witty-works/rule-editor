@@ -12,7 +12,7 @@ from rules.models import (
 import csv
 import requests
 from django.db import IntegrityError
-from rules.pluralize_fr import pluralize
+from pluralizefr import pluralize
 
 
 class Command(BaseCommand):
@@ -152,7 +152,7 @@ class Command(BaseCommand):
                             if was_added:
                                 sentences.append("Elles sont des " + plural)
 
-                            plural = pluralize(masculine_form, True)
+                            plural = pluralize(masculine_form)
                             was_added = self.check_lemmatization(
                                 language, masculine_form, plural, True
                             )

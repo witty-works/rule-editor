@@ -30,6 +30,7 @@ breame = "*"
 openai = "*"
 python-dotenv = "*"
 json-repair = "*"
+pluralizefr = "*"
 
 [dev-packages]
 

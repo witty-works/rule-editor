@@ -2,7 +2,7 @@ from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 
 from rules.models import Rule, FrenchNoun, NerTypeEnum, GenderTypeEnum, TranslatableEnum
-from rules.pluralize_fr import pluralize
+from pluralizefr import pluralize
 
 
 class Command(BaseCommand):
