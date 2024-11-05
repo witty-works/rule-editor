@@ -248,6 +248,8 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
 
     def parse_word_types(self):
         if self.word_types is None or len(self.word_types) == 0:
+            if self.tokenized:
+                return "|" * (len(self.tokenized) - 1)
             return None
 
         path = f"/parse-word-types?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}&word_types={requests.utils.quote(self.word_types)}"
