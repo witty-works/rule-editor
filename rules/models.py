@@ -527,7 +527,11 @@ class Rule(
     )
 
     parent = models.ForeignKey(
-        "self", null=True, blank=True, related_name="children", on_delete=models.SET_NULL
+        "self",
+        null=True,
+        blank=True,
+        related_name="children",
+        on_delete=models.SET_NULL,
     )
     links = models.ManyToManyField("self", symmetrical=True, blank=True)
 
