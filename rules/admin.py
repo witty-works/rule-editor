@@ -1014,11 +1014,13 @@ def update_lemma_help_text(obj, language, field, type):
     help_texts = [field.help_text]
 
     if type == "alternative":
+        if obj.is_remove:
+            return
+
         help_texts.append(
             "Gender Lemma (check 'is gendered noun'): [Male Form]~[Female Form]"
         )
 
-    if type == "alternative":
         if obj.is_gendered_noun:
             male_form, female_form = obj.lemma.split("~")
 
@@ -1033,6 +1035,9 @@ def update_lemma_help_text(obj, language, field, type):
         elif language == "de" and obj.lemma.startswith("~"):
             link_nouns(obj.lemma.removeprefix("~"), language, help_texts)
 
+    if not obj.lemma:
+        return
+
     try:
         tokens, lemmas, generated_word_types = obj.tokenize()
         message = "<br>Auto-detected word_types"
@@ -1042,7 +1047,7 @@ def update_lemma_help_text(obj, language, field, type):
 
         help_texts.append(message)
 
-        word_types = obj.parse_word_types()
+        word_types = obj.parse_word_types(tokens)
     except ValidationError as exception:
         help_texts.append(
             "<br><b>Tokenization/Word_types validation failed</b>: " + exception.message
