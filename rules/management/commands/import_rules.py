@@ -827,7 +827,9 @@ class Command(BaseCommand):
                                     language,
                                     alternative.lemma,
                                     alternative_rule_tokens,
-                                    alternative.parse_word_types(),
+                                    alternative.parse_word_types(
+                                        alternative_rule_tokens
+                                    ),
                                 )
 
                         alternative.label = label
