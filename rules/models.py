@@ -246,11 +246,10 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
 
         return tokens, lemmas, word_types
 
-    def parse_word_types(self):
-        if self.word_types is None or len(self.word_types) == 0:
-            return None
+    def parse_word_types(self, tokens):
+        word_types = self.word_types if self.word_types else "|" * (len(tokens) - 1)
 
-        path = f"/parse-word-types?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}&word_types={requests.utils.quote(self.word_types)}"
+        path = f"/parse-word-types?lang={requests.utils.quote(self.language)}&text={requests.utils.quote(self.lemma)}&word_types={requests.utils.quote(word_types)}"
         return fetch_json(path)
 
     def save(self, *args, **kwargs):
@@ -262,16 +261,16 @@ class BaseLemmaModel(ComputedFieldsModel, BaseModel):
 
         try:
             self.tokenized, lemmas, word_types = self.tokenize()
+
+            try:
+                self.parsed_word_types = self.parse_word_types(self.tokenized)
+            except ValidationError as exception:
+                if self.is_active:
+                    errors["word_types"] = (
+                        "Word_types validation failed: " + exception.message
+                    )
         except ValidationError as exception:
             errors["lemma"] = "Lemma could not be tokenized: " + exception.message
-
-        try:
-            self.parsed_word_types = self.parse_word_types()
-        except ValidationError as exception:
-            if self.is_active:
-                errors["word_types"] = (
-                    "Word_types validation failed: " + exception.message
-                )
 
         if len(errors):
             raise ValidationError(errors)
@@ -527,7 +526,11 @@ class Rule(
     )
 
     parent = models.ForeignKey(
-        "self", null=True, blank=True, related_name="children", on_delete=models.SET_NULL
+        "self",
+        null=True,
+        blank=True,
+        related_name="children",
+        on_delete=models.SET_NULL,
     )
     links = models.ManyToManyField("self", symmetrical=True, blank=True)
 
@@ -957,6 +960,8 @@ class Alternative(
             self.lemma = "-"
             self.word_types = ""
         else:
+            super().clean()
+
             words = self.lemma.split()
             for word in words:
                 if "~" not in word:
