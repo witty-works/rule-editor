@@ -1351,14 +1351,20 @@ def apply_rule(values):
     for false_positive in rule.false_positives.all():
         false_positives.append(false_positive.false_positive)
 
-    lemmatizations = {}
+    lemmatizations = []
     for token in rule.lemma_json:
         token_lemmatizations = Lemmatization.objects.filter(
             lemma=token, language=rule.language
-        )
+        ).order_by("-word_type")
 
         for token_lemmatization in token_lemmatizations:
-            lemmatizations[token_lemmatization.text] = token_lemmatization.lemma
+            lemmatizations.append(
+                {
+                    "text": token_lemmatization.text,
+                    "lemma": token_lemmatization.lemma,
+                    "word_type": token_lemmatization.word_type,
+                }
+            )
 
     data = {
         "text": values["text"],
@@ -2122,14 +2128,15 @@ class LemmatizationAdmin(ImportExportModelAdmin):
 
     resource_class = LemmatizationResource
 
-    fields = ("text", "lemma", "language", "is_plural", "comment")
+    fields = ("text", "lemma", "language", "is_plural", "word_type", "comment")
     search_fields = ("text", "lemma")
-    list_filter = ("language",)
+    list_filter = ("language", "word_type")
     list_display = (
         "text",
         "lemma",
-        "is_plural",
         "language",
+        "is_plural",
+        "word_type",
     )
 
 
