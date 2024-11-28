@@ -61,6 +61,13 @@ class LanguageEnum(models.TextChoices):
     FR = "fr", "French"
 
 
+class WordTypeEnum(models.TextChoices):
+    NONE = ""
+    NOUN = "n", "noun"
+    VERB = "v", "verb"
+    ADJECTIVE = "a", "adjective"
+
+
 class GenderTypeEnum(models.TextChoices):
     NONE = ""
     NEUTER = "neuter"
@@ -1117,7 +1124,7 @@ class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
         return self.text
 
     class Meta:
-        unique_together = (("language", "text"),)
+        unique_together = (("language", "text", "word_type"),)
 
     text = models.CharField(max_length=255, help_text="Source text")
     language = EnumField(LanguageEnum, default=LanguageEnum.EN)
@@ -1125,6 +1132,7 @@ class Lemmatization(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableMod
         max_length=255, help_text="Lemma used for the given source text"
     )
     is_plural = models.BooleanField(default=False, help_text="If the text is plural")
+    word_type = EnumField(WordTypeEnum, default=WordTypeEnum.NONE)
 
 
 class EnglishVerb(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel):
