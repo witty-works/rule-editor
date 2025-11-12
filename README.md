@@ -49,7 +49,6 @@ The data managed here powers the NLP API that performs real-time inclusive langu
    ```
 
    Edit `.env` to configure:
-
    - `SECRET_KEY`: Django secret key
    - `NLP_API`: URL to the NLP API instance
    - `NLP_API_USER` and `NLP_API_PASSWORD`: API credentials
@@ -69,22 +68,33 @@ The data managed here powers the NLP API that performs real-time inclusive langu
    python manage.py migrate
    ```
 
-5. **Download production data** (optional)
-
-   ```bash
-   platform mount:download -e main --mount database --target ./database
-   ```
-
-6. **Collect static files**
-
-   ```bash
-   python manage.py collectstatic
-   ```
-
-7. **Create superuser** (if not using production database)
+5. **Create superuser**
 
    ```bash
    python manage.py createsuperuser
+   ```
+
+6. **Import starter data** (optional)
+
+   Import pre-populated language-specific rule sets from the `data/` directory (automatically decompressed from gzip):
+
+   ```bash
+   # Import English rules
+   python manage.py import_rules_db --input=data/rules_en.json.gz --assign-to=YOUR_USERNAME
+
+   # Import German rules
+   python manage.py import_rules_db --input=data/rules_de.json.gz --assign-to=YOUR_USERNAME
+
+   # Import French rules
+   python manage.py import_rules_db --input=data/rules_fr.json.gz --assign-to=YOUR_USERNAME
+   ```
+
+   Replace `YOUR_USERNAME` with your superuser username. You can import one, two, or all three languages as needed.
+
+7. **Collect static files**
+
+   ```bash
+   python manage.py collectstatic
    ```
 
 8. **Run development server**
@@ -123,6 +133,98 @@ platform mount:upload --mount database --source ./database -e [ENV]
 ```
 
 Replace `[ENV]` with environment name (e.g., `main`, `dev`).
+
+### Database Sharing
+
+The project supports exporting and importing the rule database without user credentials, with advanced filtering capabilities.
+
+### Getting Started with Pre-populated Data
+
+Language‑specific starter exports live in `data/` (kept small so they can be committed safely):
+
+| File            | Language | Rules |
+| --------------- | -------- | ----- |
+| `rules_en.json` | English  | ~2.5k |
+| `rules_de.json` | German   | ~2.7k |
+| `rules_fr.json` | French   | ~2.7k |
+
+Import whatever languages you need:
+
+```bash
+python manage.py createsuperuser
+python manage.py import_rules_db --input=data/rules_en.json --assign-to=YOUR_USERNAME
+python manage.py import_rules_db --input=data/rules_de.json --assign-to=YOUR_USERNAME
+python manage.py import_rules_db --input=data/rules_fr.json --assign-to=YOUR_USERNAME
+```
+
+Optional bulk import:
+
+```bash
+for lang in en de fr; do
+   python manage.py import_rules_db --input=data/rules_${lang}.json --assign-to=YOUR_USERNAME
+done
+```
+
+More details (file sizes, regeneration commands) are in the sharing guide: see `SHARING_GUIDE.md` (sections: _Language-Specific Imports_ & _Data directory_).
+
+### Export Filtering (Overview)
+
+Rich filters are supported (full docs in `SHARING_GUIDE.md`):
+
+```bash
+# Language
+python3 export_db_standalone.py database/db.sqlite3 data/rules_en.json --language=en
+
+# Dates
+python3 export_db_standalone.py database/db.sqlite3 data/created_2024.json --created-after=2024-01-01
+python3 export_db_standalone.py database/db.sqlite3 data/updated_recent.json --updated-after=2024-06-01
+
+# Specific rule IDs
+python3 export_db_standalone.py database/db.sqlite3 data/some_rules.json --rule-ids=123,456
+
+# Combined
+python3 export_db_standalone.py database/db.sqlite3 data/target_en.json --rule-ids=123,456 --language=en --updated-after=2024-01-01
+```
+
+Key flags: `--language`, `--created-after`, `--created-before`, `--updated-after`, `--updated-before`, `--rule-ids`, `--dimension` (Django only). See guide for full command reference.
+
+### Import with Update Mode
+
+Import can update existing records instead of creating duplicates:
+
+```bash
+# Update existing records
+python manage.py import_rules_db --input=updates.json --update --assign-to=YOUR_USERNAME
+
+# Skip existing, only add new
+python manage.py import_rules_db --input=new_rules.json --skip-existing --assign-to=YOUR_USERNAME
+```
+
+### Export Format
+
+The export format is JSON with a complete schema definition available in `schemas/rules_export_schema.json`. You can validate exports using:
+
+```bash
+python validate_export.py data/rules_database.json
+```
+
+### Documentation
+
+**Start here based on your needs:**
+
+| Document                                        | Best For                                | Time     |
+| ----------------------------------------------- | --------------------------------------- | -------- |
+| [Quick Start Guide](QUICKSTART_SHARING.md)      | Getting started, common scenarios       | 5-15 min |
+| [Comprehensive Sharing Guide](SHARING_GUIDE.md) | Advanced usage, filters, team workflows | 30+ min  |
+| [Data Directory](data/README.md)                | Pre-populated data information          | 5 min    |
+| [JSON Schema Documentation](schemas/README.md)  | Export format and validation            | 10 min   |
+
+**Quick Links:**
+
+- **New to imports?** → [QUICKSTART_SHARING.md - Scenario 1](QUICKSTART_SHARING.md#scenario-1-first-time-setup-receiving-shared-data)
+- **Want to export rules?** → [QUICKSTART_SHARING.md - Scenario 2](QUICKSTART_SHARING.md#scenario-2-sharing-your-database-without-users)
+- **Advanced filtering?** → [SHARING_GUIDE.md - Advanced Usage](SHARING_GUIDE.md#part-3-advanced-usage)
+- **Validate exports?** → [validate_export.py](validate_export.py)
 
 ### Validation
 

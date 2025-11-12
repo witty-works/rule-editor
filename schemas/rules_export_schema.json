@@ -1,0 +1,887 @@
+{
+  "$schema": "https://json-schema.org/draft-07/schema#",
+  "$id": "https://witty-works.com/schemas/rules-export-v1.json",
+  "title": "Witty Rules Export Format",
+  "description": "JSON schema for the Witty Rules database export format. This format is used for sharing rule databases between installations.",
+  "type": "array",
+  "items": {
+    "$ref": "#/definitions/FixtureObject"
+  },
+  "definitions": {
+    "FixtureObject": {
+      "type": "object",
+      "required": ["model", "pk", "fields"],
+      "properties": {
+        "model": {
+          "type": "string",
+          "description": "Django model identifier in format 'app.model'",
+          "enum": [
+            "rules.category",
+            "rules.diversitydimension",
+            "rules.source",
+            "rules.rule",
+            "rules.rulediversitydimension",
+            "rules.alternative",
+            "rules.trainingsentence",
+            "rules.falsepositive",
+            "rules.lemmatization",
+            "rules.englishnoun",
+            "rules.englishverb",
+            "rules.englishadjective",
+            "rules.germannoun",
+            "rules.germanverb",
+            "rules.germanadjective",
+            "rules.frenchnoun",
+            "rules.rulestructureevaluation"
+          ]
+        },
+        "pk": {
+          "type": "integer",
+          "description": "Primary key of the object",
+          "minimum": 1
+        },
+        "fields": {
+          "type": "object",
+          "description": "Model fields and their values"
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.category" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/CategoryFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.diversitydimension" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/DiversityDimensionFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.source" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/SourceFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.rule" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/RuleFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.alternative" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/AlternativeFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.trainingsentence" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/TrainingSentenceFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.falsepositive" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/FalsePositiveFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.lemmatization" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/LemmatizationFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.englishnoun" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/EnglishNounFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.englishverb" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/EnglishVerbFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.englishadjective" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/EnglishAdjectiveFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.germannoun" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/GermanNounFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.germanverb" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/GermanVerbFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.germanadjective" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/GermanAdjectiveFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.frenchnoun" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/FrenchNounFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.rulediversitydimension" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": { "$ref": "#/definitions/RuleDiversityDimensionFields" }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "model": { "const": "rules.rulestructureevaluation" }
+            }
+          },
+          "then": {
+            "properties": {
+              "fields": {
+                "$ref": "#/definitions/RuleStructureEvaluationFields"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "BaseTimestampFields": {
+      "type": "object",
+      "required": ["created_at", "updated_at"],
+      "properties": {
+        "created_at": {
+          "type": "string",
+          "format": "date",
+          "description": "Creation date in ISO format"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "Last update timestamp"
+        },
+        "comment": {
+          "type": ["string", "null"],
+          "description": "Optional comment field"
+        },
+        "createdby": {
+          "type": ["integer", "null"],
+          "description": "User ID who created this object (null in exports for security)"
+        }
+      }
+    },
+    "CategoryFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Category name",
+              "examples": [
+                "organizational-diversity",
+                "acquired-diversity",
+                "social-motive"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "DiversityDimensionFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["name", "category"],
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "Dimension name",
+              "examples": [
+                "gender",
+                "age",
+                "race",
+                "ethnicity",
+                "religion",
+                "disability"
+              ]
+            },
+            "category": {
+              "type": ["integer", "null"],
+              "description": "Foreign key to rules.category"
+            },
+            "proficiency_level": {
+              "type": "string",
+              "enum": [
+                "unconscious_bias",
+                "ancestry",
+                "visible",
+                "language-clarity",
+                "age",
+                "invisible",
+                "inclusive",
+                "openly_discriminating"
+              ],
+              "description": "Witty proficiency level for this dimension"
+            }
+          }
+        }
+      ]
+    },
+    "SourceFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string", "description": "Source name/title" },
+            "url": {
+              "type": ["string", "null"],
+              "description": "URL to the source"
+            },
+            "reference": {
+              "type": ["string", "null"],
+              "description": "Non-URL reference information"
+            },
+            "citation": {
+              "type": ["string", "null"],
+              "description": "Citation text for the source"
+            },
+            "is_citation_shown": {
+              "type": ["boolean", "null"],
+              "description": "Whether citation should be shown"
+            }
+          }
+        }
+      ]
+    },
+    "RuleFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["lemma", "language", "type", "pluralization"],
+          "properties": {
+            "lemma": {
+              "type": "string",
+              "description": "Rule lemma (may be multi-token)"
+            },
+            "language": {
+              "type": "string",
+              "enum": ["en", "de", "fr"],
+              "description": "Language code"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["default", "prefix", "suffix", "substring"],
+              "description": "Rule matching type"
+            },
+            "pluralization": {
+              "type": "string",
+              "enum": ["default", "singular_only", "plural_only"],
+              "description": "Pluralization applicability"
+            },
+            "word_types": {
+              "type": ["string", "null"],
+              "description": "Raw word types string"
+            },
+            "lemma_json": {
+              "type": ["array", "string", "null"],
+              "description": "Tokenized lemma array or legacy serialized string"
+            },
+            "word_types_json": {
+              "type": ["array", "string", "null"],
+              "description": "Parsed word types array or legacy serialized string"
+            },
+            "pattern": {
+              "type": ["string", "null"],
+              "description": "Optional pattern for surrounding word types"
+            },
+            "is_pattern_match": {
+              "type": ["boolean", "null"],
+              "description": "If pattern expands the matched text"
+            },
+            "text_id": {
+              "type": ["string", "null"],
+              "description": "Identifier text for analytics"
+            },
+            "is_context_aware": {
+              "type": ["boolean", "null"],
+              "description": "Whether rule requires context analysis"
+            },
+            "is_marked_for_review": {
+              "type": ["boolean", "null"],
+              "description": "Flag for rules needing review"
+            },
+            "emoji": {
+              "type": ["string", "null"],
+              "description": "Emoji representation of the rule"
+            },
+            "explanation": {
+              "type": ["string", "null"],
+              "description": "Explanation of why this rule exists"
+            },
+            "url": {
+              "type": ["string", "null"],
+              "format": "uri",
+              "description": "Reference URL for more information"
+            },
+            "tags": {
+              "type": ["string", "null"],
+              "description": "Comma-separated tags"
+            },
+            "ownedby": {
+              "type": ["integer", "null"],
+              "description": "User ID who owns this rule (null in exports)"
+            }
+          }
+        }
+      ]
+    },
+    "AlternativeFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "properties": {
+            "rule": {
+              "type": "integer",
+              "description": "Foreign key to rules.rule"
+            },
+            "order": {
+              "type": "integer",
+              "description": "Display order"
+            },
+            "lemma": {
+              "type": "string",
+              "description": "Lemma form of the alternative"
+            },
+            "word_types": {
+              "type": ["string", "null"],
+              "description": "Word types"
+            },
+            "is_inspiration": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false)"
+            },
+            "is_active": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false)"
+            },
+            "label": {
+              "type": ["string", "null"],
+              "description": "Optional label"
+            },
+            "source_id": {
+              "type": ["integer", "null"],
+              "description": "Foreign key to rules.source"
+            },
+            "lemma_json": {
+              "type": ["array", "string", "null"],
+              "description": "Tokenized lemma data (array) or legacy serialized string"
+            },
+            "word_types_json": {
+              "type": ["array", "string", "null"],
+              "description": "Parsed word types (array) or legacy serialized string"
+            },
+            "type": {
+              "type": "string",
+              "enum": ["default", "person_first", "identity_first"],
+              "description": "Type of alternative"
+            },
+            "is_advanced": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false)"
+            },
+            "pluralization": {
+              "type": "string",
+              "description": "Pluralization strategy"
+            },
+            "is_placeholder": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false)"
+            },
+            "is_remove": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false)"
+            },
+            "language": {
+              "type": "string",
+              "enum": ["en", "de", "fr"],
+              "description": "Language code"
+            },
+            "is_collective_noun": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false)"
+            },
+            "is_gendered_noun": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false)"
+            },
+            "tags": {
+              "type": ["string", "null"],
+              "description": "Comma-separated tags"
+            }
+          },
+          "required": ["rule", "lemma"]
+        }
+      ]
+    },
+    "TrainingSentenceFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["rule", "text"],
+          "properties": {
+            "rule": {
+              "type": "integer",
+              "description": "Foreign key to rules.rule"
+            },
+            "text": {
+              "type": "string",
+              "description": "Example sentence using the rule trigger"
+            },
+            "is_advanced": {
+              "type": ["boolean", "null"],
+              "description": "Whether this is an advanced example"
+            }
+          }
+        }
+      ]
+    },
+    "FalsePositiveFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["rule", "false_positive"],
+          "properties": {
+            "rule": {
+              "type": "integer",
+              "description": "Foreign key to rules.rule"
+            },
+            "false_positive": {
+              "type": "string",
+              "description": "Text that should NOT trigger this rule"
+            },
+            "reason": {
+              "type": ["string", "null"],
+              "description": "Explanation of why this is a false positive"
+            }
+          }
+        }
+      ]
+    },
+    "LemmatizationFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["text", "lemma", "language"],
+          "properties": {
+            "text": {
+              "type": "string",
+              "description": "Source text (inflected form)"
+            },
+            "lemma": {
+              "type": "string",
+              "description": "Base form of the word"
+            },
+            "language": {
+              "type": "string",
+              "enum": ["en", "de", "fr"],
+              "description": "Language code"
+            },
+            "is_plural": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false)"
+            },
+            "word_type": {
+              "type": "string",
+              "description": "Word type enum value"
+            }
+          }
+        }
+      ]
+    },
+    "EnglishNounFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["base_form"],
+          "properties": {
+            "base_form": {
+              "type": "string",
+              "description": "Base form (singular)"
+            },
+            "plural": {
+              "type": ["string", "null"],
+              "description": "Plural form"
+            },
+            "plural_2": {
+              "type": ["string", "null"],
+              "description": "Alternative plural form"
+            },
+            "ner": {
+              "type": ["string", "null"],
+              "description": "Named entity recognition type"
+            }
+          }
+        }
+      ]
+    },
+    "EnglishVerbFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["base_form"],
+          "properties": {
+            "base_form": {
+              "type": "string",
+              "description": "Base form (infinitive)"
+            },
+            "past_tense": {
+              "type": ["string", "null"],
+              "description": "Past tense form"
+            },
+            "past_participle": {
+              "type": ["string", "null"],
+              "description": "Past participle form"
+            },
+            "present_participle": {
+              "type": ["string", "null"],
+              "description": "Present participle form"
+            },
+            "third_person_singular": {
+              "type": ["string", "null"],
+              "description": "Third person singular form"
+            }
+          }
+        }
+      ]
+    },
+    "EnglishAdjectiveFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["base_form"],
+          "properties": {
+            "base_form": {
+              "type": "string",
+              "description": "Base form (positive)"
+            },
+            "comparative": {
+              "type": ["string", "null"],
+              "description": "Comparative form"
+            },
+            "superlative": {
+              "type": ["string", "null"],
+              "description": "Superlative form"
+            },
+            "is_absolute": {
+              "type": ["integer", "boolean"],
+              "description": "Boolean flag (0/1 or true/false) - if adjective is absolute"
+            }
+          }
+        }
+      ]
+    },
+    "GermanNounFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["base_form"],
+          "additionalProperties": true,
+          "properties": {
+            "base_form": {
+              "type": "string",
+              "description": "Base form (nominative singular)"
+            }
+          }
+        }
+      ]
+    },
+    "GermanVerbFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["base_form"],
+          "additionalProperties": true,
+          "properties": {
+            "base_form": {
+              "type": "string",
+              "description": "Base form (infinitive)"
+            }
+          }
+        }
+      ]
+    },
+    "GermanAdjectiveFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["base_form"],
+          "additionalProperties": true,
+          "properties": {
+            "base_form": {
+              "type": "string",
+              "description": "Base form (positive)"
+            }
+          }
+        }
+      ]
+    },
+    "FrenchNounFields": {
+      "allOf": [
+        { "$ref": "#/definitions/BaseTimestampFields" },
+        {
+          "type": "object",
+          "required": ["base_form"],
+          "additionalProperties": true,
+          "properties": {
+            "base_form": {
+              "type": "string",
+              "description": "Base form (singular)"
+            }
+          }
+        }
+      ]
+    },
+    "RuleDiversityDimensionFields": {
+      "type": "object",
+      "required": ["rule", "diversity_dimension"],
+      "properties": {
+        "rule": {
+          "type": "integer",
+          "description": "Foreign key to rules.rule"
+        },
+        "diversity_dimension": {
+          "type": "integer",
+          "description": "Foreign key to rules.diversitydimension"
+        },
+        "order": {
+          "type": "integer",
+          "description": "Display order"
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Creation date"
+        },
+        "updated_at": {
+          "type": "string",
+          "description": "Last update timestamp"
+        }
+      }
+    },
+    "RuleStructureEvaluationFields": {
+      "type": "object",
+      "required": ["rule"],
+      "additionalProperties": true,
+      "properties": {
+        "rule": {
+          "type": "integer",
+          "description": "Foreign key to rules.rule"
+        }
+      }
+    }
+  },
+  "examples": [
+    [
+      {
+        "model": "rules.category",
+        "pk": 1,
+        "fields": {
+          "name": "organizational-diversity",
+          "comment": null,
+          "created_at": "2023-12-06",
+          "updated_at": "2023-12-06 15:39:27.302864",
+          "createdby": null
+        }
+      },
+      {
+        "model": "rules.diversitydimension",
+        "pk": 1,
+        "fields": {
+          "name": "gender",
+          "category": 1,
+          "proficiency_level": "unconscious_bias",
+          "comment": "Gender-related language patterns",
+          "created_at": "2023-12-06",
+          "updated_at": "2023-12-06 15:39:27.302864",
+          "createdby": null
+        }
+      },
+      {
+        "model": "rules.rule",
+        "pk": 1,
+        "fields": {
+          "lemma": "chairman",
+          "language": "en",
+          "type": "default",
+          "pluralization": "default",
+          "word_types": "n",
+          "lemma_json": ["chairman"],
+          "word_types_json": ["n"],
+          "is_context_aware": false,
+          "emoji": "👔",
+          "explanation": "Gender-neutral alternative available",
+          "url": null,
+          "tags": "gender,leadership",
+          "comment": null,
+          "created_at": "2023-12-06",
+          "updated_at": "2023-12-06 15:39:27.302864",
+          "createdby": null,
+          "ownedby": null
+        }
+      },
+      {
+        "model": "rules.alternative",
+        "pk": 1,
+        "fields": {
+          "rule": 1,
+          "lemma": "chairperson",
+          "lemma_json": null,
+          "word_types_json": null,
+          "is_advanced": false,
+          "type": "default",
+          "tags": "preferred",
+          "comment": "Gender-neutral term",
+          "created_at": "2023-12-06",
+          "updated_at": "2023-12-06 15:39:27.302864",
+          "createdby": null
+        }
+      },
+      {
+        "model": "rules.trainingsentence",
+        "pk": 1,
+        "fields": {
+          "rule": 1,
+          "text": "The chairman announced the decision.",
+          "is_advanced": false,
+          "comment": null,
+          "created_at": "2023-12-06",
+          "updated_at": "2023-12-06 15:39:27.302864",
+          "createdby": null
+        }
+      }
+    ]
+  ]
+}

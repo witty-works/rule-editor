@@ -1,3 +1,4 @@
+from typing import Optional
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 
@@ -61,8 +62,8 @@ class Command(BaseCommand):
     def store_noun(
         self,
         base_form: str,
-        male_form: str | None = None,
-        female_form: str | None = None,
+        male_form: Optional[str] = None,
+        female_form: Optional[str] = None,
     ):
         if " " in base_form:
             return False
