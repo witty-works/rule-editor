@@ -1,3 +1,4 @@
+from typing import Optional
 from django.core.management.base import BaseCommand
 from django.db import IntegrityError
 from rules.models import FrenchNoun, Alternative, Rule, GenderTypeEnum, NerTypeEnum
@@ -34,7 +35,7 @@ class Command(BaseCommand):
             self.store_noun(female_form, male_form, None)
 
     def store_noun(
-        self, base_form: str, male_form: str | None, female_form: str | None
+        self, base_form: str, male_form: Optional[str], female_form: Optional[str]
     ):
         if " " in base_form:
             return False

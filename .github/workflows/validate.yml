@@ -1,0 +1,94 @@
+name: Validate Export Schema and Tests
+
+on:
+    push:
+        branches: [main, dev, feature/*]
+    pull_request:
+        branches: [main, dev]
+
+jobs:
+    validate:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Cache pip dependencies
+              uses: actions/cache@v4
+              with:
+                  path: ~/.cache/pip
+                  key: ${{ runner.os }}-pip-${{ hashFiles('**/Pipfile.lock') }}
+                  restore-keys: |
+                      ${{ runner.os }}-pip-
+
+            - name: Install pipenv
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install pipenv
+
+            - name: Install dependencies
+              run: |
+                  pipenv install --dev --deploy
+
+            - name: Validate export schema
+              run: |
+                  pipenv run python validate_export.py data/rules_en.json.gz
+              continue-on-error: false
+
+            - name: Run import/export tests
+              run: |
+                  pipenv run python test_sharing.py
+              continue-on-error: true
+
+            - name: Run user reference tests
+              run: |
+                  pipenv run python test_user_references.py
+              continue-on-error: true
+
+            - name: Check for linter issues
+              run: |
+                  pipenv run python -m py_compile rules/management/commands/*.py
+                  pipenv run python -m py_compile test_*.py
+                  pipenv run python -m py_compile validate_export.py
+                  pipenv run python -m py_compile export_db_standalone.py
+              continue-on-error: false
+
+            - name: Validate JSON schema itself
+              run: |
+                  pipenv run python -c "import json; json.load(open('schemas/rules_export_schema.json'))"
+              continue-on-error: false
+
+    test-import-features:
+        runs-on: ubuntu-latest
+
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Set up Python
+              uses: actions/setup-python@v5
+              with:
+                  python-version: "3.11"
+
+            - name: Install pipenv
+              run: |
+                  python -m pip install --upgrade pip
+                  pip install pipenv
+
+            - name: Install dependencies
+              run: |
+                  pipenv install --dev --deploy
+
+            - name: Set up database
+              run: |
+                  mkdir -p database
+                  pipenv run python manage.py migrate
+
+            - name: Test import features
+              run: |
+                  bash test_import_features.sh
+              continue-on-error: false
