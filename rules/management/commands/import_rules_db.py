@@ -46,6 +46,19 @@ from rules.model_constants import (
 )
 from rules.export_utils import load_json
 
+# Maps every FK field name to the model label it references.
+# Used by _remap_foreign_keys to translate old PKs to new ones when --ignore-pk is set.
+FK_FIELD_TO_MODEL = {
+    "rule": RULE,
+    "rule_translation_source": RULE,
+    "parent": RULE,
+    "diversity_dimension": DIV_DIM,
+    "category": CATEGORY,
+    "source": SOURCE,
+    "createdby": AUTH_USER,
+    "ownedby": AUTH_USER,
+}
+
 # Unique field combinations used to detect duplicates and build queries
 UNIQUE_FIELDS_MAP = {
     CATEGORY: ["name"],
@@ -71,7 +84,11 @@ UNIQUE_FIELDS_MAP = {
 class Command(BaseCommand):
     help = """
     Import rules database from JSON fixture.
-    Loads rules and related data while handling conflicts intelligently.
+    The entire import runs in a single transaction that rolls back on failure.
+
+    Default behaviour (no flags): existing records are overwritten.
+    Use --skip-existing to leave them untouched, or --merge to update only
+    the fields present in the import file.
     """
 
     def add_arguments(self, parser):
@@ -102,12 +119,6 @@ class Command(BaseCommand):
             "--dry-run",
             action="store_true",
             help="Show detailed analysis of what would be imported without making changes",
-        )
-        parser.add_argument(
-            "--batch-size",
-            type=int,
-            default=100,
-            help="Batch size for bulk operations (default: 100)",
         )
         parser.add_argument(
             "--ignore-pk",
@@ -159,9 +170,8 @@ class Command(BaseCommand):
     def _remap_foreign_keys(self, fields, pk_mapping):
         if not pk_mapping:
             return
-        for field_name in (FIELD_RULE, FIELD_CREATEDBY, FIELD_OWNEDBY):
-            if field_name in fields:
-                fk_model = RULE if field_name == FIELD_RULE else AUTH_USER
+        for field_name, fk_model in FK_FIELD_TO_MODEL.items():
+            if field_name in fields and fields[field_name] is not None:
                 mapped = pk_mapping.get(f"{fk_model}:{fields[field_name]}")
                 if mapped is not None:
                     fields[field_name] = mapped
@@ -226,67 +236,70 @@ class Command(BaseCommand):
 
         # Deserialize object
         obj_data = json.dumps([item])
+        # Each item gets its own savepoint so an IntegrityError doesn't
+        # invalidate the outer transaction for subsequent records.
         try:
-            objects = list(serializers.deserialize("json", obj_data))
-            if not objects:
-                return
+            with transaction.atomic():
+                objects = list(serializers.deserialize("json", obj_data))
+                if not objects:
+                    return
 
-            obj = objects[0].object
+                obj = objects[0].object
 
-            # Check if exists
-            model_class = obj.__class__
-            existing = None
+                # Check if exists
+                model_class = obj.__class__
+                existing = None
 
-            if ignore_pk:
-                # Check for duplicate by unique fields
-                existing = self._find_existing(
-                    model_class, original_pk, model_name, fields, True
-                )
-                # Don't use the imported PK
-                obj.pk = None
-            else:
-                # Try to find by PK
-                existing = self._find_existing(
-                    model_class, original_pk, model_name, fields, False
-                )
-
-            if existing:
-                if skip_existing:
-                    stats["skipped"] += 1
-                    # Still track PK mapping for foreign keys
-                    if ignore_pk:
-                        self._record_pk_mapping(
-                            pk_mapping, model_name, original_pk, existing.pk
-                        )
-                elif merge:
-                    # Update existing object
-                    for field, value in fields.items():
-                        if hasattr(existing, field):
-                            setattr(existing, field, value)
-                    existing.save()
-                    stats["updated"] += 1
-                    # Track PK mapping
-                    if ignore_pk:
-                        self._record_pk_mapping(
-                            pk_mapping, model_name, original_pk, existing.pk
-                        )
-                else:
-                    # Default: update existing
-                    obj.pk = existing.pk
-                    obj.save()
-                    stats["updated"] += 1
-                    # Track PK mapping
-                    if ignore_pk:
-                        self._record_pk_mapping(
-                            pk_mapping, model_name, original_pk, existing.pk
-                        )
-            else:
-                # Create new object
-                obj.save()
-                stats["created"] += 1
-                # Track PK mapping for new objects
                 if ignore_pk:
-                    self._record_pk_mapping(pk_mapping, model_name, original_pk, obj.pk)
+                    # Check for duplicate by unique fields
+                    existing = self._find_existing(
+                        model_class, original_pk, model_name, fields, True
+                    )
+                    # Don't use the imported PK
+                    obj.pk = None
+                else:
+                    # Try to find by PK
+                    existing = self._find_existing(
+                        model_class, original_pk, model_name, fields, False
+                    )
+
+                if existing:
+                    if skip_existing:
+                        stats["skipped"] += 1
+                        # Still track PK mapping for foreign keys
+                        if ignore_pk:
+                            self._record_pk_mapping(
+                                pk_mapping, model_name, original_pk, existing.pk
+                            )
+                    elif merge:
+                        # Update existing object
+                        for field, value in fields.items():
+                            if hasattr(existing, field):
+                                setattr(existing, field, value)
+                        existing.save()
+                        stats["updated"] += 1
+                        # Track PK mapping
+                        if ignore_pk:
+                            self._record_pk_mapping(
+                                pk_mapping, model_name, original_pk, existing.pk
+                            )
+                    else:
+                        # Default: overwrite existing record
+                        obj.pk = existing.pk
+                        obj.save()
+                        stats["updated"] += 1
+                        # Track PK mapping
+                        if ignore_pk:
+                            self._record_pk_mapping(
+                                pk_mapping, model_name, original_pk, existing.pk
+                            )
+                else:
+                    # Create new object
+                    obj.save()
+                    stats["created"] += 1
+                    # Track PK mapping for new objects
+                    if ignore_pk:
+                        self._record_pk_mapping(pk_mapping, model_name, original_pk, obj.pk)
 
         except IntegrityError as e:
             if skip_existing:
@@ -319,34 +332,24 @@ class Command(BaseCommand):
             for item in items:
                 self._assign_user_fields(item["fields"], assign_user)
 
-        # Import with transaction
-        try:
-            with transaction.atomic():
-                # Use tqdm for progress bar if available
-                items_iter = (
-                    tqdm(items, desc=f"  {model_name}", leave=False, ncols=80)
-                    if HAS_TQDM and len(items) > 100
-                    else items
-                )
+        items_iter = (
+            tqdm(items, desc=f"  {model_name}", leave=False, ncols=80)
+            if HAS_TQDM and len(items) > 100
+            else items
+        )
 
-                for item in items_iter:
-                    self._import_item(
-                        item,
-                        model_name,
-                        ignore_pk,
-                        pk_mapping,
-                        skip_existing,
-                        merge,
-                        stats,
-                    )
-
-                self.stdout.write(f"  ✓ Imported {model_name}")
-
-        except Exception as e:
-            self.stdout.write(
-                self.style.ERROR(f"  Transaction failed for {model_name}: {e}")
+        for item in items_iter:
+            self._import_item(
+                item,
+                model_name,
+                ignore_pk,
+                pk_mapping,
+                skip_existing,
+                merge,
+                stats,
             )
-            stats["errors"] += len(items)
+
+        self.stdout.write(f"  ✓ Imported {model_name}")
 
     def _print_summary(self, stats, ignore_pk, pk_mapping, assign_user):
         """Print import summary and recommendations."""
@@ -662,22 +665,24 @@ class Command(BaseCommand):
         # PK remapping for foreign keys (when using --ignore-pk)
         pk_mapping = {}
 
-        # Process each model in order
-        for model_name in IMPORT_ORDER:
-            if model_name not in by_model:
-                continue
+        # Process each model in order inside a single transaction so a
+        # failure in any model rolls back the entire import cleanly.
+        with transaction.atomic():
+            for model_name in IMPORT_ORDER:
+                if model_name not in by_model:
+                    continue
 
-            items = by_model[model_name]
-            self._process_model(
-                model_name,
-                items,
-                assign_user,
-                ignore_pk,
-                pk_mapping,
-                skip_existing,
-                merge,
-                stats,
-            )
+                items = by_model[model_name]
+                self._process_model(
+                    model_name,
+                    items,
+                    assign_user,
+                    ignore_pk,
+                    pk_mapping,
+                    skip_existing,
+                    merge,
+                    stats,
+                )
 
         # Print summary
         self._print_summary(stats, ignore_pk, pk_mapping, assign_user)

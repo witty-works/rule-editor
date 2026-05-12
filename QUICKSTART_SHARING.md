@@ -146,7 +146,7 @@ python manage.py import_rules_db --input=updates.json.gz --update --assign-to=yo
 python manage.py import_rules_db --input=updates.json.gz --skip-existing --assign-to=your_username
 ```
 
-**Note:** `--update` (alias: `--merge`) will update existing records with new data from the import.
+**Note:** `--update` (alias: `--merge`) updates existing records with new data from the import. Without any flag, existing records matched by PK are **overwritten** silently — always use `--dry-run` first when unsure.
 
 ---
 
@@ -157,7 +157,7 @@ Export only what you need using filters:
 ```bash
 # Export only English rules
 python manage.py export_rules_db --output=english_rules.json --language=en
-python3 export_db_standalone.py database/db.sqlite3 data/rules_en.json --language=en
+python3 export_db_standalone.py database/db.sqlite3 data/rules_en.json.gz --language=en
 
 # Export only German rules
 python manage.py export_rules_db --output=german_rules.json --language=de
@@ -226,11 +226,10 @@ python manage.py cleanup_duplicate_rules --remove --keep=newest
 
 **What `--ignore-pk` does:**
 
-- Ignores imported primary keys
-- Generates new sequential IDs
+- Ignores imported primary keys and generates new sequential IDs
 - Detects duplicates by content (not by ID)
-- Remaps all foreign key relationships
-- Prevents "PK already exists" errors
+- Remaps **all** foreign key relationships to the new IDs — this covers `rule`, `source`, `category`, `diversity_dimension`, self-referential `parent` / `rule_translation_source`, and user fields
+- Prevents "PK already exists" errors when merging exports from different installations
 
 ---
 
@@ -274,15 +273,14 @@ python manage.py check_rules
 - **Single rule**: ~1-10 KB (with all relations)
 - **Language subset**: ~2-8 MB
 
-Files are JSON, so they compress well:
+Use a `.json.gz` output path to enable automatic gzip compression (typically 80–90% smaller):
 
 ```bash
-# Compress for sharing
-gzip shared_rules.json
-# Creates: shared_rules.json.gz (typically 80-90% smaller)
+# Export compressed — no extra flag needed, extension is enough
+python manage.py export_rules_db --output=shared_rules.json.gz
 
-# Decompress
-gunzip shared_rules.json.gz
+# Import decompresses automatically
+python manage.py import_rules_db --input=shared_rules.json.gz --assign-to=YOUR_USERNAME
 ```
 
 ---

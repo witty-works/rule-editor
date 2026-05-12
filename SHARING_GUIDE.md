@@ -200,13 +200,15 @@ Options:
 python manage.py import_rules_db [options]
 
 Options:
-  --input=<path>  # required
-  --update | --merge
-  --skip-existing
+  --input=<path>        # required
+  --update | --merge    # update existing records
+  --skip-existing       # leave existing records untouched
   --assign-to=<username>
   --dry-run
-  --ignore-pk
+  --ignore-pk           # generate new PKs, remap all FKs
 ```
+
+> **Atomicity:** the entire import runs inside a single database transaction. If any model fails, all previously imported models in the same run are rolled back, leaving the database unchanged.
 
 ## Part 2: Usage
 
@@ -251,10 +253,12 @@ python manage.py import_rules_db --input=shared_rules.json.gz --assign-to=yourus
 **Important flags:**
 
 - `--dry-run`: Show detailed analysis without making changes (shows duplicates, conflicts, samples)
-- `--ignore-pk`: Generate new primary keys and detect duplicates by content (prevents PK conflicts when merging from different sources)
-- `--skip-existing`: Skip objects that already exist
+- `--ignore-pk`: Generate new primary keys, detect duplicates by content, and remap **all** foreign key relationships (rule, source, category, diversity_dimension, and self-referential FKs). Required when merging exports from different installations to prevent PK collisions.
+- `--skip-existing`: Skip objects that already exist (matched by unique fields)
 - `--merge`: Update existing objects with imported data
 - `--assign-to=USERNAME`: Assign all imported data to a specific user
+
+> **Default behaviour (no flags):** existing records matched by primary key are **overwritten** with the imported data. Use `--skip-existing` or `--merge` if you want a safer merge.
 
 **Merging data from multiple sources:**
 
@@ -270,21 +274,10 @@ python manage.py import_rules_db --input=other_team_rules.json.gz --ignore-pk --
 
 The `--ignore-pk` flag will:
 
-- Ignore imported primary keys
-- Generate new sequential IDs
+- Ignore imported primary keys and generate new sequential IDs
 - Detect true duplicates by comparing content (lemma, trigger, language, etc.)
 - Skip true duplicates automatically
-- Remap foreign key relationships correctly
-
-# Or import without assigning (all user references will be null)
-
-python manage.py import_rules_db --input=shared_rules.json
-
-# 4. (Optional) Assign ownership later if needed
-
-python manage.py assign_rule_ownership --username=yourusername
-
-````
+- Remap **all** foreign key relationships to the new PKs — this covers `rule`, `source`, `category`, `diversity_dimension`, self-referential `parent` and `rule_translation_source`, and user fields
 
 **Important:** The `--assign-to` flag assigns ownership to your user for ALL imported objects that have user references (rules, alternatives, training sentences, sources, categories, etc.). This ensures proper attribution and prevents permission issues.
 
@@ -561,9 +554,11 @@ The export format is Django's natural JSON fixture format:
 ### Import Fails with Integrity Error
 
 ```bash
-# Try importing dependencies first
-python manage.py import_rules_db --input=data.json --models=categories,diversitydimensions,sources
-python manage.py import_rules_db --input=data.json --models=rules,alternatives
+# Skip records that already exist
+python manage.py import_rules_db --input=data.json --skip-existing
+
+# Or use --ignore-pk to generate new PKs and avoid collisions entirely
+python manage.py import_rules_db --input=data.json --ignore-pk --skip-existing
 ```
 
 ### Duplicate Rules After Import
@@ -578,9 +573,11 @@ python manage.py cleanup_duplicate_rules
 
 ### Missing Related Objects
 
+Export with the `--full` flag to include all dependencies (categories, sources, diversity dimensions):
+
 ```bash
-# Import with dependencies
-python manage.py import_rule --input=rule.json --with-dependencies
+python manage.py export_rule --id=123 --output=rule_full.json.gz --full
+python manage.py import_rule --input=rule_full.json.gz
 ```
 
 ## Security Considerations
@@ -758,17 +755,19 @@ python manage.py import_rules_db --input=team_b_rules.json --ignore-pk --skip-ex
 
 ## Testing
 
+The import/export system has a proper Django test suite under `rules/tests/`. It covers export structure and filters, import conflict modes, FK remapping under `--ignore-pk`, and full roundtrip integrity.
+
 ```bash
-# Test user reference handling
-python test_user_references.py
+# Run all import/export tests
+pipenv run python manage.py test rules.tests
 
-# Full test suite
-python test_sharing.py
+# Run a specific test class
+pipenv run python manage.py test rules.tests.test_import_rules_db.IgnorePkFkRemappingTests
 
-# Dry run any command
-python manage.py COMMAND --dry-run
+# Dry run any command against live data (no DB changes)
+python manage.py import_rules_db --input=data.json --dry-run
 
-# Validate export format
+# Validate export format against the JSON schema
 python validate_export.py data/rules_database.json
 ```
 

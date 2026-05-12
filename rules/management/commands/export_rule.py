@@ -60,7 +60,7 @@ class Command(BaseCommand):
         language = options.get("language")
         text_id = options.get("text_id")
         output_file = options["output"]
-        compress = options["compress"]
+        compress = True if options["compress"] else None
         full = options["full"]
         indent = options["indent"] if options["indent"] > 0 else None
 

@@ -142,26 +142,26 @@ The project supports exporting and importing the rule database without user cred
 
 Language‑specific starter exports live in `data/` (kept small so they can be committed safely):
 
-| File            | Language | Rules |
-| --------------- | -------- | ----- |
-| `rules_en.json` | English  | ~2.5k |
-| `rules_de.json` | German   | ~2.7k |
-| `rules_fr.json` | French   | ~2.7k |
+| File               | Language | Rules | Compressed |
+| ------------------ | -------- | ----- | ---------- |
+| `rules_en.json.gz` | English  | ~2.5k | ~927 KB    |
+| `rules_de.json.gz` | German   | ~2.7k | ~840 KB    |
+| `rules_fr.json.gz` | French   | ~2.7k | ~1.1 MB    |
 
-Import whatever languages you need:
+Import whatever languages you need (`.gz` files are decompressed automatically):
 
 ```bash
 python manage.py createsuperuser
-python manage.py import_rules_db --input=data/rules_en.json --assign-to=YOUR_USERNAME
-python manage.py import_rules_db --input=data/rules_de.json --assign-to=YOUR_USERNAME
-python manage.py import_rules_db --input=data/rules_fr.json --assign-to=YOUR_USERNAME
+python manage.py import_rules_db --input=data/rules_en.json.gz --assign-to=YOUR_USERNAME
+python manage.py import_rules_db --input=data/rules_de.json.gz --assign-to=YOUR_USERNAME
+python manage.py import_rules_db --input=data/rules_fr.json.gz --assign-to=YOUR_USERNAME
 ```
 
 Optional bulk import:
 
 ```bash
 for lang in en de fr; do
-   python manage.py import_rules_db --input=data/rules_${lang}.json --assign-to=YOUR_USERNAME
+   python manage.py import_rules_db --input=data/rules_${lang}.json.gz --assign-to=YOUR_USERNAME
 done
 ```
 
@@ -173,17 +173,17 @@ Rich filters are supported (full docs in `SHARING_GUIDE.md`):
 
 ```bash
 # Language
-python3 export_db_standalone.py database/db.sqlite3 data/rules_en.json --language=en
+python3 export_db_standalone.py database/db.sqlite3 data/rules_en.json.gz --language=en
 
 # Dates
-python3 export_db_standalone.py database/db.sqlite3 data/created_2024.json --created-after=2024-01-01
-python3 export_db_standalone.py database/db.sqlite3 data/updated_recent.json --updated-after=2024-06-01
+python3 export_db_standalone.py database/db.sqlite3 data/created_2024.json.gz --created-after=2024-01-01
+python3 export_db_standalone.py database/db.sqlite3 data/updated_recent.json.gz --updated-after=2024-06-01
 
 # Specific rule IDs
-python3 export_db_standalone.py database/db.sqlite3 data/some_rules.json --rule-ids=123,456
+python3 export_db_standalone.py database/db.sqlite3 data/some_rules.json.gz --rule-ids=123,456
 
 # Combined
-python3 export_db_standalone.py database/db.sqlite3 data/target_en.json --rule-ids=123,456 --language=en --updated-after=2024-01-01
+python3 export_db_standalone.py database/db.sqlite3 data/target_en.json.gz --rule-ids=123,456 --language=en --updated-after=2024-01-01
 ```
 
 Key flags: `--language`, `--created-after`, `--created-before`, `--updated-after`, `--updated-before`, `--rule-ids`, `--dimension` (Django only). See guide for full command reference.

@@ -105,7 +105,9 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         output_file = options["output"]
-        compress = options["compress"]
+        # True when --compress is explicitly passed; None otherwise so dump_json
+        # can auto-detect compression from a .json.gz extension.
+        compress = True if options["compress"] else None
         exclude_linguistic = options["exclude_linguistic_data"]
         exclude_evaluations = options["exclude_evaluations"]
         dimension_filter = options["dimension"]
@@ -192,6 +194,16 @@ class Command(BaseCommand):
             ]
         )
 
+        # Compute filtered rule IDs once so related-model queries don't
+        # mutate the closure variable and re-trigger the filter on each model.
+        filtered_rule_id_list = None
+        if filter_active:
+            from rules.models import Rule
+
+            filtered_rule_id_list = list(
+                _apply_rule_filters(Rule.objects.all()).values_list("id", flat=True)
+            )
+
         for model_path in models_to_export:
             app_label, model_name = model_path.split(".")
             model = apps.get_model(app_label, model_name)
@@ -203,7 +215,7 @@ class Command(BaseCommand):
             if model_name == "Rule":
                 queryset = _apply_rule_filters(queryset)
 
-            # Get related objects if filtering rules
+            # Restrict related models to the filtered rule set
             if (
                 model_name
                 in [
@@ -215,12 +227,7 @@ class Command(BaseCommand):
                 ]
                 and filter_active
             ):
-                # Get rules that match filters
-                from rules.models import Rule
-
-                filtered_rules = _apply_rule_filters(Rule.objects.all())
-                rule_ids = list(filtered_rules.values_list("id", flat=True))
-                queryset = queryset.filter(rule_id__in=rule_ids)
+                queryset = queryset.filter(rule_id__in=filtered_rule_id_list)
 
             count = queryset.count()
             if count > 0:
