@@ -4,7 +4,8 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = ">=5.2.15"
+# Django 5.2 is LTS; 6.0 requires Python 3.12+ (this app runs on python:3.11)
+django = ">=5.2.16,<6"
 django-debug-toolbar = "*"
 django-enum = "*"
 django-import-export = "*"
@@ -19,11 +20,14 @@ requests = "*"
 emoji = "*"
 django-taggit = "*"
 django-autocomplete-light = "*"
-django-grappelli = "*"
+# Grappelli 5.0 dropped Python 3.11 support (3.12+ only)
+django-grappelli = "<5"
 django-computedfields = "*"
 django-forms-dynamic = "*"
 inflex = "*"
-german-nouns = "*"
+# german-nouns is vendored in rules/vendor/german_nouns/ — see the README there.
+# Its wiktionary-de-parser pin held lxml at <5; vendoring drops lxml,
+# wiktionary-de-parser and mwparserfromhell from the tree entirely.
 beautifulsoup4 = "*"
 django-nested-admin = "*"
 breame = "*"
