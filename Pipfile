@@ -25,7 +25,9 @@ django-grappelli = "<5"
 django-computedfields = "*"
 django-forms-dynamic = "*"
 inflex = "*"
-german-nouns = "*"
+# german-nouns is vendored in rules/vendor/german_nouns/ — see the README there.
+# Its wiktionary-de-parser pin held lxml at <5; vendoring drops lxml,
+# wiktionary-de-parser and mwparserfromhell from the tree entirely.
 beautifulsoup4 = "*"
 django-nested-admin = "*"
 breame = "*"

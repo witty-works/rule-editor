@@ -9,7 +9,7 @@ from django_enum import EnumField
 from taggit.managers import TaggableManager
 from computedfields.models import ComputedFieldsModel, computed
 
-from german_nouns.lookup import Nouns
+from rules.vendor.german_nouns.lookup import Nouns
 from inflex import Noun, Verb, Adjective
 from bs4 import BeautifulSoup
 
