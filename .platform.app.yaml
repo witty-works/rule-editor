@@ -34,7 +34,9 @@ web:
     socket_family: unix
   # Commands are run once after deployment to start the application process.
   commands:
-    start: "gunicorn -w 4 -b unix:$SOCKET rule_editor.wsgi:application"
+    # --no-control-socket: gunicorn >=25 opens a control socket under $HOME
+    # ($HOME=/app here), which is read-only at runtime and logs an error loop.
+    start: "gunicorn -w 4 --no-control-socket -b unix:$SOCKET rule_editor.wsgi:application"
   locations:
     "/":
       passthru: true
