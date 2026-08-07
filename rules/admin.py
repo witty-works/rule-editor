@@ -52,6 +52,7 @@ from .models import (
     LanguageEnum,
     fetch_json,
 )
+from .evaluation import build_rule_payload
 
 stopwords = {
     "de": [
@@ -1329,60 +1330,7 @@ def apply_rule(values):
 
     rule = Rule.objects.get(pk=values["rule"])
 
-    rule_alternatives = rule.parent.alternatives if rule.parent else rule.alternatives
-
-    alternatives = []
-    for alternative in rule_alternatives.all().order_by("order"):
-        alternative = {
-            "lemma": alternative.lemma,
-            "word_types": alternative.word_types_json,
-            "type": str(alternative.type),
-            "pluralization": str(alternative.pluralization),
-            "is_inspiration": alternative.is_inspiration,
-            "is_advanced": alternative.is_advanced,
-            "is_remove": alternative.is_remove,
-            "is_collective_noun": alternative.is_collective_noun,
-            "is_gendered_noun": alternative.is_gendered_noun,
-            "is_placeholder": alternative.is_placeholder,
-        }
-        alternatives.append(alternative)
-
-    false_positives = []
-    for false_positive in rule.false_positives.all():
-        false_positives.append(false_positive.false_positive)
-
-    lemmatizations = []
-    for token in rule.lemma_json:
-        token_lemmatizations = Lemmatization.objects.filter(
-            lemma=token, language=rule.language
-        ).order_by("-word_type")
-
-        for token_lemmatization in token_lemmatizations:
-            lemmatizations.append(
-                {
-                    "text": token_lemmatization.text,
-                    "lemma": token_lemmatization.lemma,
-                    "word_type": token_lemmatization.word_type,
-                }
-            )
-
-    data = {
-        "text": values["text"],
-        "lang": str(rule.language),
-        "lemma": rule.lemma,
-        "type": rule.type,
-        "word_types": rule.word_types_json,
-        "actual_word_types": rule.actual_word_types,
-        "subcategories": rule.diversity_dimension_json,
-        "alternatives": alternatives,
-        "false_positives": false_positives,
-        "label": rule.label,
-        "pattern": rule.pattern,
-        "is_pattern_match": rule.is_pattern_match,
-        "entity_type": rule.entity_type,
-        "pluralization": rule.pluralization,
-        "lemmatizations": lemmatizations,
-    }
+    data = build_rule_payload(rule) | {"text": values["text"]}
 
     path = "/debug/rule"
 
