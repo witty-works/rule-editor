@@ -2578,3 +2578,80 @@ class FrenchNoun(BaseTimestampedModel, BaseCreatedByModel, BaseCommentableModel)
     collective_noun = models.CharField(max_length=255, null=True, blank=True)
     collective_noun_2 = models.CharField(max_length=255, null=True, blank=True)
     ner = EnumField(NerTypeEnum, null=True, blank=True)
+
+
+class EvaluationRun(models.Model):
+    """One evaluation of training sentences against a specific NLP API build.
+
+    The stamp (git revision, spaCy and model versions) is what keeps pass/fail
+    state honest: results from a run whose stamp no longer matches the
+    deployed API are by definition outdated. The bare has_training_sentences /
+    has_failing_training_sentence flags went stale invisibly for lack of this.
+    """
+
+    def __str__(self):
+        return f"run {self.pk} @ {self.api_git_revision[:12] or self.api_app_version} (spacy {self.spacy_version})"
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    nlp_api_url = models.CharField(max_length=255)
+    api_app_version = models.CharField(max_length=64, blank=True, default="")
+    api_git_revision = models.CharField(max_length=64, blank=True, default="")
+    spacy_version = models.CharField(max_length=32, blank=True, default="")
+    model_versions = models.JSONField(
+        default=dict, help_text="Per-language spaCy model name and version"
+    )
+    comment = models.TextField(blank=True, default="")
+
+
+class RuleEvaluation(models.Model):
+    """Per-rule outcome of an evaluation run."""
+
+    class Meta:
+        unique_together = (("run", "rule"),)
+
+    def __str__(self):
+        state = "failing" if self.failing else "passing"
+        return f"{self.rule} {state} (run {self.run_id})"
+
+    run = models.ForeignKey(
+        EvaluationRun, related_name="rule_evaluations", on_delete=models.CASCADE
+    )
+    rule = models.ForeignKey(
+        Rule, related_name="sentence_check_evaluations", on_delete=models.CASCADE
+    )
+    failing = models.BooleanField(
+        help_text="A positive training sentence did not trigger the rule"
+    )
+    previous_flag = models.BooleanField(
+        help_text="Value of has_failing_training_sentence when this run started"
+    )
+    sentence_count = models.IntegerField(default=0)
+    failed_count = models.IntegerField(default=0)
+    error_count = models.IntegerField(default=0)
+
+
+class TrainingSentenceEvaluation(models.Model):
+    """Per-sentence outcome of an evaluation run.
+
+    matched records what the API did; passed records whether that is what the
+    sentence expects (positive sentences must match, false-positive sentences
+    must not). Both are NULL when the API call itself failed - an error is
+    not a verdict.
+    """
+
+    class Meta:
+        unique_together = (("run", "training_sentence"),)
+
+    run = models.ForeignKey(
+        EvaluationRun, related_name="sentence_evaluations", on_delete=models.CASCADE
+    )
+    training_sentence = models.ForeignKey(
+        TrainingSentence, related_name="evaluations", on_delete=models.CASCADE
+    )
+    rule = models.ForeignKey(
+        Rule, related_name="sentence_evaluations", on_delete=models.CASCADE
+    )
+    matched = models.BooleanField(null=True)
+    passed = models.BooleanField(null=True)
+    is_false_positive = models.BooleanField(default=False)
+    error = models.TextField(blank=True, default="")
