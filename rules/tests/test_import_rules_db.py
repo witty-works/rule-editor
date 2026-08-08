@@ -109,46 +109,99 @@ class ImportConflictTests(ImportExportTestCase):
         cat.refresh_from_db()
         self.assertEqual(cat.name, "changed-in-db")
 
-    def test_default_behaviour_overwrites_existing(self):
-        """Without flags, an existing record is overwritten with imported data."""
+    def test_default_refuses_pk_hit_with_different_identity(self):
+        """A pk hit whose natural keys differ is a conflict: the record is
+        refused and the whole import rolls back, because the local record may
+        simply be an unrelated one that happens to carry the same pk."""
         cat = self.make_category(name="original-name")
         export_path = self.do_export()
 
-        # Rename in DB; re-import with no flags should restore original name
         cat.name = "renamed-in-db"
         cat.save()
 
-        # Export has "original-name" (pk=cat.pk) → import overwrites
-        self.do_import(export_path)
+        with self.assertRaises(SystemExit):
+            self.do_import(export_path)
+
+        cat.refresh_from_db()
+        self.assertEqual(cat.name, "renamed-in-db")
+
+    def test_force_pk_overwrite_restores_exported_state(self):
+        """--force-pk-overwrite declares pk lineage is trusted; the record is
+        overwritten with the imported data."""
+        cat = self.make_category(name="original-name")
+        export_path = self.do_export()
+
+        cat.name = "renamed-in-db"
+        cat.save()
+
+        self.do_import(export_path, force_pk_overwrite=True)
 
         cat.refresh_from_db()
         self.assertEqual(cat.name, "original-name")
 
-    def test_merge_updates_existing_record(self):
-        """--merge must update the existing record rather than skip it."""
-        cat = self.make_category(name="merge-target")
+    def test_default_overwrites_when_identity_matches(self):
+        """Same pk and same natural keys: the record is the same record, and
+        the default overwrite applies to its non-key fields."""
+        src = self.make_source(name="same-source")
+        src.url = "https://example.org/original"
+        src.save()
         export_path = self.do_export()
 
-        cat.name = "pre-merge-value"
-        cat.save()
+        src.url = "https://example.org/changed-locally"
+        src.save()
+
+        self.do_import(export_path)
+
+        src.refresh_from_db()
+        self.assertEqual(src.url, "https://example.org/original")
+
+    def test_merge_updates_existing_record(self):
+        """--merge updates a record whose identity matches."""
+        src = self.make_source(name="merge-target")
+        src.url = "https://example.org/exported"
+        src.save()
+        export_path = self.do_export()
+
+        src.url = "https://example.org/pre-merge"
+        src.save()
 
         self.do_import(export_path, merge=True)
 
+        src.refresh_from_db()
+        self.assertEqual(src.url, "https://example.org/exported")
+
+    def test_merge_refuses_identity_mismatch_without_force(self):
+        """--merge on a pk hit with different natural keys is refused like any
+        other identity conflict; --force-pk-overwrite unlocks it."""
+        cat = self.make_category(name="merge-original")
+        export_path = self.do_export()
+
+        cat.name = "merge-renamed"
+        cat.save()
+
+        with self.assertRaises(SystemExit):
+            self.do_import(export_path, merge=True)
         cat.refresh_from_db()
-        self.assertEqual(cat.name, "merge-target")
+        self.assertEqual(cat.name, "merge-renamed")
+
+        self.do_import(export_path, merge=True, force_pk_overwrite=True)
+        cat.refresh_from_db()
+        self.assertEqual(cat.name, "merge-original")
 
     def test_update_flag_is_alias_for_merge(self):
         """--update must behave identically to --merge."""
-        cat = self.make_category(name="update-target")
+        src = self.make_source(name="update-target")
+        src.url = "https://example.org/exported"
+        src.save()
         export_path = self.do_export()
 
-        cat.name = "pre-update-value"
-        cat.save()
+        src.url = "https://example.org/pre-update"
+        src.save()
 
         self.do_import(export_path, update=True)
 
-        cat.refresh_from_db()
-        self.assertEqual(cat.name, "update-target")
+        src.refresh_from_db()
+        self.assertEqual(src.url, "https://example.org/exported")
 
 
 # ---------------------------------------------------------------------------
