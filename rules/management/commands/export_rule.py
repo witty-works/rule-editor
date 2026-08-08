@@ -101,6 +101,14 @@ class Command(BaseCommand):
         for rule in rules:
             self.stdout.write(f"  Exporting: {rule.lemma} ({rule.language})")
 
+            # Parents must precede their children in the file: importers map
+            # old pks to new ones in file order, so a child serialized first
+            # would carry an unmapped parent reference.
+            if rule.parent and rule.parent.id not in exported_ids["rules"]:
+                self.stdout.write(f"    Including parent rule: {rule.parent.lemma}")
+                all_objects.append(rule.parent)
+                exported_ids["rules"].add(rule.parent.id)
+
             # Add rule
             all_objects.append(rule)
             exported_ids["rules"].add(rule.id)
@@ -153,12 +161,6 @@ class Command(BaseCommand):
                 all_objects.append(rule.source)
                 exported_ids["sources"].add(rule.source.id)
 
-            # Add parent rule if exists
-            if rule.parent and rule.parent.id not in exported_ids["rules"]:
-                self.stdout.write(f"    Including parent rule: {rule.parent.lemma}")
-                all_objects.append(rule.parent)
-                exported_ids["rules"].add(rule.parent.id)
-
             # Add linked rules
             for linked in rule.links.all():
                 if linked.id not in exported_ids["rules"]:
@@ -186,6 +188,11 @@ class Command(BaseCommand):
             for key in (FIELD_CREATEDBY, FIELD_OWNEDBY):
                 if key in fields:
                     fields[key] = None
+            # Many-to-many fields serialize as raw pk lists that mean nothing
+            # in another installation and are never applied on import; strip
+            # them so what does not travel is explicit (see export_rules_db).
+            for m2m_name in ("links", "sanctions"):
+                fields.pop(m2m_name, None)
 
         # Write to file
         output_path = dump_json(

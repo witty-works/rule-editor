@@ -158,7 +158,11 @@ class Command(BaseCommand):
         if not exclude_evaluations:
             models_to_export.extend(EXPORT_MODELS_EVALUATIONS)
 
-        # Collect all objects
+        # Collect all objects. The whole collection runs inside one
+        # transaction so the export is a consistent snapshot even while
+        # other processes (nightly checks, admin edits) write to the DB.
+        from django.db import transaction
+
         all_objects = []
         exported_counts = {}
 
@@ -196,53 +200,56 @@ class Command(BaseCommand):
 
         # Compute filtered rule IDs once so related-model queries don't
         # mutate the closure variable and re-trigger the filter on each model.
-        filtered_rule_id_list = None
-        if filter_active:
-            from rules.models import Rule
+        with transaction.atomic():
+            filtered_rule_id_list = None
+            if filter_active:
+                from rules.models import Rule
 
-            filtered_rule_id_list = list(
-                _apply_rule_filters(Rule.objects.all()).values_list("id", flat=True)
-            )
-
-        for model_path in models_to_export:
-            app_label, model_name = model_path.split(".")
-            model = apps.get_model(app_label, model_name)
-
-            # Order by primary key for deterministic output
-            queryset = model.objects.all().order_by("pk")
-
-            # Apply filters
-            if model_name == "Rule":
-                queryset = _apply_rule_filters(queryset)
-
-            # Restrict related models to the filtered rule set
-            if (
-                model_name
-                in [
-                    "Alternative",
-                    "TrainingSentence",
-                    "FalsePositive",
-                    "RuleDiversityDimension",
-                    "RuleStructureEvaluation",
-                ]
-                and filter_active
-            ):
-                queryset = queryset.filter(rule_id__in=filtered_rule_id_list)
-
-            count = queryset.count()
-            if count > 0:
-                exported_counts[model_name] = count
-                self.stdout.write(f"  Collecting {count} {model_name} objects...")
-
-                # Use tqdm for progress bar if available and count is large
-                queryset_iter = (
-                    tqdm(queryset, desc=f"  {model_name}", leave=False, ncols=80)
-                    if HAS_TQDM and count > 100
-                    else queryset
+                filtered_rule_id_list = list(
+                    _apply_rule_filters(Rule.objects.all()).values_list(
+                        "id", flat=True
+                    )
                 )
 
-                for obj in queryset_iter:
-                    all_objects.append(obj)
+            for model_path in models_to_export:
+                app_label, model_name = model_path.split(".")
+                model = apps.get_model(app_label, model_name)
+
+                # Order by primary key for deterministic output
+                queryset = model.objects.all().order_by("pk")
+
+                # Apply filters
+                if model_name == "Rule":
+                    queryset = _apply_rule_filters(queryset)
+
+                # Restrict related models to the filtered rule set
+                if (
+                    model_name
+                    in [
+                        "Alternative",
+                        "TrainingSentence",
+                        "FalsePositive",
+                        "RuleDiversityDimension",
+                        "RuleStructureEvaluation",
+                    ]
+                    and filter_active
+                ):
+                    queryset = queryset.filter(rule_id__in=filtered_rule_id_list)
+
+                count = queryset.count()
+                if count > 0:
+                    exported_counts[model_name] = count
+                    self.stdout.write(f"  Collecting {count} {model_name} objects...")
+
+                    # Use tqdm for progress bar if available and count is large
+                    queryset_iter = (
+                        tqdm(queryset, desc=f"  {model_name}", leave=False, ncols=80)
+                        if HAS_TQDM and count > 100
+                        else queryset
+                    )
+
+                    for obj in queryset_iter:
+                        all_objects.append(obj)
 
         # Serialize to JSON
         self.stdout.write(
@@ -260,12 +267,26 @@ class Command(BaseCommand):
 
         # Parse and clean user references
         data_list = json.loads(data)
+        m2m_fields_by_model = {}
         for item in data_list:
             fields = item.get("fields", {})
             # Nullify user references
             for key in (FIELD_CREATEDBY, FIELD_OWNEDBY):
                 if key in fields:
                     fields[key] = None
+            # Strip many-to-many fields (links, sanctions): they serialize as
+            # raw pk lists that are meaningless in another installation, and
+            # the importer never applied them - so they only produced silent
+            # divergence. Dropping them makes "does not travel" explicit.
+            model_label = item.get("model")
+            if model_label not in m2m_fields_by_model:
+                app_label, model_class_name = model_label.split(".")
+                model_class = apps.get_model(app_label, model_class_name)
+                m2m_fields_by_model[model_label] = [
+                    field.name for field in model_class._meta.many_to_many
+                ]
+            for m2m_name in m2m_fields_by_model[model_label]:
+                fields.pop(m2m_name, None)
 
         # Write to file (atomic) using shared utility
         output_path = dump_json(
@@ -285,10 +306,12 @@ class Command(BaseCommand):
             )
         )
 
-        # Include taggit tags note
+        # What deliberately does not travel
         self.stdout.write(
             self.style.WARNING(
-                "\nNote: Tags are exported separately by Django. "
-                "If you need tags, also export: taggit.Tag, taggit.TaggedItem"
+                "\nNote: tags, rule links and sanctions do not travel in this "
+                "export; they reference installation-local records and must "
+                "be recreated manually where needed. Evaluation runs "
+                "(pass/fail state) are installation-local by design."
             )
         )
