@@ -31,7 +31,7 @@ from rules.model_constants import (
     RULE_STRUCTURE_EVAL,
     MODELS_WITH_USER_REFS,
 )
-from rules.export_utils import load_json
+from rules.export_utils import load_json, validate_foreign_keys_exist
 
 
 class Command(BaseCommand):
@@ -47,12 +47,27 @@ class Command(BaseCommand):
         parser.add_argument(
             "--skip-existing",
             action="store_true",
-            help="Skip rules that already exist (by lemma + word_types + language)",
+            help="Skip rules that already exist (matched on the full natural key: "
+            "language, lemma, word_types, type, pluralization, pattern)",
         )
         parser.add_argument(
             "--update-existing",
             action="store_true",
             help="Update existing rules with imported data",
+        )
+        parser.add_argument(
+            "--replace",
+            action="store_true",
+            help="DESTRUCTIVE: delete an existing rule (cascades to its "
+            "alternatives, sentences, false positives and evaluations) and "
+            "recreate it from the import. Without this flag an existing rule "
+            "is skipped and reported",
+        )
+        parser.add_argument(
+            "--allow-partial",
+            action="store_true",
+            help="Commit successfully imported records even when others "
+            "errored. Default: any error rolls back the entire import",
         )
         parser.add_argument(
             "--owner", type=str, help="Assign imported rules to specific username"
@@ -72,9 +87,20 @@ class Command(BaseCommand):
         input_file = options["input"]
         skip_existing = options["skip_existing"]
         update_existing = options["update_existing"]
+        replace = options["replace"]
+        allow_partial = options["allow_partial"]
         owner = options["owner"]
         dry_run = options["dry_run"]
         create_deps = options["create_dependencies"]
+
+        if sum([skip_existing, update_existing, replace]) > 1:
+            self.stdout.write(
+                self.style.ERROR(
+                    "--skip-existing, --update-existing and --replace are "
+                    "mutually exclusive"
+                )
+            )
+            return
 
         # Validate owner if provided
         owner_user = None
@@ -133,79 +159,98 @@ class Command(BaseCommand):
         # Track PK mapping (old PK -> new PK)
         pk_mapping = {}
 
-        # Import each model
-        for model_name in import_order:
-            if model_name not in by_model:
-                continue
+        class _ImportAborted(Exception):
+            pass
 
-            items = by_model[model_name]
-            self.stdout.write(f"\n{model_name}: {len(items)} object(s)")
+        # Import each model. The outer transaction makes an error roll the
+        # entire import back unless --allow-partial was requested: a rule
+        # without its alternatives is worse than no rule at all.
+        rolled_back = False
+        try:
+            with transaction.atomic():
+                for model_name in import_order:
+                    if model_name not in by_model:
+                        continue
 
-            for item in items:
-                pk = item.get("pk")
-                fields = item.get("fields", {})
+                    items = by_model[model_name]
+                    self.stdout.write(f"\n{model_name}: {len(items)} object(s)")
 
-                # Assign owner if requested (for all models with user references)
-                if owner_user and model_name in MODELS_WITH_USER_REFS:
-                    # Assign createdby if field exists
-                    if "createdby" in fields:
-                        fields["createdby"] = owner_user.id
-                    # Assign ownedby if field exists (only Rule has this)
-                    if "ownedby" in fields:
-                        fields["ownedby"] = owner_user.id
+                    for item in items:
+                        pk = item.get("pk")
+                        fields = item.get("fields", {})
 
-                if dry_run:
-                    self.stdout.write(f"  Would import {model_name} pk={pk}")
-                    stats["created"] += 1
-                    continue
+                        # Assign owner if requested
+                        if owner_user and model_name in MODELS_WITH_USER_REFS:
+                            if "createdby" in fields:
+                                fields["createdby"] = owner_user.id
+                            if "ownedby" in fields:
+                                fields["ownedby"] = owner_user.id
 
-                try:
-                    with transaction.atomic():
-                        # Handle based on model type
-                        if model_name == RULE:
-                            result = self._import_rule(
-                                item, pk_mapping, skip_existing, update_existing
-                            )
-                        elif model_name == CATEGORY:
-                            result = self._import_category(item, create_deps)
-                        elif model_name == DIV_DIM:
-                            result = self._import_dimension(
-                                item, pk_mapping, create_deps
-                            )
-                        elif model_name == SOURCE:
-                            result = self._import_source(item)
-                        else:
-                            # Generic import for related objects
-                            result = self._import_generic(item, pk_mapping)
-
-                        if result["status"] == "created":
+                        if dry_run:
+                            self.stdout.write(f"  Would import {model_name} pk={pk}")
                             stats["created"] += 1
-                            pk_mapping[f"{model_name}:{pk}"] = result["new_pk"]
-                            self.stdout.write(
-                                f'  ✓ Created {model_name} (old pk={pk}, new pk={result["new_pk"]})'
-                            )
-                        elif result["status"] == "updated":
-                            stats["updated"] += 1
-                            pk_mapping[f"{model_name}:{pk}"] = result["new_pk"]
-                            self.stdout.write(
-                                f'  ↻ Updated {model_name} pk={result["new_pk"]}'
-                            )
-                        elif result["status"] == "skipped":
-                            stats["skipped"] += 1
-                            pk_mapping[f"{model_name}:{pk}"] = result["existing_pk"]
-                        elif result["status"] == "error":
+                            continue
+
+                        try:
+                            with transaction.atomic():
+                                # Handle based on model type
+                                if model_name == RULE:
+                                    result = self._import_rule(
+                                        item, pk_mapping, update_existing, replace
+                                    )
+                                elif model_name == CATEGORY:
+                                    result = self._import_category(item, create_deps)
+                                elif model_name == DIV_DIM:
+                                    result = self._import_dimension(
+                                        item, pk_mapping, create_deps
+                                    )
+                                elif model_name == SOURCE:
+                                    result = self._import_source(item)
+                                else:
+                                    result = self._import_generic(item, pk_mapping)
+
+                                if result["status"] == "created":
+                                    stats["created"] += 1
+                                    pk_mapping[f"{model_name}:{pk}"] = result["new_pk"]
+                                    self.stdout.write(
+                                        f'  ✓ Created {model_name} (old pk={pk}, new pk={result["new_pk"]})'
+                                    )
+                                elif result["status"] == "updated":
+                                    stats["updated"] += 1
+                                    pk_mapping[f"{model_name}:{pk}"] = result["new_pk"]
+                                    self.stdout.write(
+                                        f'  ↻ Updated {model_name} pk={result["new_pk"]}'
+                                    )
+                                elif result["status"] == "skipped":
+                                    stats["skipped"] += 1
+                                    pk_mapping[f"{model_name}:{pk}"] = result[
+                                        "existing_pk"
+                                    ]
+                                    self.stdout.write(
+                                        f"  = Skipped existing {model_name} "
+                                        f'pk={result["existing_pk"]} (use '
+                                        "--update-existing or --replace to change it)"
+                                    )
+                                elif result["status"] == "error":
+                                    stats["errors"] += 1
+                                    self.stdout.write(
+                                        self.style.ERROR(
+                                            f'  ✗ Error: {result["message"]}'
+                                        )
+                                    )
+
+                        except Exception as e:
                             stats["errors"] += 1
                             self.stdout.write(
-                                self.style.ERROR(f'  ✗ Error: {result["message"]}')
+                                self.style.ERROR(
+                                    f"  ✗ Error importing {model_name} pk={pk}: {e}"
+                                )
                             )
 
-                except Exception as e:
-                    stats["errors"] += 1
-                    self.stdout.write(
-                        self.style.ERROR(
-                            f"  ✗ Error importing {model_name} pk={pk}: {e}"
-                        )
-                    )
+                if stats["errors"] and not allow_partial and not dry_run:
+                    raise _ImportAborted()
+        except _ImportAborted:
+            rolled_back = True
 
         # Print summary
         self.stdout.write("\n" + "=" * 60)
@@ -218,39 +263,92 @@ class Command(BaseCommand):
 
         if dry_run:
             self.stdout.write(self.style.WARNING("\nDRY RUN - No changes made"))
+        elif rolled_back:
+            self.stdout.write(
+                self.style.ERROR(
+                    "\n✗ Import ROLLED BACK because of the errors above. "
+                    "Nothing was changed; fix the input or pass --allow-partial."
+                )
+            )
+            raise SystemExit(1)
         else:
             self.stdout.write(self.style.SUCCESS("\n✓ Import completed"))
 
-    def _import_rule(self, item, pk_mapping, skip_existing, update_existing):
+    # The full natural key of a rule; a subset (as used before: lemma +
+    # word_types + language) mistakes sibling rules that differ in type,
+    # pluralization or pattern for "the same rule".
+    RULE_NATURAL_KEY = (
+        "language",
+        "lemma",
+        "word_types",
+        "type",
+        "pluralization",
+        "pattern",
+    )
+
+    def _import_rule(self, item, pk_mapping, update_existing, replace):
         """Import a Rule object"""
         fields = item["fields"]
 
-        # Check if rule exists
-        existing = Rule.objects.filter(
-            lemma=fields["lemma"],
-            word_types=fields.get("word_types", ""),
-            language=fields["language"],
-        ).first()
+        query = {}
+        for key in self.RULE_NATURAL_KEY:
+            value = fields.get(key)
+            if value is None:
+                query[f"{key}__isnull"] = True
+            else:
+                query[key] = value
+        existing = Rule.objects.filter(**query).first()
 
         if existing:
-            if skip_existing:
-                return {"status": "skipped", "existing_pk": existing.pk}
-            elif update_existing:
-                # Update existing
+            if update_existing:
+                model_fields = {f.name: f for f in existing._meta.get_fields()}
                 for key, value in fields.items():
-                    if key not in ["createdby", "ownedby", "id"]:
+                    field = model_fields.get(key)
+                    if key in ("createdby", "ownedby", "id") or field is None:
+                        continue
+                    if getattr(field, "many_to_many", False):
+                        continue
+                    if field.is_relation:
+                        setattr(existing, f"{key}_id", value)
+                    else:
                         setattr(existing, key, value)
                 existing.save()
                 return {"status": "updated", "new_pk": existing.pk}
-            else:
-                # Replace
+            elif replace:
+                # Explicitly requested destructive replace: cascades to the
+                # rule's children and detaches its own children rules.
                 existing.delete()
+            else:
+                # Fail safe: never silently destroy an existing rule. The
+                # operator picks --update-existing or --replace deliberately.
+                return {"status": "skipped", "existing_pk": existing.pk}
 
         # Create new
         obj_data = json.dumps([item])
         objects = list(serializers.deserialize("json", obj_data))
         obj = objects[0].object
         obj.pk = None  # Force new object
+
+        # Remap self-referential FKs; refuse to keep a source-side pk that
+        # was never remapped (it would point at an arbitrary local rule).
+        for self_ref in ("parent", "rule_translation_source"):
+            value = fields.get(self_ref)
+            if value is None:
+                continue
+            mapped = pk_mapping.get(f"{RULE}:{value}")
+            if mapped is not None:
+                setattr(obj, f"{self_ref}_id", mapped)
+            else:
+                return {
+                    "status": "error",
+                    "message": (
+                        f"rule references {self_ref}={value} which is not part "
+                        "of this import; export it too (export_rule includes "
+                        "parents automatically) or import it first"
+                    ),
+                }
+
+        validate_foreign_keys_exist(obj)
         obj.save()
 
         return {"status": "created", "new_pk": obj.pk}
@@ -296,12 +394,22 @@ class Command(BaseCommand):
                 "message": f'Dimension "{fields["name"]}" not found. Use --create-dependencies',
             }
 
-        # Resolve category FK
+        # Resolve category FK; an unmapped value is the source installation's
+        # pk and must not be attached to whatever local category owns it.
         cat_pk = fields.get("category")
         if cat_pk:
             mapped_key = f"{CATEGORY}:{cat_pk}"
             if mapped_key in pk_mapping:
                 fields["category"] = pk_mapping[mapped_key]
+            else:
+                return {
+                    "status": "error",
+                    "message": (
+                        f'dimension "{fields.get("name")}" references '
+                        f"category={cat_pk} which is not part of this import; "
+                        "use export_rule --full to include categories"
+                    ),
+                }
 
         # Create new
         obj_data = json.dumps([item])
@@ -327,30 +435,82 @@ class Command(BaseCommand):
         objects = list(serializers.deserialize("json", obj_data))
         obj = objects[0].object
         obj.pk = None
+        validate_foreign_keys_exist(obj)
         obj.save()
 
         return {"status": "created", "new_pk": obj.pk}
 
+    # FK field -> fixture label of the referenced model. Deriving the label
+    # from the field name ("diversity_dimension" -> "rules.diversity_dimension")
+    # silently missed the mapping for every model whose class name is not the
+    # snake_case field name, so dimension links landed on source-side pks.
+    GENERIC_FK_TARGETS = {
+        "rule": RULE,
+        "parent": RULE,
+        "rule_translation_source": RULE,
+        "diversity_dimension": DIV_DIM,
+        "category": CATEGORY,
+        "source": SOURCE,
+    }
+
+    # Natural keys used to keep re-imports of child records idempotent.
+    GENERIC_UNIQUE_FIELDS = {
+        ALTERNATIVE: ("rule", "lemma"),
+        TRAINING_SENTENCE: ("rule", "text"),
+        FALSE_POSITIVE: ("rule", "false_positive"),
+        RULE_DIV_DIM: ("rule", "diversity_dimension"),
+    }
+
     def _import_generic(self, item, pk_mapping):
         """Generic import for related objects"""
         fields = item["fields"]
+        model_label = item["model"]
 
-        # Remap FKs using pk_mapping
-        for key, value in fields.items():
-            if key.endswith("_id") or key in [
-                "rule",
-                "diversity_dimension",
-                "source",
-                "parent",
-            ]:
-                if value:
-                    # Try to find mapping
-                    model_name = (
-                        item["model"].rsplit(".", 1)[0] + "." + key.replace("_id", "")
-                    )
-                    mapped_key = f"{model_name}:{value}"
-                    if mapped_key in pk_mapping:
-                        fields[key] = pk_mapping[mapped_key]
+        # Remap FKs using pk_mapping; a child whose rule was not imported in
+        # this run must not be attached to whatever local rule carries the
+        # source pk.
+        for key, target_model in self.GENERIC_FK_TARGETS.items():
+            value = fields.get(key)
+            if not value:
+                continue
+            mapped_key = f"{target_model}:{value}"
+            if mapped_key in pk_mapping:
+                fields[key] = pk_mapping[mapped_key]
+            elif key == "rule":
+                return {
+                    "status": "error",
+                    "message": (
+                        f"{model_label} references rule={value} which was not "
+                        "imported in this run; import the rule first"
+                    ),
+                }
+            else:
+                return {
+                    "status": "error",
+                    "message": (
+                        f"{model_label} references {key}={value} which is not "
+                        "part of this import; use export_rule --full or import "
+                        "the dependency first"
+                    ),
+                }
+
+        # Idempotence: a re-import must not duplicate children.
+        from django.apps import apps
+
+        app_label, model_class_name = model_label.split(".")
+        model_class = apps.get_model(app_label, model_class_name)
+        unique_fields = self.GENERIC_UNIQUE_FIELDS.get(model_label)
+        if unique_fields and all(f in fields for f in unique_fields):
+            query = {}
+            for f in unique_fields:
+                value = fields[f]
+                if value is None:
+                    query[f"{f}__isnull"] = True
+                else:
+                    query[f] = value
+            existing = model_class.objects.filter(**query).first()
+            if existing is not None:
+                return {"status": "skipped", "existing_pk": existing.pk}
 
         # Create new
         obj_data = json.dumps([item])
