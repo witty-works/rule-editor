@@ -205,10 +205,40 @@ Options:
   --skip-existing       # leave existing records untouched
   --assign-to=<username>
   --dry-run
-  --ignore-pk           # generate new PKs, remap all FKs
+  --ignore-pk           # generate new PKs, remap all FKs (content identity)
+  --force-pk-overwrite  # trust pk lineage across databases (same-installation sync only)
+  --allow-partial       # commit clean records even when others error/conflict
 ```
 
-> **Atomicity:** the entire import runs inside a single database transaction. If any model fails, all previously imported models in the same run are rolled back, leaving the database unchanged.
+> **Atomicity:** the entire import runs inside a single database transaction. Any error or refused conflict rolls the **whole** import back and exits non-zero — the database is never left half-updated. Pass `--allow-partial` if you explicitly want the clean records committed anyway; refused records are reported and must be resolved manually.
+
+### Identity and conflicts
+
+A record in the file is only treated as *the same record* as a local one when its
+**natural key** matches (rules: `language + lemma + word_types + type +
+pluralization + pattern`; categories/dimensions/sources: `name`; children:
+`rule + lemma/text/false_positive`; lemmatizations: `language + text +
+word_type`). `NULL` values participate in the natural key — a rule with no
+word type is still uniquely identified.
+
+A **pk hit with a different natural key is a conflict, not an update**: another
+installation's export can carry the same pk for an unrelated record, and
+overwriting it would silently destroy local work. Conflicts are refused and the
+import rolls back. You then choose the identity model explicitly:
+
+- `--ignore-pk` — content identity: pks in the file are ignored, records are
+  matched by natural key, new pks are generated and every FK is remapped.
+  This is the correct mode for **cross-installation** imports.
+- `--force-pk-overwrite` — pk identity: the two databases share pk lineage
+  (e.g. production → development of the *same* installation), so a pk hit is
+  the same record even if it was renamed. Never use this on an export from a
+  different installation.
+
+Under `--ignore-pk`, a record referencing something that is *not part of the
+import* (e.g. an alternative whose rule was filtered out, or a parent rule
+missing from a partial export) is refused rather than attached to whatever
+local record happens to carry the referenced pk. Include the dependency in the
+export or import it first.
 
 ## Part 2: Usage
 
@@ -254,11 +284,13 @@ python manage.py import_rules_db --input=shared_rules.json.gz --assign-to=yourus
 
 - `--dry-run`: Show detailed analysis without making changes (shows duplicates, conflicts, samples)
 - `--ignore-pk`: Generate new primary keys, detect duplicates by content, and remap **all** foreign key relationships (rule, source, category, diversity_dimension, and self-referential FKs). Required when merging exports from different installations to prevent PK collisions.
-- `--skip-existing`: Skip objects that already exist (matched by unique fields)
+- `--skip-existing`: Skip objects that already exist (matched by unique fields); never writes, so it is always safe
 - `--merge`: Update existing objects with imported data
+- `--force-pk-overwrite`: Trust pk lineage — overwrite/merge a pk hit even when the natural keys differ (same-installation sync only)
+- `--allow-partial`: Commit clean records even when other records error or conflict (default: everything rolls back)
 - `--assign-to=USERNAME`: Assign all imported data to a specific user
 
-> **Default behaviour (no flags):** existing records matched by primary key are **overwritten** with the imported data. Use `--skip-existing` or `--merge` if you want a safer merge.
+> **Default behaviour (no flags):** a record whose *identity matches* (pk **and** natural key) is overwritten with the imported data. A pk hit whose natural key differs is a **conflict**: it is refused and the whole import rolls back — see "Identity and conflicts" above. Use `--dry-run` first, always.
 
 **Merging data from multiple sources:**
 
@@ -300,14 +332,42 @@ python manage.py export_rule --id=123 --output=full_rule.json.gz --full
 ### Importing Individual Rules
 
 ```bash
-# Import a rule (works with .json or .json.gz)
+# Import a rule (works with .json or .json.gz). If a rule with the same
+# natural key (language + lemma + word_types + type + pluralization + pattern)
+# already exists it is SKIPPED and reported — never silently replaced.
 python manage.py import_rule --input=my_rule.json.gz
 
-# Import without overwriting existing rules
-python manage.py import_rule --input=my_rule.json.gz --skip-existing
+# Update an existing rule's fields with the imported data
+python manage.py import_rule --input=my_rule.json.gz --update-existing
+
+# DESTRUCTIVE: delete the existing rule (cascades to its alternatives,
+# sentences, false positives and evaluations) and recreate it from the file
+python manage.py import_rule --input=my_rule.json.gz --replace
 
 # Import and assign to specific user
 python manage.py import_rule --input=my_rule.json.gz --owner=yourusername
+```
+
+Re-importing the same file is idempotent: alternatives, training sentences,
+false positives and dimension links are matched by their natural keys and not
+duplicated. Any error rolls the whole import back unless `--allow-partial` is
+passed. A child record whose rule (or a dimension whose category) is not part
+of the file is refused with a message — export with `--full` or import the
+dependency first.
+
+**Submitting rule improvements from an edge installation back to the hub:**
+
+```bash
+# On the edge: export the improved rule with everything it needs
+python manage.py export_rule --id=123 --output=improved_rule.json.gz --full
+
+# On the hub: inspect first, then update the existing rule after review
+python manage.py import_rule --input=improved_rule.json.gz --dry-run
+python manage.py import_rule --input=improved_rule.json.gz --update-existing
+
+# Afterwards: re-evaluate the touched rules so the versioned pass/fail
+# state reflects the change
+python manage.py evaluate_rules --rule-ids <hub ids> --update-flags
 ```
 
 ## Part 3: Advanced Usage
@@ -417,8 +477,9 @@ python manage.py import_rules_db --input=updated_rules.json.gz --update --skip-e
 
 The `--update` flag will:
 
-- Update existing records that match (by unique fields like lemma+language+trigger)
+- Update existing records whose identity matches (pk and natural key agree)
 - Insert new records that don't exist yet
+- Refuse pk collisions with different content (see "Identity and conflicts")
 - Preserve local changes if `--skip-existing` is also used
 
 ### Sharing Between Teams
@@ -524,7 +585,53 @@ The export format is Django's natural JSON fixture format:
 ]
 ```
 
-## Part 6: Best Practices
+## Part 6: What travels — and what does not
+
+An export carries: rules (with their computed `lemma_json` / `word_types_json`),
+rule↔dimension links, alternatives, training sentences, false positives,
+lemmatizations, categories, dimensions, sources, optional linguistic declension
+tables and rule structure evaluations.
+
+Deliberately **not** in an export:
+
+- **Users** — `createdby`/`ownedby` are nulled (privacy); use `--assign-to`.
+- **Tags, rule links, sanctions** — they reference installation-local records;
+  raw pk lists would be meaningless (or wrong) elsewhere, so the exporter
+  strips them. Recreate them manually where needed.
+- **Evaluation runs** (`EvaluationRun`, per-sentence pass/fail state) — this is
+  installation-local state stamped with a specific NLP API build; every
+  installation computes its own with `manage.py evaluate_rules`.
+
+### The NLP API is part of the import
+
+Saving a rule or alternative re-tokenizes it against **your local NLP API**
+(`NLP_API` in `.env`), which recomputes `lemma_json`, `word_types_json` and the
+derived matching columns. Two consequences:
+
+1. The NLP API must be up during an import, or every rule errors and the
+   import rolls back.
+2. If your NLP API runs a different spaCy/model version than the exporter's,
+   the recomputed tokenization can differ from the source. That is *usually*
+   what you want (rules must match your models), but after any model upgrade
+   re-run `manage.py evaluate_rules` and triage the diff. Compare builds via
+   the API's `/version` endpoint.
+
+### Working in parallel
+
+Imports merge at **record** granularity — there is no field-level merge. If the
+hub edits a rule's explanation while an edge edits the same rule's word types,
+whichever import runs last wins for the whole record. To work in parallel
+safely:
+
+1. Partition ownership (by language, dimension, or rule ownership) so two
+   sites do not edit the same records.
+2. Exchange *narrow* exports (`--rule-ids`, `--dimension`, `--since`) rather
+   than full dumps.
+3. Always `--dry-run` first and read the conflict report; a refused conflict
+   means a human has to look, and that is intentional.
+4. Back up `database/db.sqlite3` before any import you cannot easily undo.
+
+## Part 6b: Best Practices
 
 ### For Sharing:
 

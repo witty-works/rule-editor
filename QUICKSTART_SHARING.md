@@ -146,7 +146,7 @@ python manage.py import_rules_db --input=updates.json.gz --update --assign-to=yo
 python manage.py import_rules_db --input=updates.json.gz --skip-existing --assign-to=your_username
 ```
 
-**Note:** `--update` (alias: `--merge`) updates existing records with new data from the import. Without any flag, existing records matched by PK are **overwritten** silently — always use `--dry-run` first when unsure.
+**Note:** `--update` (alias: `--merge`) updates existing records with new data from the import. A record only counts as "existing" when its **natural key** matches (for rules: language + lemma + word_types + type + pluralization + pattern) — a pk collision with different content is refused and the whole import rolls back. Choose `--ignore-pk` for exports from *other* installations (content identity, new pks, all FKs remapped) or `--force-pk-overwrite` only when both databases are the *same* installation's lineage. Any error rolls the entire import back unless `--allow-partial` is passed. Always use `--dry-run` first.
 
 ---
 
