@@ -94,6 +94,29 @@ def load_json(input_path: Union[str, Path]) -> list:
             return json.load(f)
 
 
+def validate_foreign_keys_exist(obj) -> None:
+    """Raise ValueError when a to-be-saved object references a pk that does
+    not exist.
+
+    SQLite defers foreign key enforcement to the COMMIT of the outermost
+    transaction, so a dangling reference sails through its per-item savepoint
+    and blows up the whole import at the very end, far from the record that
+    caused it. Checking here turns that into a per-record error with a
+    message naming the culprit.
+    """
+    for field in obj._meta.concrete_fields:
+        if not field.is_relation:
+            continue
+        value = getattr(obj, field.attname)
+        if value is None:
+            continue
+        if not field.related_model._default_manager.filter(pk=value).exists():
+            raise ValueError(
+                f"{obj._meta.label} references {field.name}={value} "
+                f"({field.related_model._meta.label}) which does not exist"
+            )
+
+
 def format_file_size(size_bytes: int) -> str:
     """Format bytes as human-readable size."""
     for unit in ["B", "KB", "MB", "GB"]:
