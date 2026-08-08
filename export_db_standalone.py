@@ -129,7 +129,26 @@ def _should_include_row(table_name, row, idx, filtered_rule_ids, language_filter
     return _language_specific_table_allowed(table_name, language_filter)
 
 
-def _row_to_fixture(model_name, row, columns, user_fields):
+# DB columns that are foreign keys. Their fixture field name has no "_id"
+# suffix (Django fixture format); regular columns that merely end in "_id"
+# (text_id) keep their name. Emitting raw column names produced files the
+# Django deserializer rejects outright.
+FK_COLUMNS = {
+    "rule_id",
+    "parent_id",
+    "rule_translation_source_id",
+    "diversity_dimension_id",
+    "category_id",
+    "source_id",
+    "createdby_id",
+    "ownedby_id",
+}
+
+# Junction/m2m columns never appear here because their tables are not in
+# DB_TABLE_TO_MODEL; tags, links and sanctions deliberately do not travel.
+
+
+def _row_to_fixture(model_name, row, columns, user_fields, bool_columns=frozenset()):
     """Convert a DB row to a Django fixture dict, handling user refs and types."""
     fields = {}
     idx = _index_map(columns)
@@ -137,7 +156,12 @@ def _row_to_fixture(model_name, row, columns, user_fields):
         if col_name == "id":
             continue
         value = None if col_name in user_fields else row[i]
-        fields[col_name] = (
+        field_name = (
+            col_name[: -len("_id")] if col_name in FK_COLUMNS else col_name
+        )
+        if value is not None and col_name in bool_columns:
+            value = bool(value)
+        fields[field_name] = (
             None
             if value is None
             else value if isinstance(value, (int, float, bool)) else str(value)
@@ -152,20 +176,27 @@ def _row_to_fixture(model_name, row, columns, user_fields):
 
 
 def get_table_data(cursor, table_name):
-    """Get all data from a table in deterministic order (by primary key)"""
+    """Get all data from a table in deterministic order (by primary key).
+
+    Returns (rows, columns, bool_columns): SQLite stores booleans as 0/1,
+    but Django fixtures (and the export schema) carry true/false, so callers
+    need to know which columns are declared bool.
+    """
     try:
         # Order by id (primary key) for deterministic output
         cursor.execute(f"SELECT * FROM {table_name} ORDER BY id")
         rows = cursor.fetchall()
 
-        # Get column names
+        # Get column names and declared types
         cursor.execute(f"PRAGMA table_info({table_name})")
-        columns = [col[1] for col in cursor.fetchall()]
+        table_info = cursor.fetchall()
+        columns = [col[1] for col in table_info]
+        bool_columns = {col[1] for col in table_info if col[2].lower() == "bool"}
 
-        return rows, columns
+        return rows, columns, bool_columns
     except sqlite3.Error as e:
         print(f"Error reading table {table_name}: {e}", file=sys.stderr)
-        return [], []
+        return [], [], set()
 
 
 def export_to_json(
@@ -209,8 +240,17 @@ def export_to_json(
 
     model_tables = DB_TABLE_TO_MODEL
 
-    # Process tables in deterministic order (sorted by table name)
-    sorted_model_tables = sorted(model_tables.items(), key=lambda x: x[0])
+    # Process tables in dependency order (rules before their children, base
+    # models first) so importers that validate references as they go never
+    # see a child before its parent. Alphabetical order put alternatives
+    # before rules.
+    from rules.model_constants import IMPORT_ORDER, MODEL_TO_DB_TABLE
+
+    sorted_model_tables = [
+        (MODEL_TO_DB_TABLE[model], model)
+        for model in IMPORT_ORDER
+        if MODEL_TO_DB_TABLE.get(model) in model_tables
+    ]
 
     # Fields that should be nullified (user references)
     # Use shared DB field names for user references
@@ -236,7 +276,7 @@ def export_to_json(
         if table_name not in tables:
             continue
 
-        rows, columns = get_table_data(cursor, table_name)
+        rows, columns, bool_columns = get_table_data(cursor, table_name)
 
         if not rows:
             continue
@@ -247,7 +287,9 @@ def export_to_json(
                 table_name, row, idx, filtered_rule_ids, language_filter
             ):
                 continue
-            fixtures.append(_row_to_fixture(model_name, row, columns, user_fields))
+            fixtures.append(
+                _row_to_fixture(model_name, row, columns, user_fields, bool_columns)
+            )
             total_records += 1
 
     conn.close()
