@@ -76,7 +76,7 @@ class Nouns(object):
             with gzip.open(INDEX_FILE_PATH, "wt", encoding="utf-8") as f:
                 f.write(output)
         except OSError:
-            # Read-only filesystem (e.g. the Platform.sh app container). The
+            # Read-only filesystem (e.g. a read-only container filesystem). The
             # in-memory index above is complete, so carry on without caching.
             pass
 
