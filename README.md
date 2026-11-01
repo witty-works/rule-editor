@@ -30,7 +30,6 @@ The data managed here powers the NLP API that performs real-time inclusive langu
 
 - Python 3.8+
 - Pipenv
-- Platform.sh CLI (for database sync)
 - SQLite
 
 ## Installation
@@ -117,22 +116,6 @@ When making model changes:
 python manage.py makemigrations rules
 python manage.py migrate
 ```
-
-### Database Sync with Platform.sh
-
-**Download database from environment:**
-
-```bash
-platform mount:download --mount database --target ./database -e [ENV]
-```
-
-**Upload local database to environment:**
-
-```bash
-platform mount:upload --mount database --source ./database -e [ENV]
-```
-
-Replace `[ENV]` with environment name (e.g., `main`, `dev`).
 
 ### Database Sharing
 
@@ -276,7 +259,7 @@ rule-editor/
 
 - **Framework**: Django 4.2+
 - **Database**: SQLite
-- **Deployment**: Platform.sh
+- **Deployment**: Docker (compose)
 - **Admin**: Django Admin with Grappelli
 - **Dependencies**: See `Pipfile` for complete list
 

@@ -52,8 +52,8 @@ The lookup logic is byte-for-byte upstream apart from the following:
 2. **`csv.field_size_limit(sys.maxsize)`.** The CSV has very wide rows; this
    avoids a platform-dependent `_csv.Error` on some systems.
 3. **`create_index()` tolerates a read-only filesystem.** The index write is
-   wrapped in `try/except OSError`. The Platform.sh app container is read-only
-   at runtime, and the in-memory index is already complete at that point, so a
+   wrapped in `try/except OSError`. The app may run on a read-only container
+   filesystem, and the in-memory index is already complete at that point, so a
    failed cache write is not fatal. In practice `index.txt.gz` ships with this
    directory, so the rebuild path is not normally reached.
 4. **Import path.** `from german_nouns.config import ...` became

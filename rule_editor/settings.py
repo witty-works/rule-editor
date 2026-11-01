@@ -14,7 +14,6 @@ from pathlib import Path
 import os
 import environ
 
-from platformshconfig import Config
 import sentry_sdk
 from sentry_sdk.integrations.django import DjangoIntegration
 
@@ -31,8 +30,8 @@ env = environ.Env(
     NLP_API=(str, ""),
     NLP_API_USER=(str, None),
     NLP_API_PASSWORD=(str, None),
-    PLATFORM_SMTP_HOST=(str, None),
-    PLATFORM_SMTP_PORT=(int, 25),
+    EMAIL_HOST=(str, None),
+    EMAIL_PORT=(int, 25),
     AZURE_OPENAI_ENDPOINT=(str, None),
     AZURE_OPENAI_KEY=(str, None),
     AZURE_OPENAI_VERSION=(str, None),
@@ -207,8 +206,8 @@ INTERNAL_IPS = [
 
 # Email
 
-EMAIL_HOST = env("PLATFORM_SMTP_HOST")
-EMAIL_PORT = env("PLATFORM_SMTP_PORT")
+EMAIL_HOST = env("EMAIL_HOST")
+EMAIL_PORT = env("EMAIL_PORT")
 
 
 def get_app_list(self, request, app_label=None):
@@ -218,14 +217,6 @@ def get_app_list(self, request, app_label=None):
 
 
 admin.AdminSite.get_app_list = get_app_list
-
-# Import some Platform.sh settings from the environment.
-config = Config()
-if config.is_valid_platform():
-    if config.appDir:
-        STATIC_ROOT = os.path.join(config.appDir, "static")
-    if config.projectEntropy:
-        SECRET_KEY = config.projectEntropy
 
 GRAPPELLI_AUTOCOMPLETE_LIMIT = 10
 GRAPPELLI_SWITCH_USER = False

@@ -2,6 +2,7 @@ import sys
 
 from django.contrib import admin
 from django import forms
+from django.conf import settings
 from django.utils.safestring import mark_safe
 from django.urls import reverse, reverse_lazy, NoReverseMatch
 from django.shortcuts import redirect
@@ -1044,7 +1045,7 @@ def update_lemma_help_text(obj, language, field, type):
         message = "<br>Auto-detected word_types"
         if obj.word_types != generated_word_types:
             message += "<b>mismatch</b>"
-        message += f': <a href="https://dev-54ta5gq-jyeciedibdzvq.fr-4.platformsh.site/debug/spacy?text={requests.utils.quote(obj.lemma)}&lang={requests.utils.quote(obj.language)}&detailed=false">{generated_word_types}</a>'
+        message += f': <a href="{settings.NLP_API}/debug/spacy?text={requests.utils.quote(obj.lemma)}&lang={requests.utils.quote(obj.language)}&detailed=false">{generated_word_types}</a>'
 
         help_texts.append(message)
 
@@ -1368,7 +1369,7 @@ def analyze_sentence(values):
 
     html = f'<a href="https://demos.explosion.ai/displacy?text={requests.utils.quote(values["text"])}&model={requests.utils.quote(models[rule.language])}">Visualize</a>'
 
-    html += f' - <a href="https://dev-54ta5gq-jyeciedibdzvq.fr-4.platformsh.site/debug/spacy?text={requests.utils.quote(values["text"])}&lang={requests.utils.quote(rule.language)}&detailed=false">Debug</a>'
+    html += f' - <a href="{settings.NLP_API}/debug/spacy?text={requests.utils.quote(values["text"])}&lang={requests.utils.quote(rule.language)}&detailed=false">Debug</a>'
 
     return mark_safe(html)
 
