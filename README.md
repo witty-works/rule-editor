@@ -49,7 +49,7 @@ The data managed here powers the NLP API that performs real-time inclusive langu
 
    Edit `.env` to configure:
    - `SECRET_KEY`: Django secret key
-   - `NLP_API`: URL to the NLP API instance
+   - `NLP_API`: URL to the NLP API instance (defaults to `https://default.api.witty.works`)
    - `NLP_API_USER` and `NLP_API_PASSWORD`: API credentials
    - `DEBUG`: Set to `True` for development
 
