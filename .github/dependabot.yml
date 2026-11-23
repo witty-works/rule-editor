@@ -1,0 +1,43 @@
+# Dependabot reads Pipfile.lock. Security updates are switched on in the
+# repository settings and open pull requests against the default branch,
+# dev; the options below shape them and the weekly version updates.
+version: 2
+updates:
+  # Python packages, from Pipfile and Pipfile.lock (Pipenv).
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    # Version updates wait a week after a release, so a compromised or broken
+    # release has time to be pulled before it is proposed here.
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+    groups:
+      # Minor and patch updates in one weekly pull request; major versions
+      # come one pull request each.
+      python:
+        applies-to: version-updates
+        patterns:
+          - "*"
+        update-types:
+          - minor
+          - patch
+
+  # The actions the workflow in .github/workflows uses.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    cooldown:
+      default-days: 7
+    labels:
+      - dependencies
+    groups:
+      actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
