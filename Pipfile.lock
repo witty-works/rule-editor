@@ -327,12 +327,12 @@
         },
         "gunicorn": {
             "hashes": [
-                "sha256:40233d26a5f0d1872916188c276e21641155111c2853f0c2cd55260aec0d24fc",
-                "sha256:ca9346f85e3a4aeeb64d491045c16b9a35647abd37ea15efe53080eb8b090baf"
+                "sha256:378b26b9a38adcf4592f28828233c1716acc55e833ea06bf48719782efaa0d10",
+                "sha256:b1514965361c8b7e8107a80aa2a92636878df1ccfac6dd204a676426e04d9e3e"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.10'",
-            "version": "==26.0.0"
+            "version": "==27.0.1"
         },
         "h11": {
             "hashes": [
