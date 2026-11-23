@@ -20,7 +20,7 @@ emoji = "*"
 django-taggit = "*"
 django-autocomplete-light = "*"
 # Grappelli 5.0 dropped Python 3.11 support (3.12+ only)
-django-grappelli = "<5"
+django-grappelli = "<6"
 django-computedfields = "*"
 django-forms-dynamic = "*"
 inflex = "*"
